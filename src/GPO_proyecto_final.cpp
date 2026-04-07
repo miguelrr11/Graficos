@@ -16,24 +16,24 @@ const char* prac = "OpenGL (GpO)";   // Nombre de la practica (aparecera en el t
 #define GLSL(src) "#version 330 core\n" #src
 
 const char* vertex_prog = GLSL(
-layout(location = 0) in vec3 pos; 
-layout(location = 1) in vec3 color;
-out vec3 col;
-uniform mat4 MVP=mat4(1.0f);
-void main()
- {
-  gl_Position = MVP*vec4(pos,1); // Construyo coord homog�neas y aplico matriz transformacion M
-  col = color;                             // Paso color a fragment shader
- }
+	layout(location = 0) in vec3 pos; 
+	layout(location = 1) in vec3 color;
+	out vec3 col;
+	uniform mat4 MVP=mat4(1.0f);
+	void main()
+	{
+		gl_Position = MVP*vec4(pos,1); // Construyo coord homog�neas y aplico matriz transformacion M
+		col = color;                             // Paso color a fragment shader
+	}
 );
 
 const char* fragment_prog = GLSL(
-in vec3 col;
-out vec3 outputColor;
-void main() 
- {
-	outputColor = col;
- }
+	in vec3 col;
+	out vec3 outputColor;
+	void main() 
+	{
+		outputColor = col;
+	}
 );
 
 
@@ -133,6 +133,8 @@ vec3 up = vec3(0,0,1);
 
 float fov = 35.0f, aspect = 4.0f / 3.0f; //###float fov = 40.0f, aspect = 4.0f / 3.0f;
 
+float speed = 5.0f; // velocidad movimiento
+
 // Actualizar escena: cambiar posici�n objetos, nuevos objetros, posici�n c�mara, luces, etc.
 void render_scene()
 {
@@ -140,6 +142,24 @@ void render_scene()
 	glClear(GL_COLOR_BUFFER_BIT);          // Aplica color asignado borrando el buffer
 
 	float t = (float)glfwGetTime();  // Contador de tiempo en segundos 
+
+	float deltaTime = 0.01f; // mejor calcularlo real, pero así funciona simple
+	float velocity = speed * deltaTime;
+
+	vec3 forward = normalize(target - pos_obs);
+	vec3 right = normalize(cross(forward, up));
+
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+		pos_obs += forward * velocity;
+
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+		pos_obs -= forward * velocity;
+
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+		pos_obs -= right * velocity;
+
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+		pos_obs += right * velocity;
 
 
 	///////// Actualizacion matrices M, V, P  /////////	
