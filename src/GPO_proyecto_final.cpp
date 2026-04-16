@@ -9,10 +9,6 @@ int ANCHO = 800, ALTO = 600;  // Tama�o inicial ventana
 const char* prac = "OpenGL (GpO)";   // Nombre de la practica (aparecera en el titulo de la ventana).
 
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////     CODIGO SHADERS 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 #define GLSL(src) "#version 330 core\n" #src
 
 const char* vertex_prog = GLSL(
@@ -35,11 +31,6 @@ const char* fragment_prog = GLSL(
 		outputColor = col;
 	}
 );
-
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/////////////////////   RENDER CODE AND DATA
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 GLFWwindow* window;
 GLuint prog;
@@ -130,12 +121,17 @@ void init_scene()
 vec3 pos_obs=vec3(10.0f,0.0f,0.0f); //###vec3 pos_obs=vec3(1.5f,0.0f,0.0f); 
 vec3 target = vec3(0.0f,0.0f,0.0f);
 vec3 up = vec3(0,0,1);
+float yaw   = 180.0f;  // 180° porque la cámara empieza mirando hacia -X
+float pitch =   0.0f;
+float lastX = 400.0f, lastY = 300.0f;
+bool  firstMouse = true;
+float mouseSensitivity = 0.1f;
 
 float fov = 35.0f, aspect = 4.0f / 3.0f; //###float fov = 40.0f, aspect = 4.0f / 3.0f;
 
 float speed = 5.0f; // velocidad movimiento
 
-// Actualizar escena: cambiar posici�n objetos, nuevos objetros, posici�n c�mara, luces, etc.
+
 void render_scene()
 {
 	glClearColor(0.0f,0.0f,0.0f,1.0f);  // Especifica color para el fondo (RGB+alfa)
@@ -146,20 +142,21 @@ void render_scene()
 	float deltaTime = 0.01f; // mejor calcularlo real, pero así funciona simple
 	float velocity = speed * deltaTime;
 
-	vec3 forward = normalize(target - pos_obs);
-	vec3 right = normalize(cross(forward, up));
+	// Recalcular dirección de mirada desde yaw/pitch (con Z hacia arriba)
+	vec3 forward_dir;
+	forward_dir.x = cos(glm::radians(pitch)) * cos(glm::radians(yaw));
+	forward_dir.y = cos(glm::radians(pitch)) * sin(glm::radians(yaw));
+	forward_dir.z = sin(glm::radians(pitch));
+	forward_dir = normalize(forward_dir);
+	target = pos_obs + forward_dir;  // actualizamos target dinámicamente
 
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-		pos_obs += forward * velocity;
+	// WASD ahora usa forward_dir en lugar del viejo forward
+	vec3 right = normalize(cross(forward_dir, up));
 
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-		pos_obs -= forward * velocity;
-
-	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-		pos_obs -= right * velocity;
-
-	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-		pos_obs += right * velocity;
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)  pos_obs += forward_dir * velocity;
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)  pos_obs -= forward_dir * velocity;
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)  pos_obs -= right       * velocity;
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)  pos_obs += right       * velocity;
 
 
 	///////// Actualizacion matrices M, V, P  /////////	
@@ -183,10 +180,6 @@ void render_scene()
 
 }
 
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/// PROGRAMA PRINCIPAL
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 int main(int argc, char* argv[])
 {
 	init_GLFW();            // Inicializa lib GLFW
@@ -207,8 +200,6 @@ int main(int argc, char* argv[])
 	exit(EXIT_SUCCESS);
 }
 
-
-//////////  FUNCION PARA MOSTRAR INFO OPCIONAL EN EL TITULO DE VENTANA  //////////
 void show_info()
 {
 	static int fps = 0;
@@ -228,11 +219,6 @@ void show_info()
 
 }
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////  ASIGNACON FUNCIONES CALLBACK
-///////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
 // Callback de cambio tama�o de ventana
 void ResizeCallback(GLFWwindow* window, int width, int height)
 {
@@ -248,11 +234,31 @@ static void KeyCallback(GLFWwindow* window, int key, int code, int action, int m
 	if (key == GLFW_KEY_ESCAPE) glfwSetWindowShouldClose(window, true);
 }
 
+void MouseCallback(GLFWwindow* window, double xpos, double ypos)
+{
+    if (firstMouse) {
+        lastX = (float)xpos;  lastY = (float)ypos;
+        firstMouse = false;
+    }
+
+    float xoffset = ((float)xpos - lastX) * mouseSensitivity;
+	float yoffset = ((float)ypos - lastY) * mouseSensitivity;
+    lastX = (float)xpos;  lastY = (float)ypos;
+
+    yaw   += xoffset;
+    pitch += yoffset;
+
+    // Limitar pitch para no dar la vuelta
+    if (pitch >  89.0f) pitch =  89.0f;
+    if (pitch < -89.0f) pitch = -89.0f;
+}
 
 void asigna_funciones_callback(GLFWwindow* window)
 {
 	glfwSetWindowSizeCallback(window, ResizeCallback);
 	glfwSetKeyCallback(window, KeyCallback);
+	glfwSetCursorPosCallback(window, MouseCallback);
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 }
 
 
