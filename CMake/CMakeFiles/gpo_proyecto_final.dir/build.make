@@ -83,10 +83,24 @@ CMakeFiles/gpo_proyecto_final.dir/src/GPO_proyecto_final.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/gpo_proyecto_final.dir/src/GPO_proyecto_final.cpp.s"
 	/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/src/GPO_proyecto_final.cpp -o CMakeFiles/gpo_proyecto_final.dir/src/GPO_proyecto_final.cpp.s
 
+CMakeFiles/gpo_proyecto_final.dir/src/obstacle.cpp.o: CMakeFiles/gpo_proyecto_final.dir/flags.make
+CMakeFiles/gpo_proyecto_final.dir/src/obstacle.cpp.o: /Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/src/obstacle.cpp
+CMakeFiles/gpo_proyecto_final.dir/src/obstacle.cpp.o: CMakeFiles/gpo_proyecto_final.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/CMake/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/gpo_proyecto_final.dir/src/obstacle.cpp.o"
+	/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/gpo_proyecto_final.dir/src/obstacle.cpp.o -MF CMakeFiles/gpo_proyecto_final.dir/src/obstacle.cpp.o.d -o CMakeFiles/gpo_proyecto_final.dir/src/obstacle.cpp.o -c /Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/src/obstacle.cpp
+
+CMakeFiles/gpo_proyecto_final.dir/src/obstacle.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/gpo_proyecto_final.dir/src/obstacle.cpp.i"
+	/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/src/obstacle.cpp > CMakeFiles/gpo_proyecto_final.dir/src/obstacle.cpp.i
+
+CMakeFiles/gpo_proyecto_final.dir/src/obstacle.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/gpo_proyecto_final.dir/src/obstacle.cpp.s"
+	/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/src/obstacle.cpp -o CMakeFiles/gpo_proyecto_final.dir/src/obstacle.cpp.s
+
 CMakeFiles/gpo_proyecto_final.dir/src/GPO_aux.cpp.o: CMakeFiles/gpo_proyecto_final.dir/flags.make
 CMakeFiles/gpo_proyecto_final.dir/src/GPO_aux.cpp.o: /Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/src/GPO_aux.cpp
 CMakeFiles/gpo_proyecto_final.dir/src/GPO_aux.cpp.o: CMakeFiles/gpo_proyecto_final.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/CMake/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/gpo_proyecto_final.dir/src/GPO_aux.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/CMake/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/gpo_proyecto_final.dir/src/GPO_aux.cpp.o"
 	/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/gpo_proyecto_final.dir/src/GPO_aux.cpp.o -MF CMakeFiles/gpo_proyecto_final.dir/src/GPO_aux.cpp.o.d -o CMakeFiles/gpo_proyecto_final.dir/src/GPO_aux.cpp.o -c /Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/src/GPO_aux.cpp
 
 CMakeFiles/gpo_proyecto_final.dir/src/GPO_aux.cpp.i: cmake_force
@@ -100,7 +114,7 @@ CMakeFiles/gpo_proyecto_final.dir/src/GPO_aux.cpp.s: cmake_force
 CMakeFiles/gpo_proyecto_final.dir/libs/glad/src/glad.c.o: CMakeFiles/gpo_proyecto_final.dir/flags.make
 CMakeFiles/gpo_proyecto_final.dir/libs/glad/src/glad.c.o: /Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/libs/glad/src/glad.c
 CMakeFiles/gpo_proyecto_final.dir/libs/glad/src/glad.c.o: CMakeFiles/gpo_proyecto_final.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/CMake/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building C object CMakeFiles/gpo_proyecto_final.dir/libs/glad/src/glad.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/CMake/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building C object CMakeFiles/gpo_proyecto_final.dir/libs/glad/src/glad.c.o"
 	/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/gpo_proyecto_final.dir/libs/glad/src/glad.c.o -MF CMakeFiles/gpo_proyecto_final.dir/libs/glad/src/glad.c.o.d -o CMakeFiles/gpo_proyecto_final.dir/libs/glad/src/glad.c.o -c /Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/libs/glad/src/glad.c
 
 CMakeFiles/gpo_proyecto_final.dir/libs/glad/src/glad.c.i: cmake_force
@@ -114,6 +128,7 @@ CMakeFiles/gpo_proyecto_final.dir/libs/glad/src/glad.c.s: cmake_force
 # Object files for target gpo_proyecto_final
 gpo_proyecto_final_OBJECTS = \
 "CMakeFiles/gpo_proyecto_final.dir/src/GPO_proyecto_final.cpp.o" \
+"CMakeFiles/gpo_proyecto_final.dir/src/obstacle.cpp.o" \
 "CMakeFiles/gpo_proyecto_final.dir/src/GPO_aux.cpp.o" \
 "CMakeFiles/gpo_proyecto_final.dir/libs/glad/src/glad.c.o"
 
@@ -121,12 +136,13 @@ gpo_proyecto_final_OBJECTS = \
 gpo_proyecto_final_EXTERNAL_OBJECTS =
 
 bin/gpo_proyecto_final: CMakeFiles/gpo_proyecto_final.dir/src/GPO_proyecto_final.cpp.o
+bin/gpo_proyecto_final: CMakeFiles/gpo_proyecto_final.dir/src/obstacle.cpp.o
 bin/gpo_proyecto_final: CMakeFiles/gpo_proyecto_final.dir/src/GPO_aux.cpp.o
 bin/gpo_proyecto_final: CMakeFiles/gpo_proyecto_final.dir/libs/glad/src/glad.c.o
 bin/gpo_proyecto_final: CMakeFiles/gpo_proyecto_final.dir/build.make
 bin/gpo_proyecto_final: libs/glfw/src/libglfw3.a
 bin/gpo_proyecto_final: CMakeFiles/gpo_proyecto_final.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/CMake/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Linking CXX executable bin/gpo_proyecto_final"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/CMake/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Linking CXX executable bin/gpo_proyecto_final"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/gpo_proyecto_final.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

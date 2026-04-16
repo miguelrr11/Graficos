@@ -35,7 +35,9 @@ include_directories(${PROJECT_SOURCE_DIR}/include/stb)
 
 set(GPO_SOURCE_FILES include/stb/stb_image.h
 					 include/GpO.h
+					 include/obstacle.h
 					 src/GPO_proyecto_final.cpp
+					 src/obstacle.cpp
 					 src/GPO_aux.cpp)
 add_executable(gpo_proyecto_final ${GPO_SOURCE_FILES})
 target_link_libraries(gpo_proyecto_final PRIVATE ${OPENGL_LIBRARIES} glfw glm glad_interface)

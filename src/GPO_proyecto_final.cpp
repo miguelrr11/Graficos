@@ -3,6 +3,8 @@ ATG, 2019
 ******************************************************************************/
 
 #include <GpO.h>
+#include "obstacle.h"   // <-- añadir esto
+#include <vector>       // <-- y esto si GpO.h no lo incluye ya
 
 // TAMA�O y TITULO INICIAL de la VENTANA
 int ANCHO = 800, ALTO = 600;  // Tama�o inicial ventana
@@ -12,29 +14,51 @@ const char* prac = "OpenGL (GpO)";   // Nombre de la practica (aparecera en el t
 #define GLSL(src) "#version 330 core\n" #src
 
 const char* vertex_prog = GLSL(
-	layout(location = 0) in vec3 pos; 
-	layout(location = 1) in vec3 color;
-	out vec3 col;
-	uniform mat4 MVP=mat4(1.0f);
-	void main()
-	{
-		gl_Position = MVP*vec4(pos,1); // Construyo coord homog�neas y aplico matriz transformacion M
-		col = color;                             // Paso color a fragment shader
-	}
+    layout(location = 0) in vec3 pos;
+    layout(location = 1) in vec3 normal;       // atributo 1 ahora es normal
+
+    out vec3 fragNormal;
+    out vec3 fragPos;
+
+    uniform mat4 MVP = mat4(1.0f);
+    uniform mat4 M   = mat4(1.0f);             // matriz modelo sola (para normales)
+
+    void main()
+    {
+        gl_Position = MVP * vec4(pos, 1.0);
+        fragPos     = vec3(M * vec4(pos, 1.0));
+        fragNormal  = mat3(transpose(inverse(M))) * normal; // normal en world space
+    }
 );
 
 const char* fragment_prog = GLSL(
-	in vec3 col;
-	out vec3 outputColor;
-	void main() 
-	{
-		outputColor = col;
-	}
-);
+    in vec3 fragNormal;
+    in vec3 fragPos;
+    out vec3 outputColor;
 
+    uniform vec3 uColor    = vec3(1.0);
+    uniform vec3 uLightPos = vec3(5.0, 5.0, 10.0);
+    uniform vec3 uLightColor = vec3(1.0, 1.0, 1.0);
+    uniform float uAmbient = 0.2;
+
+    void main()
+    {
+        // Luz ambiente
+        vec3 ambient = uAmbient * uLightColor;
+
+        // Luz difusa
+        vec3  norm    = normalize(fragNormal);
+        vec3  lightDir = normalize(uLightPos - fragPos);
+        float diff    = max(dot(norm, lightDir), 0.0);
+        vec3  diffuse = diff * uLightColor;
+
+        outputColor = (ambient + diffuse) * uColor;
+    }
+);
 GLFWwindow* window;
 GLuint prog;
 objeto triangulo;
+std::vector<BoxObstacle> obstaculos;
 
 objeto crear_triangulo(void)
 {
@@ -88,11 +112,28 @@ objeto crear_triangulo(void)
 // Preparaci�n de los datos de los objetos a dibujar, envialarlos a la GPU
 // Compilaci�n programas a ejecutar en la tarjeta gr�fica:  vertex shader, fragment shaders
 // Opciones generales de render de OpenGL
+
+
+vec3 pos_obs=vec3(10.0f,0.0f,0.0f); //###vec3 pos_obs=vec3(1.5f,0.0f,0.0f); 
+vec3 target = vec3(0.0f,0.0f,0.0f);
+vec3 up = vec3(0,0,1);
+float cam_yaw   = 180.0f;  // 180° porque la cámara empieza mirando hacia -X
+float cam_pitch =   0.0f;
+float lastX = 400.0f, lastY = 300.0f;
+bool  firstMouse = true;
+float mouseSensitivity = 0.1f;
+
+float fov = 35.0f, aspect = 4.0f / 3.0f; //###float fov = 40.0f, aspect = 4.0f / 3.0f;
+
+float speed = 5.0f; // velocidad movimiento
+
 void init_scene()
 {
 	int width, height;
     glfwGetFramebufferSize(window, &width, &height);
     glViewport(0, 0, width, height); 
+
+	glEnable(GL_DEPTH_TEST);
     
 	triangulo = crear_triangulo();  // Preparar datos de objeto, mandar a GPU
 
@@ -115,38 +156,30 @@ void init_scene()
 	//	prog = Compile_Link_Shaders(vertex_prog, fragment_prog); 
 
 	glUseProgram(prog);    // Indicamos que programa vamos a usar 
+
+	obstaculos.push_back(crear_box({0, 0, -20}, {4, 2, 0.2f}, {0, 0, 0}, {0.2f, 0.5f, 0.8f}));          // suelo
+	// obstaculos.push_back(crear_box({2, 0, 0.5f},   {0.2f, 1, 2}, {0,0,30})); // rampa
+	// obstaculos.push_back(crear_box({-1, 0, 0.5f},  {0.2f, 2, 2}, {0,0,0},   {0.2f,0.5f,0.8f})); // pared
+
 }
 
-
-vec3 pos_obs=vec3(10.0f,0.0f,0.0f); //###vec3 pos_obs=vec3(1.5f,0.0f,0.0f); 
-vec3 target = vec3(0.0f,0.0f,0.0f);
-vec3 up = vec3(0,0,1);
-float yaw   = 180.0f;  // 180° porque la cámara empieza mirando hacia -X
-float pitch =   0.0f;
-float lastX = 400.0f, lastY = 300.0f;
-bool  firstMouse = true;
-float mouseSensitivity = 0.1f;
-
-float fov = 35.0f, aspect = 4.0f / 3.0f; //###float fov = 40.0f, aspect = 4.0f / 3.0f;
-
-float speed = 5.0f; // velocidad movimiento
 
 
 void render_scene()
 {
 	glClearColor(0.0f,0.0f,0.0f,1.0f);  // Especifica color para el fondo (RGB+alfa)
-	glClear(GL_COLOR_BUFFER_BIT);          // Aplica color asignado borrando el buffer
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);  // añadir el depth bit
 
 	float t = (float)glfwGetTime();  // Contador de tiempo en segundos 
 
 	float deltaTime = 0.01f; // mejor calcularlo real, pero así funciona simple
 	float velocity = speed * deltaTime;
 
-	// Recalcular dirección de mirada desde yaw/pitch (con Z hacia arriba)
+	// Recalcular dirección de mirada desde cam_yaw/cam_pitch (con Z hacia arriba)
 	vec3 forward_dir;
-	forward_dir.x = cos(glm::radians(pitch)) * cos(glm::radians(yaw));
-	forward_dir.y = cos(glm::radians(pitch)) * sin(glm::radians(yaw));
-	forward_dir.z = sin(glm::radians(pitch));
+	forward_dir.x = cos(glm::radians(cam_pitch)) * cos(glm::radians(cam_yaw));
+	forward_dir.y = cos(glm::radians(cam_pitch)) * sin(glm::radians(cam_yaw));
+	forward_dir.z = sin(glm::radians(cam_pitch));
 	forward_dir = normalize(forward_dir);
 	target = pos_obs + forward_dir;  // actualizamos target dinámicamente
 
@@ -176,6 +209,11 @@ void render_scene()
     glDrawArrays(GL_TRIANGLES, 0, triangulo.Nv);   // Orden de dibujar (Nv vertices)	
 	glBindVertexArray(0);                          // Desconectamos VAO
 
+	glm::mat4 VP = P * V;
+	for (const auto& obs : obstaculos)
+    	render_box(obs, prog, VP);
+
+
 	////////////////////////////////////////////////////////
 
 }
@@ -196,6 +234,7 @@ int main(int argc, char* argv[])
 		show_info();
 	}
 
+	for (auto& obs : obstaculos) destroy_box(obs);
 	glfwTerminate();
 	exit(EXIT_SUCCESS);
 }
@@ -245,12 +284,12 @@ void MouseCallback(GLFWwindow* window, double xpos, double ypos)
 	float yoffset = ((float)ypos - lastY) * mouseSensitivity;
     lastX = (float)xpos;  lastY = (float)ypos;
 
-    yaw   += xoffset;
-    pitch += yoffset;
+    cam_yaw   += xoffset;
+    cam_pitch += yoffset;
 
-    // Limitar pitch para no dar la vuelta
-    if (pitch >  89.0f) pitch =  89.0f;
-    if (pitch < -89.0f) pitch = -89.0f;
+    // Limitar cam_pitch para no dar la vuelta
+    if (cam_pitch >  89.0f) cam_pitch =  89.0f;
+    if (cam_pitch < -89.0f) cam_pitch = -89.0f;
 }
 
 void asigna_funciones_callback(GLFWwindow* window)
