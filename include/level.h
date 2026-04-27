@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include "obstacle.h"
+#include "sphere.h"
 
 #include <glad/glad.h> 
 
@@ -21,7 +22,7 @@ struct Ball {
     glm::vec3 vel    = { 0.0f, 0.0f, 0.0f  };
     float     radius = 0.15f;
     bool      moving = false;
-    BoxObstacle mesh;           // renderizamos la bola como una caja pequeña (por ahora)
+    SphereObstacle mesh;           // renderizamos la bola como una caja pequeña (por ahora)
 };
 
 // ─────────────────────────────────────────

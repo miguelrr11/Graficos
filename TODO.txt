@@ -1,6 +1,24 @@
 TODOs
 
-bola rendonda
-habilidad de cambiar angulo
-hoyo en vez de cubo rojo
-deteccion correcta de nivel finalizado
+bola rendonda (HECHO)
+habilidad de cambiar angulo (HECHO)
+cambiar el hoyo de tipo box a tipo sphere
+texturas
+niveles 
+mejor navegacion (hecho)
+
+
+COMANDOS que uso:
+si añades archivos:
+primero tienes que modificar el CMakeLists.txt para incluirlos en la compilación, luego haces:
+cd CMake
+CMake .
+make
+./bin/gpo_proyecto_final
+
+si no añades o eliminas archivos
+cambias codigo
+make
+./bin/gpo_proyecto_final
+
+si te da error de doxygen, te lo instalas

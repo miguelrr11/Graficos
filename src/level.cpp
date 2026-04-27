@@ -40,17 +40,16 @@ void Level::load()
     ball.pos    = { 0.5f, 0.0f, ball.radius };
     ball.vel    = { 0.0f, 0.0f, 0.0f };
     ball.moving = false;
-    ball.mesh   = crear_box({0,0,0},
-                            {ball.radius*2, ball.radius*2, ball.radius*2},
-                            {0,0,0},
+    ball.mesh   = crear_sphere({0,0,0},
+                            ball.radius,
                             {1.0f, 1.0f, 1.0f});
 
     //  Hoyo (marcador visual: una caja plana oscura)
-    holePos = { 7.5f, 0.0f, FLOOR_Z };
+    holePos = { 7.5f, 0.0f, FLOOR_Z+0.1f};
     obstacles.push_back(crear_box(holePos + glm::vec3(0,0,-0.09f),
                                   {HOLE_RADIUS*2, HOLE_RADIUS*2, 0.02f},
                                   {0,0,0},
-                                  {0.05f, 0.05f, 0.05f}));
+                                  {0.05f, 0.05f, 0.05f}, true));
 
     printf("Nivel cargado. Flechas = apuntar | ESPACIO = cargar/disparar\n");
 }
@@ -113,6 +112,8 @@ void Level::resolveFloor()
 void Level::resolveWalls()
 {
     for (const auto& obs : obstacles) {
+        if(obs.ignoreCollision) continue;
+
         // AABB del obstáculo (sin rotación – válido para paredes axis-aligned)
         glm::vec3 half = obs.size * 0.5f;
         glm::vec3 minB = obs.position - half;
@@ -162,9 +163,9 @@ void Level::render(GLuint prog, const glm::mat4& VP)
         render_box(obs, prog, VP);
 
     // Bola: copiamos el mesh y le actualizamos la posición antes de renderizar
-    BoxObstacle bm = ball.mesh;
+    SphereObstacle bm = ball.mesh;
     bm.position = ball.pos;
-    render_box(bm, prog, VP);
+    render_sphere(bm, prog, VP);
 
     // Indicador de dirección de disparo (caja pequeña delante de la bola)
     if (!ball.moving) {
@@ -172,11 +173,11 @@ void Level::render(GLuint prog, const glm::mat4& VP)
         glm::vec3 dir = { std::cos(rad), std::sin(rad), 0.0f };
         glm::vec3 arrowPos = ball.pos + dir * (ball.radius * 3.0f);
 
-        BoxObstacle arrow = ball.mesh;
+        SphereObstacle arrow = ball.mesh;
         arrow.position = arrowPos;
-        arrow.size     = { ball.radius, ball.radius, ball.radius };
+        arrow.radius     = ball.radius;
         arrow.color    = { 1.0f, 1.0f - shotPower, 0.0f };   // amarillo → rojo al cargar
-        render_box(arrow, prog, VP);
+        render_sphere(arrow, prog, VP);
     }
 }
 
@@ -234,5 +235,5 @@ void Level::destroy()
 {
     for (auto& obs : obstacles) destroy_box(obs);
     obstacles.clear();
-    destroy_box(ball.mesh);
+    destroy_sphere(ball.mesh);
 }

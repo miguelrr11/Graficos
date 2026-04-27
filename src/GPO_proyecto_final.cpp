@@ -78,16 +78,16 @@ GLuint      prog;
 Level       level;          // ← el nivel de juego
 
 // Cámara
-vec3  pos_obs  = vec3(10.0f, 0.0f, 3.0f);
 vec3  up       = vec3(0, 0, 1);
 float cam_yaw  = 180.0f;
 float cam_pitch = -15.0f;
 float lastX = 400.0f, lastY = 300.0f;
 bool  firstMouse = true;
 float mouseSensitivity = 0.1f;
-float fov    = 35.0f;
+float fov    = 80.0f;
 float aspect = 4.0f / 3.0f;
 float cam_speed = 5.0f;
+float cam_distance = 3.0f;   // distancia a la bola
 
 // Tiempo para deltaTime real
 float lastFrameTime = 0.0f;
@@ -160,31 +160,24 @@ void render_scene()
     lastFrameTime = now;
     if (dt > 0.05f) dt = 0.05f;  // cap para evitar saltos si la ventana se mueve
 
-    // Dirección de cámara desde yaw/pitch
-    vec3 forward;
-    forward.x = cos(glm::radians(cam_pitch)) * cos(glm::radians(cam_yaw));
-    forward.y = cos(glm::radians(cam_pitch)) * sin(glm::radians(cam_yaw));
-    forward.z = sin(glm::radians(cam_pitch));
-    forward   = normalize(forward);
-
-    vec3 right = normalize(cross(forward, up));
-
-    // Movimiento WASD de cámara
-    float vel = cam_speed * dt;
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) pos_obs += forward * vel;
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) pos_obs -= forward * vel;
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) pos_obs -= right   * vel;
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) pos_obs += right   * vel;
-
     // Input de juego (flechas + espacio)
     level.handleInput(window, dt);
 
     // Física
     level.update(dt);
 
+	//camara sigue a la bola
+	vec3 target = level.ball.pos;
+
+	vec3 camPos;
+
+	camPos.x = target.x + cam_distance * cos(glm::radians(cam_pitch)) * cos(glm::radians(cam_yaw));
+	camPos.y = target.y + cam_distance * cos(glm::radians(cam_pitch)) * sin(glm::radians(cam_yaw));
+	camPos.z = target.z + cam_distance * sin(glm::radians(cam_pitch));
+
     // Matrices
     mat4 P = perspective(glm::radians(fov), aspect, 0.5f, 40.0f);
-    mat4 V = lookAt(pos_obs, pos_obs + forward, up);
+    mat4 V = lookAt(camPos, target, up);
     mat4 VP = P * V;
 
     // Renderizar nivel (obstáculos + bola + indicador de disparo)
@@ -265,11 +258,22 @@ static void KeyCallback(GLFWwindow* window, int key, int code, int action, int m
 
 void MouseCallback(GLFWwindow* window, double xpos, double ypos)
 {
-    if (firstMouse) { lastX = (float)xpos; lastY = (float)ypos; firstMouse = false; }
-    cam_yaw   += ((float)xpos - lastX) * mouseSensitivity;
-    cam_pitch += ((float)ypos - lastY) * mouseSensitivity;
+    if (firstMouse) {
+        lastX = (float)xpos;
+        lastY = (float)ypos;
+        firstMouse = false;
+    }
+
+    float dx = (float)xpos - lastX;
+    float dy = (float)ypos - lastY;
+
+    cam_yaw   += dx * mouseSensitivity;
+    cam_pitch -= -dy * mouseSensitivity;  // invertido (más natural)
+
     cam_pitch = glm::clamp(cam_pitch, -89.0f, 89.0f);
-    lastX = (float)xpos; lastY = (float)ypos;
+
+    lastX = (float)xpos;
+    lastY = (float)ypos;
 }
 
 void asigna_funciones_callback(GLFWwindow* window)

@@ -51,13 +51,14 @@ static const GLuint box_indices[] = {
 };
 
 BoxObstacle crear_box(glm::vec3 position, glm::vec3 size,
-                      glm::vec3 eulerAngles, glm::vec3 color)
+                      glm::vec3 eulerAngles, glm::vec3 color, bool ignoreCollision)
 {
     BoxObstacle box;
     box.position    = position;
     box.size        = size;
     box.eulerAngles = eulerAngles;
     box.color       = color;
+    box.ignoreCollision = ignoreCollision || false;
     box.indexCount  = 36;
 
     glGenVertexArrays(1, &box.VAO);
