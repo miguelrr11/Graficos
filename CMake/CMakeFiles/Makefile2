@@ -100,16 +100,34 @@ libs/glad/clean:
 
 # Recursive "all" directory target.
 libs/glfw/all: libs/glfw/src/all
+libs/glfw/all: libs/glfw/docs/all
 .PHONY : libs/glfw/all
 
 # Recursive "preinstall" directory target.
 libs/glfw/preinstall: libs/glfw/src/preinstall
+libs/glfw/preinstall: libs/glfw/docs/preinstall
 .PHONY : libs/glfw/preinstall
 
 # Recursive "clean" directory target.
 libs/glfw/clean: libs/glfw/CMakeFiles/uninstall.dir/clean
 libs/glfw/clean: libs/glfw/src/clean
+libs/glfw/clean: libs/glfw/docs/clean
 .PHONY : libs/glfw/clean
+
+#=============================================================================
+# Directory level rules for directory libs/glfw/docs
+
+# Recursive "all" directory target.
+libs/glfw/docs/all: libs/glfw/docs/CMakeFiles/docs.dir/all
+.PHONY : libs/glfw/docs/all
+
+# Recursive "preinstall" directory target.
+libs/glfw/docs/preinstall:
+.PHONY : libs/glfw/docs/preinstall
+
+# Recursive "clean" directory target.
+libs/glfw/docs/clean: libs/glfw/docs/CMakeFiles/docs.dir/clean
+.PHONY : libs/glfw/docs/clean
 
 #=============================================================================
 # Directory level rules for directory libs/glfw/src
@@ -163,12 +181,12 @@ libs/glm/glm/clean:
 CMakeFiles/gpo_proyecto_final.dir/all: libs/glfw/src/CMakeFiles/glfw.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/CMake/CMakeFiles --progress-num=17,18,19,20,21 "Built target gpo_proyecto_final"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/CMake/CMakeFiles --progress-num=18,19,20,21,22,23 "Built target gpo_proyecto_final"
 .PHONY : CMakeFiles/gpo_proyecto_final.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/gpo_proyecto_final.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/CMake/CMakeFiles 21
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/CMake/CMakeFiles 22
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/gpo_proyecto_final.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/CMake/CMakeFiles 0
 .PHONY : CMakeFiles/gpo_proyecto_final.dir/rule
@@ -215,7 +233,7 @@ libs/glfw/CMakeFiles/uninstall.dir/clean:
 libs/glfw/src/CMakeFiles/glfw.dir/all:
 	$(MAKE) $(MAKESILENT) -f libs/glfw/src/CMakeFiles/glfw.dir/build.make libs/glfw/src/CMakeFiles/glfw.dir/depend
 	$(MAKE) $(MAKESILENT) -f libs/glfw/src/CMakeFiles/glfw.dir/build.make libs/glfw/src/CMakeFiles/glfw.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/CMake/CMakeFiles --progress-num=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16 "Built target glfw"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/CMake/CMakeFiles --progress-num=2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17 "Built target glfw"
 .PHONY : libs/glfw/src/CMakeFiles/glfw.dir/all
 
 # Build rule for subdir invocation for target.
@@ -233,6 +251,32 @@ glfw: libs/glfw/src/CMakeFiles/glfw.dir/rule
 libs/glfw/src/CMakeFiles/glfw.dir/clean:
 	$(MAKE) $(MAKESILENT) -f libs/glfw/src/CMakeFiles/glfw.dir/build.make libs/glfw/src/CMakeFiles/glfw.dir/clean
 .PHONY : libs/glfw/src/CMakeFiles/glfw.dir/clean
+
+#=============================================================================
+# Target rules for target libs/glfw/docs/CMakeFiles/docs.dir
+
+# All Build rule for target.
+libs/glfw/docs/CMakeFiles/docs.dir/all:
+	$(MAKE) $(MAKESILENT) -f libs/glfw/docs/CMakeFiles/docs.dir/build.make libs/glfw/docs/CMakeFiles/docs.dir/depend
+	$(MAKE) $(MAKESILENT) -f libs/glfw/docs/CMakeFiles/docs.dir/build.make libs/glfw/docs/CMakeFiles/docs.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/CMake/CMakeFiles --progress-num=1 "Built target docs"
+.PHONY : libs/glfw/docs/CMakeFiles/docs.dir/all
+
+# Build rule for subdir invocation for target.
+libs/glfw/docs/CMakeFiles/docs.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/CMake/CMakeFiles 1
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libs/glfw/docs/CMakeFiles/docs.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/CMake/CMakeFiles 0
+.PHONY : libs/glfw/docs/CMakeFiles/docs.dir/rule
+
+# Convenience name for target.
+docs: libs/glfw/docs/CMakeFiles/docs.dir/rule
+.PHONY : docs
+
+# clean rule for target.
+libs/glfw/docs/CMakeFiles/docs.dir/clean:
+	$(MAKE) $(MAKESILENT) -f libs/glfw/docs/CMakeFiles/docs.dir/build.make libs/glfw/docs/CMakeFiles/docs.dir/clean
+.PHONY : libs/glfw/docs/CMakeFiles/docs.dir/clean
 
 #=============================================================================
 # Special targets to cleanup operation of make.

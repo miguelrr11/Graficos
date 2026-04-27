@@ -36,6 +36,8 @@ include_directories(${PROJECT_SOURCE_DIR}/include/stb)
 set(GPO_SOURCE_FILES include/stb/stb_image.h
 					 include/GpO.h
 					 include/obstacle.h
+					 include/level.h
+					 src/level.cpp
 					 src/GPO_proyecto_final.cpp
 					 src/obstacle.cpp
 					 src/GPO_aux.cpp)

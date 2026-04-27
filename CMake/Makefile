@@ -200,6 +200,19 @@ glfw/fast:
 	$(MAKE) $(MAKESILENT) -f libs/glfw/src/CMakeFiles/glfw.dir/build.make libs/glfw/src/CMakeFiles/glfw.dir/build
 .PHONY : glfw/fast
 
+#=============================================================================
+# Target rules for targets named docs
+
+# Build rule for target.
+docs: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 docs
+.PHONY : docs
+
+# fast build rule for target.
+docs/fast:
+	$(MAKE) $(MAKESILENT) -f libs/glfw/docs/CMakeFiles/docs.dir/build.make libs/glfw/docs/CMakeFiles/docs.dir/build
+.PHONY : docs/fast
+
 libs/glad/src/glad.o: libs/glad/src/glad.c.o
 .PHONY : libs/glad/src/glad.o
 
@@ -272,6 +285,30 @@ src/GPO_proyecto_final.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/src/GPO_proyecto_final.cpp.s
 .PHONY : src/GPO_proyecto_final.cpp.s
 
+src/level.o: src/level.cpp.o
+.PHONY : src/level.o
+
+# target to build an object file
+src/level.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/src/level.cpp.o
+.PHONY : src/level.cpp.o
+
+src/level.i: src/level.cpp.i
+.PHONY : src/level.i
+
+# target to preprocess a source file
+src/level.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/src/level.cpp.i
+.PHONY : src/level.cpp.i
+
+src/level.s: src/level.cpp.s
+.PHONY : src/level.s
+
+# target to generate assembly for a file
+src/level.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/src/level.cpp.s
+.PHONY : src/level.cpp.s
+
 src/obstacle.o: src/obstacle.cpp.o
 .PHONY : src/obstacle.o
 
@@ -308,6 +345,7 @@ help:
 	@echo "... install/strip"
 	@echo "... list_install_components"
 	@echo "... rebuild_cache"
+	@echo "... docs"
 	@echo "... uninstall"
 	@echo "... glfw"
 	@echo "... gpo_proyecto_final"
@@ -320,6 +358,9 @@ help:
 	@echo "... src/GPO_proyecto_final.o"
 	@echo "... src/GPO_proyecto_final.i"
 	@echo "... src/GPO_proyecto_final.s"
+	@echo "... src/level.o"
+	@echo "... src/level.i"
+	@echo "... src/level.s"
 	@echo "... src/obstacle.o"
 	@echo "... src/obstacle.i"
 	@echo "... src/obstacle.s"

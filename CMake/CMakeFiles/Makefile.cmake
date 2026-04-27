@@ -16,6 +16,8 @@ set(CMAKE_MAKEFILE_DEPENDS
   "/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/libs/glfw/CMake/glfw3.pc.in"
   "/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/libs/glfw/CMake/glfw3Config.cmake.in"
   "/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/libs/glfw/CMakeLists.txt"
+  "/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/libs/glfw/docs/CMakeLists.txt"
+  "/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/libs/glfw/docs/Doxyfile.in"
   "/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/libs/glfw/src/CMakeLists.txt"
   "/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/libs/glfw/src/glfw_config.h.in"
   "/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/libs/glm/CMakeLists.txt"
@@ -73,6 +75,8 @@ set(CMAKE_MAKEFILE_PRODUCTS
   "libs/glfw/CMakeFiles/CMakeDirectoryInformation.cmake"
   "libs/glfw/src/glfw_config.h"
   "libs/glfw/src/CMakeFiles/CMakeDirectoryInformation.cmake"
+  "libs/glfw/docs/Doxyfile"
+  "libs/glfw/docs/CMakeFiles/CMakeDirectoryInformation.cmake"
   "libs/glm/CMakeFiles/CMakeDirectoryInformation.cmake"
   "libs/glm/glm/CMakeFiles/CMakeDirectoryInformation.cmake"
   "libs/glad/CMakeFiles/CMakeDirectoryInformation.cmake"
@@ -83,4 +87,5 @@ set(CMAKE_DEPEND_INFO_FILES
   "CMakeFiles/gpo_proyecto_final.dir/DependInfo.cmake"
   "libs/glfw/CMakeFiles/uninstall.dir/DependInfo.cmake"
   "libs/glfw/src/CMakeFiles/glfw.dir/DependInfo.cmake"
+  "libs/glfw/docs/CMakeFiles/docs.dir/DependInfo.cmake"
   )

@@ -1,0 +1,6 @@
+TODOs
+
+bola rendonda
+habilidad de cambiar angulo
+hoyo en vez de cubo rojo
+deteccion correcta de nivel finalizado

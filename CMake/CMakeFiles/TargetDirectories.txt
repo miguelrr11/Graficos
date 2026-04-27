@@ -19,6 +19,13 @@
 /Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/CMake/libs/glfw/src/CMakeFiles/install.dir
 /Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/CMake/libs/glfw/src/CMakeFiles/install/local.dir
 /Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/CMake/libs/glfw/src/CMakeFiles/install/strip.dir
+/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/CMake/libs/glfw/docs/CMakeFiles/docs.dir
+/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/CMake/libs/glfw/docs/CMakeFiles/edit_cache.dir
+/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/CMake/libs/glfw/docs/CMakeFiles/rebuild_cache.dir
+/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/CMake/libs/glfw/docs/CMakeFiles/list_install_components.dir
+/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/CMake/libs/glfw/docs/CMakeFiles/install.dir
+/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/CMake/libs/glfw/docs/CMakeFiles/install/local.dir
+/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/CMake/libs/glfw/docs/CMakeFiles/install/strip.dir
 /Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/CMake/libs/glm/CMakeFiles/edit_cache.dir
 /Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/CMake/libs/glm/CMakeFiles/rebuild_cache.dir
 /Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/CMake/libs/glm/CMakeFiles/list_install_components.dir

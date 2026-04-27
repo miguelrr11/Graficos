@@ -272,6 +272,30 @@ src/GPO_proyecto_final.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/src/GPO_proyecto_final.cpp.s
 .PHONY : src/GPO_proyecto_final.cpp.s
 
+src/level.o: src/level.cpp.o
+.PHONY : src/level.o
+
+# target to build an object file
+src/level.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/src/level.cpp.o
+.PHONY : src/level.cpp.o
+
+src/level.i: src/level.cpp.i
+.PHONY : src/level.i
+
+# target to preprocess a source file
+src/level.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/src/level.cpp.i
+.PHONY : src/level.cpp.i
+
+src/level.s: src/level.cpp.s
+.PHONY : src/level.s
+
+# target to generate assembly for a file
+src/level.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/src/level.cpp.s
+.PHONY : src/level.cpp.s
+
 src/obstacle.o: src/obstacle.cpp.o
 .PHONY : src/obstacle.o
 
@@ -320,6 +344,9 @@ help:
 	@echo "... src/GPO_proyecto_final.o"
 	@echo "... src/GPO_proyecto_final.i"
 	@echo "... src/GPO_proyecto_final.s"
+	@echo "... src/level.o"
+	@echo "... src/level.i"
+	@echo "... src/level.s"
 	@echo "... src/obstacle.o"
 	@echo "... src/obstacle.i"
 	@echo "... src/obstacle.s"

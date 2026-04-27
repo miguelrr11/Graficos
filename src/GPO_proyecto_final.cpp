@@ -3,27 +3,25 @@ ATG, 2019
 ******************************************************************************/
 
 #include <GpO.h>
-#include "obstacle.h"   // <-- añadir esto
-#include <vector>       // <-- y esto si GpO.h no lo incluye ya
+#include "obstacle.h"
+#include "level.h"       // <-- nivel de minigolf
+#include <vector>
 
-// TAMA�O y TITULO INICIAL de la VENTANA
-int ANCHO = 800, ALTO = 600;  // Tama�o inicial ventana
-const char* prac = "OpenGL (GpO)";   // Nombre de la practica (aparecera en el titulo de la ventana).
-
+// TAMAÑO y TITULO INICIAL de la VENTANA
+int ANCHO = 800, ALTO = 600;
+const char* prac = "MiniGolf 3D (GpO)";
 
 #define GLSL(src) "#version 330 core\n" #src
 
+// ─── Skybox ──────────────────────────────────────────────────────────────────
 GLuint skybox_prog;
 GLuint skyboxVAO, skyboxVBO;
 
 const char* skybox_vs = GLSL(
     layout(location = 0) in vec3 pos;
     out vec3 dir;
-
     uniform mat4 VP;
-
-    void main()
-    {
+    void main() {
         dir = pos;
         vec4 p = VP * vec4(pos, 1.0);
         gl_Position = p.xyww;
@@ -33,38 +31,27 @@ const char* skybox_vs = GLSL(
 const char* skybox_fs = GLSL(
     in vec3 dir;
     out vec4 FragColor;
-
-    void main()
-    {
+    void main() {
         vec3 d = normalize(dir);
-
-        // degradado simple tipo cielo
         float t = 0.5 * (d.z + 1.0);
-
         vec3 skyTop    = vec3(0.2, 0.5, 0.9);
         vec3 skyBottom = vec3(0.9, 0.9, 1.0);
-
-        vec3 color = mix(skyBottom, skyTop, t);
-
-        FragColor = vec4(color, 1.0);
+        FragColor = vec4(mix(skyBottom, skyTop, t), 1.0);
     }
 );
 
+// ─── Shaders principales ─────────────────────────────────────────────────────
 const char* vertex_prog = GLSL(
     layout(location = 0) in vec3 pos;
-    layout(location = 1) in vec3 normal;       // atributo 1 ahora es normal
-
+    layout(location = 1) in vec3 normal;
     out vec3 fragNormal;
     out vec3 fragPos;
-
     uniform mat4 MVP = mat4(1.0f);
-    uniform mat4 M   = mat4(1.0f);             // matriz modelo sola (para normales)
-
-    void main()
-    {
+    uniform mat4 M   = mat4(1.0f);
+    void main() {
         gl_Position = MVP * vec4(pos, 1.0);
         fragPos     = vec3(M * vec4(pos, 1.0));
-        fragNormal  = mat3(transpose(inverse(M))) * normal; // normal en world space
+        fragNormal  = mat3(transpose(inverse(M))) * normal;
     }
 );
 
@@ -72,331 +59,223 @@ const char* fragment_prog = GLSL(
     in vec3 fragNormal;
     in vec3 fragPos;
     out vec3 outputColor;
-
-    uniform vec3 uColor    = vec3(1.0);
-    uniform vec3 uLightPos = vec3(5.0, 5.0, 10.0);
-    uniform vec3 uLightColor = vec3(1.0, 1.0, 1.0);
-    uniform float uAmbient = 0.2;
-
-    void main()
-    {
-        // Luz ambiente
-        vec3 ambient = uAmbient * uLightColor;
-
-        // Luz difusa
-        vec3  norm    = normalize(fragNormal);
-        vec3  lightDir = normalize(uLightPos - fragPos);
+    uniform vec3  uColor      = vec3(1.0);
+    uniform vec3  uLightPos   = vec3(5.0, 5.0, 10.0);
+    uniform vec3  uLightColor = vec3(1.0, 1.0, 1.0);
+    uniform float uAmbient    = 0.2;
+    void main() {
+        vec3 ambient  = uAmbient * uLightColor;
+        vec3 norm     = normalize(fragNormal);
+        vec3 lightDir = normalize(uLightPos - fragPos);
         float diff    = max(dot(norm, lightDir), 0.0);
-        vec3  diffuse = diff * uLightColor;
-
-        outputColor = (ambient + diffuse) * uColor;
+        outputColor   = (ambient + diff * uLightColor) * uColor;
     }
 );
 
-void crear_skybox()
-{
-    float vertices[] = {
-        -1,-1, 1,   1,-1, 1,   1, 1, 1,  -1,-1, 1,   1, 1, 1,  -1, 1, 1,
-        -1,-1,-1,  -1, 1,-1,   1, 1,-1,  -1,-1,-1,   1, 1,-1,   1,-1,-1,
-        -1, 1,-1,  -1, 1, 1,   1, 1, 1,  -1, 1,-1,   1, 1, 1,   1, 1,-1,
-        -1,-1,-1,   1,-1,-1,   1,-1, 1,  -1,-1,-1,   1,-1, 1,  -1,-1, 1,
-         1,-1,-1,   1, 1,-1,   1, 1, 1,   1,-1,-1,   1, 1, 1,   1,-1, 1,
-        -1,-1,-1,  -1,-1, 1,  -1, 1, 1,  -1,-1,-1,  -1, 1, 1,  -1, 1,-1
-    };
-
-    glGenVertexArrays(1, &skyboxVAO);
-    glGenBuffers(1, &skyboxVBO);
-
-    glBindVertexArray(skyboxVAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), 0);
-
-    glBindVertexArray(0);
-}
-
+// ─── Globals ──────────────────────────────────────────────────────────────────
 GLFWwindow* window;
-GLuint prog;
-objeto triangulo;
-std::vector<BoxObstacle> obstaculos;
+GLuint      prog;
+Level       level;          // ← el nivel de juego
 
-objeto crear_triangulo(void)
-{
-	objeto obj;
-	GLuint VAO;
-	GLuint buffer_pos, buffer_col;
-
-	GLfloat pos_data[3][3] = { 0.0f,  0.0000f,  1.0f,  // Posici�n vertice 1
-							   0.0f, -0.8660f, -0.5f,  // Posici�n vertice 2
-							   0.0f,  0.8660f, -0.5f}; // Posici�n vertice 3
-
-	GLfloat color_data[3][3] = { 1.0f, 0.0f, 0.0f,  // Color vertice 1
-		                         0.0f, 1.0f, 0.0f,  // Color vertice 2 
-								 0.0f, 0.0f, 1.0f }; // Color vertice 3
-
-	// Mando posiciones en un VBO
-	glGenBuffers(1, &buffer_pos); glBindBuffer(GL_ARRAY_BUFFER, buffer_pos);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(pos_data), pos_data, GL_STATIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	// Mando colores en otro VBO
-	glGenBuffers(1, &buffer_col); glBindBuffer(GL_ARRAY_BUFFER, buffer_col);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(color_data), color_data, GL_STATIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-
-	// Creo y enlazo el VAO
-	glGenVertexArrays(1, &VAO);	glBindVertexArray(VAO);
-
-	// Indico donde hallar datos de posiciones dentro del VBO correspondiente
-	glBindBuffer(GL_ARRAY_BUFFER, buffer_pos);
-	glEnableVertexAttribArray(0);  // Organizaci�n de los datos del atributo 0 (pos) del vertex shade
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	// Indico donde hallar datos de colores dentro del VBO correspondiente
-	glBindBuffer(GL_ARRAY_BUFFER, buffer_col);
-	glEnableVertexAttribArray(1);  // Organizaci�n de los datos del atributo 0 (pos) del vertex shade
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	glBindVertexArray(0);  //Cerramos VAO con todo listo para ser pintado
-
-	obj.VAO = VAO; obj.Nv = 3;  // Devuelvo objeto VAO + n�mero de vertices en estructura obj
-
-	return obj;
-
-}
-
-
-// Preparaci�n de los datos de los objetos a dibujar, envialarlos a la GPU
-// Compilaci�n programas a ejecutar en la tarjeta gr�fica:  vertex shader, fragment shaders
-// Opciones generales de render de OpenGL
-
-
-vec3 pos_obs=vec3(10.0f,0.0f,0.0f); //###vec3 pos_obs=vec3(1.5f,0.0f,0.0f); 
-vec3 target = vec3(0.0f,0.0f,0.0f);
-vec3 up = vec3(0,0,1);
-float cam_yaw   = 180.0f;  // 180° porque la cámara empieza mirando hacia -X
-float cam_pitch =   0.0f;
+// Cámara
+vec3  pos_obs  = vec3(10.0f, 0.0f, 3.0f);
+vec3  up       = vec3(0, 0, 1);
+float cam_yaw  = 180.0f;
+float cam_pitch = -15.0f;
 float lastX = 400.0f, lastY = 300.0f;
 bool  firstMouse = true;
 float mouseSensitivity = 0.1f;
+float fov    = 35.0f;
+float aspect = 4.0f / 3.0f;
+float cam_speed = 5.0f;
 
-float fov = 35.0f, aspect = 4.0f / 3.0f; //###float fov = 40.0f, aspect = 4.0f / 3.0f;
+// Tiempo para deltaTime real
+float lastFrameTime = 0.0f;
 
-float speed = 5.0f; // velocidad movimiento
 
+// ─── Skybox helper ───────────────────────────────────────────────────────────
+void crear_skybox()
+{
+    float v[] = {
+        -1,-1, 1,  1,-1, 1,  1, 1, 1,  -1,-1, 1,  1, 1, 1,  -1, 1, 1,
+        -1,-1,-1, -1, 1,-1,  1, 1,-1,  -1,-1,-1,  1, 1,-1,   1,-1,-1,
+        -1, 1,-1, -1, 1, 1,  1, 1, 1,  -1, 1,-1,  1, 1, 1,   1, 1,-1,
+        -1,-1,-1,  1,-1,-1,  1,-1, 1,  -1,-1,-1,  1,-1, 1,  -1,-1, 1,
+         1,-1,-1,  1, 1,-1,  1, 1, 1,   1,-1,-1,  1, 1, 1,   1,-1, 1,
+        -1,-1,-1, -1,-1, 1, -1, 1, 1,  -1,-1,-1, -1, 1, 1,  -1, 1,-1
+    };
+    glGenVertexArrays(1, &skyboxVAO);  glBindVertexArray(skyboxVAO);
+    glGenBuffers(1, &skyboxVBO);       glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(v), v, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), 0);
+    glBindVertexArray(0);
+}
+
+
+// ─── Inicialización ───────────────────────────────────────────────────────────
 void init_scene()
 {
-	int width, height;
-    glfwGetFramebufferSize(window, &width, &height);
-    glViewport(0, 0, width, height); 
+    int w, h;
+    glfwGetFramebufferSize(window, &w, &h);
+    glViewport(0, 0, w, h);
+    glEnable(GL_DEPTH_TEST);
 
-	glEnable(GL_DEPTH_TEST);
-    
-	triangulo = crear_triangulo();  // Preparar datos de objeto, mandar a GPU
+    // Shaders principales
+    GLuint VS = compilar_shader(vertex_prog,   GL_VERTEX_SHADER);
+    GLuint FS = compilar_shader(fragment_prog, GL_FRAGMENT_SHADER);
+    prog = glCreateProgram();
+    glAttachShader(prog, VS);  glAttachShader(prog, FS);
+    glLinkProgram(prog);       check_errores_programa(prog);
+    glDetachShader(prog, VS);  glDeleteShader(VS);
+    glDetachShader(prog, FS);  glDeleteShader(FS);
+    glUseProgram(prog);
 
-	// Mandar programas a GPU, compilar y crear programa en GPU
+    // Cargar nivel
+    level.load();
 
-	// Compilear Shaders
-	GLuint VertexShaderID = compilar_shader(vertex_prog, GL_VERTEX_SHADER);
-	GLuint FragmentShaderID = compilar_shader(fragment_prog, GL_FRAGMENT_SHADER);
+    // Skybox
+    crear_skybox();
+    GLuint SVS = compilar_shader(skybox_vs, GL_VERTEX_SHADER);
+    GLuint SFS = compilar_shader(skybox_fs, GL_FRAGMENT_SHADER);
+    skybox_prog = glCreateProgram();
+    glAttachShader(skybox_prog, SVS);  glAttachShader(skybox_prog, SFS);
+    glLinkProgram(skybox_prog);        check_errores_programa(skybox_prog);
+    glDetachShader(skybox_prog, SVS);  glDeleteShader(SVS);
+    glDetachShader(skybox_prog, SFS);  glDeleteShader(SFS);
 
-	// Enlazar sharders en el programa final
-	prog = glCreateProgram();
-	glAttachShader(prog, VertexShaderID);  glAttachShader(prog, FragmentShaderID);
-	glLinkProgram(prog); check_errores_programa(prog);
-
-	// Limpieza final de los shaders una vez compilado el programa
-	glDetachShader(prog, VertexShaderID);  glDeleteShader(VertexShaderID);
-	glDetachShader(prog, FragmentShaderID);  glDeleteShader(FragmentShaderID);
-
-	// Alternativamente usar la funci�n Compile_Link_Shaders().
-	//	prog = Compile_Link_Shaders(vertex_prog, fragment_prog); 
-
-	glUseProgram(prog);    // Indicamos que programa vamos a usar 
-
-	obstaculos.push_back(crear_box({0, 0, -5}, {4, 2, 0.2f}, {0, 0, 0}, {0.2f, 0.5f, 0.8f}));          // suelo
-	obstaculos.push_back(crear_box({2, 0, 0.5f},   {0.2f, 1, 2}, {0,0,30})); // rampa
-	obstaculos.push_back(crear_box({-1, 0, 0.5f},  {0.2f, 2, 2}, {0,0,0},   {0.2f,0.5f,0.8f})); // pared
-
-	// crear skybox VAO
-	crear_skybox();
-
-	// compilar shaders
-	GLuint SkyboxVS = compilar_shader(skybox_vs, GL_VERTEX_SHADER);
-	GLuint SkyboxFS = compilar_shader(skybox_fs, GL_FRAGMENT_SHADER);
-
-	skybox_prog = glCreateProgram();
-	glAttachShader(skybox_prog, SkyboxVS);
-	glAttachShader(skybox_prog, SkyboxFS);
-	glLinkProgram(skybox_prog);
-	check_errores_programa(skybox_prog);
-
-	// limpiar
-	glDetachShader(skybox_prog, SkyboxVS);
-	glDeleteShader(SkyboxVS);
-	glDetachShader(skybox_prog, SkyboxFS);
-	glDeleteShader(SkyboxFS);
-
+    lastFrameTime = (float)glfwGetTime();
 }
 
 
-
+// ─── Render ───────────────────────────────────────────────────────────────────
 void render_scene()
 {
-	glClearColor(0.0f,0.0f,0.0f,1.0f);  // Especifica color para el fondo (RGB+alfa)
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);  // añadir el depth bit
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	float t = (float)glfwGetTime();  // Contador de tiempo en segundos 
+    // deltaTime real
+    float now = (float)glfwGetTime();
+    float dt  = now - lastFrameTime;
+    lastFrameTime = now;
+    if (dt > 0.05f) dt = 0.05f;  // cap para evitar saltos si la ventana se mueve
 
-	float deltaTime = 0.01f; // mejor calcularlo real, pero así funciona simple
-	float velocity = speed * deltaTime;
+    // Dirección de cámara desde yaw/pitch
+    vec3 forward;
+    forward.x = cos(glm::radians(cam_pitch)) * cos(glm::radians(cam_yaw));
+    forward.y = cos(glm::radians(cam_pitch)) * sin(glm::radians(cam_yaw));
+    forward.z = sin(glm::radians(cam_pitch));
+    forward   = normalize(forward);
 
-	// Recalcular dirección de mirada desde cam_yaw/cam_pitch (con Z hacia arriba)
-	vec3 forward_dir;
-	forward_dir.x = cos(glm::radians(cam_pitch)) * cos(glm::radians(cam_yaw));
-	forward_dir.y = cos(glm::radians(cam_pitch)) * sin(glm::radians(cam_yaw));
-	forward_dir.z = sin(glm::radians(cam_pitch));
-	forward_dir = normalize(forward_dir);
-	target = pos_obs + forward_dir;  // actualizamos target dinámicamente
+    vec3 right = normalize(cross(forward, up));
 
-	// WASD ahora usa forward_dir en lugar del viejo forward
-	vec3 right = normalize(cross(forward_dir, up));
+    // Movimiento WASD de cámara
+    float vel = cam_speed * dt;
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) pos_obs += forward * vel;
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) pos_obs -= forward * vel;
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) pos_obs -= right   * vel;
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) pos_obs += right   * vel;
 
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)  pos_obs += forward_dir * velocity;
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)  pos_obs -= forward_dir * velocity;
-	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)  pos_obs -= right       * velocity;
-	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)  pos_obs += right       * velocity;
+    // Input de juego (flechas + espacio)
+    level.handleInput(window, dt);
 
+    // Física
+    level.update(dt);
 
-	///////// Actualizacion matrices M, V, P  /////////	
-	mat4 P,V,M,T,R,S;
+    // Matrices
+    mat4 P = perspective(glm::radians(fov), aspect, 0.5f, 40.0f);
+    mat4 V = lookAt(pos_obs, pos_obs + forward, up);
+    mat4 VP = P * V;
 
-	P = perspective(glm::radians(fov), aspect, 0.5f, 20.0f);  //40� FOV,  4:3 ,  Znear=0.5, Zfar=20
-	V = lookAt(pos_obs, target, up  );  // Pos camara, Lookat, head up
-	
-	//T = translate(0.0f, 0.0f, 3.0f*sin(t));  
-	T = glm::translate(glm::vec3(0.0, 0.0, 3.0f*sin(t))); 
-	
-	M = T;
-	glUseProgram(prog);
-	transfer_mat4("MVP",P*V*M);
-	
-	// ORDEN de dibujar
-	glBindVertexArray(triangulo.VAO);              // Activamos VAO asociado al objeto
-    glDrawArrays(GL_TRIANGLES, 0, triangulo.Nv);   // Orden de dibujar (Nv vertices)	
-	glBindVertexArray(0);                          // Desconectamos VAO
+    // Renderizar nivel (obstáculos + bola + indicador de disparo)
+    glUseProgram(prog);
+    level.render(prog, VP);
 
-	glm::mat4 VP = P * V;
-	for (const auto& obs : obstaculos)
-    	render_box(obs, prog, VP);
-
-
-	// SKYBOX
-	glDepthFunc(GL_LEQUAL);
-
-	glUseProgram(skybox_prog);
-
-	// quitar traslación de la cámara
-	mat4 view = mat4(mat3(V));
-	mat4 VP_sky = P * view;
-
-	transfer_mat4("VP", VP_sky);
-
-	glBindVertexArray(skyboxVAO);
-	glDrawArrays(GL_TRIANGLES, 0, 36);
-	glBindVertexArray(0);
-
-	glDepthFunc(GL_LESS);
-
+    // Skybox
+    glDepthFunc(GL_LEQUAL);
+    glUseProgram(skybox_prog);
+    mat4 VP_sky = P * mat4(mat3(V));    // sin traslación
+    transfer_mat4("VP", VP_sky);
+    glBindVertexArray(skyboxVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glBindVertexArray(0);
+    glDepthFunc(GL_LESS);
 }
 
+
+// ─── Main ─────────────────────────────────────────────────────────────────────
 int main(int argc, char* argv[])
 {
-	init_GLFW();            // Inicializa lib GLFW
-	window = Init_Window(prac);  // Crea ventana usando GLFW, asociada a un contexto OpenGL	X.Y
-	load_Opengl();         // Carga funciones de OpenGL, comprueba versi�n.
-	init_scene();          // Prepara escena
-	
-	glfwSwapInterval(1);
-	while (!glfwWindowShouldClose(window))
-	{
-		render_scene();
-		glfwSwapBuffers(window);
-		glfwPollEvents();
-		show_info();
-	}
+    init_GLFW();
+    window = Init_Window(prac);
+    load_Opengl();
+    init_scene();
 
-	for (auto& obs : obstaculos) destroy_box(obs);
-	glfwTerminate();
-	exit(EXIT_SUCCESS);
+    glfwSwapInterval(1);
+    while (!glfwWindowShouldClose(window)) {
+        render_scene();
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+        show_info();
+    }
+
+    level.destroy();
+    glfwTerminate();
+    exit(EXIT_SUCCESS);
 }
 
+
+// ─── Callbacks ────────────────────────────────────────────────────────────────
 void show_info()
 {
-	static int fps = 0;
-	static double last_tt = 0;
-	double elapsed, tt;
-	char nombre_ventana[128];   // buffer para modificar titulo de la ventana
-
-	fps++; tt = glfwGetTime();  // Contador de tiempo en segundos 
-
-	elapsed = (tt - last_tt);
-	if (elapsed >= 0.5)  // Refrescar cada 0.5 segundo
-	{
-		sprintf_s(nombre_ventana, 128, "%s: %4.0f FPS @ %d x %d", prac, fps / elapsed, ANCHO, ALTO);
-		glfwSetWindowTitle(window, nombre_ventana);
-		last_tt = tt; fps = 0;
-	}
-
+    static int fps = 0;
+    static double last_tt = 0;
+    char buf[128];
+    fps++;
+    double tt = glfwGetTime();
+    double elapsed = tt - last_tt;
+    if (elapsed >= 0.5) {
+        const char* estado = level.completed  ? "COMPLETADO!" :
+                             level.ball.moving ? "Rodando..." :
+                             level.charging    ? "Cargando..." : "Listo";
+        sprintf_s(buf, 128, "%s | %.0f FPS | %s | Potencia: %.0f%%",
+                  prac, fps/elapsed, estado, level.shotPower * 100.0f);
+        glfwSetWindowTitle(window, buf);
+        last_tt = tt; fps = 0;
+    }
 }
 
-// Callback de cambio tama�o de ventana
 void ResizeCallback(GLFWwindow* window, int width, int height)
 {
-	glfwGetFramebufferSize(window, &width, &height); 
-	glViewport(0, 0, width, height);
-	ALTO = height;	ANCHO = width;
+    glfwGetFramebufferSize(window, &width, &height);
+    glViewport(0, 0, width, height);
+    ALTO = height; ANCHO = width;
+    aspect = (float)width / (float)height;
 }
 
-// Callback de pulsacion de tecla
 static void KeyCallback(GLFWwindow* window, int key, int code, int action, int mode)
 {
-	fprintf(stdout, "Key %d Code %d Act %d Mode %d\n", key, code, action, mode);
-	if (key == GLFW_KEY_ESCAPE) glfwSetWindowShouldClose(window, true);
+    if (key == GLFW_KEY_ESCAPE) glfwSetWindowShouldClose(window, true);
+    // R: reiniciar nivel
+    if (key == GLFW_KEY_R && action == GLFW_PRESS) {
+        level.destroy();
+        level.load();
+    }
 }
 
 void MouseCallback(GLFWwindow* window, double xpos, double ypos)
 {
-    if (firstMouse) {
-        lastX = (float)xpos;  lastY = (float)ypos;
-        firstMouse = false;
-    }
-
-    float xoffset = ((float)xpos - lastX) * mouseSensitivity;
-	float yoffset = ((float)ypos - lastY) * mouseSensitivity;
-    lastX = (float)xpos;  lastY = (float)ypos;
-
-    cam_yaw   += xoffset;
-    cam_pitch += yoffset;
-
-    // Limitar cam_pitch para no dar la vuelta
-    if (cam_pitch >  89.0f) cam_pitch =  89.0f;
-    if (cam_pitch < -89.0f) cam_pitch = -89.0f;
+    if (firstMouse) { lastX = (float)xpos; lastY = (float)ypos; firstMouse = false; }
+    cam_yaw   += ((float)xpos - lastX) * mouseSensitivity;
+    cam_pitch += ((float)ypos - lastY) * mouseSensitivity;
+    cam_pitch = glm::clamp(cam_pitch, -89.0f, 89.0f);
+    lastX = (float)xpos; lastY = (float)ypos;
 }
 
 void asigna_funciones_callback(GLFWwindow* window)
 {
-	glfwSetWindowSizeCallback(window, ResizeCallback);
-	glfwSetKeyCallback(window, KeyCallback);
-	glfwSetCursorPosCallback(window, MouseCallback);
-	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetWindowSizeCallback(window,  ResizeCallback);
+    glfwSetKeyCallback(window,         KeyCallback);
+    glfwSetCursorPosCallback(window,   MouseCallback);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 }
-
-
-
