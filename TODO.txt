@@ -6,11 +6,17 @@ cambiar el hoyo de tipo box a tipo sphere
 texturas
 niveles 
 mejor navegacion (hecho)
+efectos
+texto
+sonidos
+objetos como portales, arena que te ralentiza, agua que es muerte, etc
+probar si funcionan paredes anguladas
+
 
 
 COMANDOS que uso:
 si añades archivos:
-primero tienes que modificar el CMakeLists.txt para incluirlos en la compilación, luego haces:
+primero tienes que modificar el CMakeLists.txt (el que esta en la raiz) para incluirlos en la compilación, luego haces:
 cd CMake
 CMake .
 make
