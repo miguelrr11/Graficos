@@ -13,6 +13,43 @@ const char* prac = "OpenGL (GpO)";   // Nombre de la practica (aparecera en el t
 
 #define GLSL(src) "#version 330 core\n" #src
 
+GLuint skybox_prog;
+GLuint skyboxVAO, skyboxVBO;
+
+const char* skybox_vs = GLSL(
+    layout(location = 0) in vec3 pos;
+    out vec3 dir;
+
+    uniform mat4 VP;
+
+    void main()
+    {
+        dir = pos;
+        vec4 p = VP * vec4(pos, 1.0);
+        gl_Position = p.xyww;
+    }
+);
+
+const char* skybox_fs = GLSL(
+    in vec3 dir;
+    out vec4 FragColor;
+
+    void main()
+    {
+        vec3 d = normalize(dir);
+
+        // degradado simple tipo cielo
+        float t = 0.5 * (d.z + 1.0);
+
+        vec3 skyTop    = vec3(0.2, 0.5, 0.9);
+        vec3 skyBottom = vec3(0.9, 0.9, 1.0);
+
+        vec3 color = mix(skyBottom, skyTop, t);
+
+        FragColor = vec4(color, 1.0);
+    }
+);
+
 const char* vertex_prog = GLSL(
     layout(location = 0) in vec3 pos;
     layout(location = 1) in vec3 normal;       // atributo 1 ahora es normal
@@ -55,6 +92,32 @@ const char* fragment_prog = GLSL(
         outputColor = (ambient + diffuse) * uColor;
     }
 );
+
+void crear_skybox()
+{
+    float vertices[] = {
+        -1,-1, 1,   1,-1, 1,   1, 1, 1,  -1,-1, 1,   1, 1, 1,  -1, 1, 1,
+        -1,-1,-1,  -1, 1,-1,   1, 1,-1,  -1,-1,-1,   1, 1,-1,   1,-1,-1,
+        -1, 1,-1,  -1, 1, 1,   1, 1, 1,  -1, 1,-1,   1, 1, 1,   1, 1,-1,
+        -1,-1,-1,   1,-1,-1,   1,-1, 1,  -1,-1,-1,   1,-1, 1,  -1,-1, 1,
+         1,-1,-1,   1, 1,-1,   1, 1, 1,   1,-1,-1,   1, 1, 1,   1,-1, 1,
+        -1,-1,-1,  -1,-1, 1,  -1, 1, 1,  -1,-1,-1,  -1, 1, 1,  -1, 1,-1
+    };
+
+    glGenVertexArrays(1, &skyboxVAO);
+    glGenBuffers(1, &skyboxVBO);
+
+    glBindVertexArray(skyboxVAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), 0);
+
+    glBindVertexArray(0);
+}
+
 GLFWwindow* window;
 GLuint prog;
 objeto triangulo;
@@ -157,9 +220,28 @@ void init_scene()
 
 	glUseProgram(prog);    // Indicamos que programa vamos a usar 
 
-	obstaculos.push_back(crear_box({0, 0, -20}, {4, 2, 0.2f}, {0, 0, 0}, {0.2f, 0.5f, 0.8f}));          // suelo
-	// obstaculos.push_back(crear_box({2, 0, 0.5f},   {0.2f, 1, 2}, {0,0,30})); // rampa
-	// obstaculos.push_back(crear_box({-1, 0, 0.5f},  {0.2f, 2, 2}, {0,0,0},   {0.2f,0.5f,0.8f})); // pared
+	obstaculos.push_back(crear_box({0, 0, -5}, {4, 2, 0.2f}, {0, 0, 0}, {0.2f, 0.5f, 0.8f}));          // suelo
+	obstaculos.push_back(crear_box({2, 0, 0.5f},   {0.2f, 1, 2}, {0,0,30})); // rampa
+	obstaculos.push_back(crear_box({-1, 0, 0.5f},  {0.2f, 2, 2}, {0,0,0},   {0.2f,0.5f,0.8f})); // pared
+
+	// crear skybox VAO
+	crear_skybox();
+
+	// compilar shaders
+	GLuint SkyboxVS = compilar_shader(skybox_vs, GL_VERTEX_SHADER);
+	GLuint SkyboxFS = compilar_shader(skybox_fs, GL_FRAGMENT_SHADER);
+
+	skybox_prog = glCreateProgram();
+	glAttachShader(skybox_prog, SkyboxVS);
+	glAttachShader(skybox_prog, SkyboxFS);
+	glLinkProgram(skybox_prog);
+	check_errores_programa(skybox_prog);
+
+	// limpiar
+	glDetachShader(skybox_prog, SkyboxVS);
+	glDeleteShader(SkyboxVS);
+	glDetachShader(skybox_prog, SkyboxFS);
+	glDeleteShader(SkyboxFS);
 
 }
 
@@ -202,6 +284,7 @@ void render_scene()
 	T = glm::translate(glm::vec3(0.0, 0.0, 3.0f*sin(t))); 
 	
 	M = T;
+	glUseProgram(prog);
 	transfer_mat4("MVP",P*V*M);
 	
 	// ORDEN de dibujar
@@ -214,7 +297,22 @@ void render_scene()
     	render_box(obs, prog, VP);
 
 
-	////////////////////////////////////////////////////////
+	// SKYBOX
+	glDepthFunc(GL_LEQUAL);
+
+	glUseProgram(skybox_prog);
+
+	// quitar traslación de la cámara
+	mat4 view = mat4(mat3(V));
+	mat4 VP_sky = P * view;
+
+	transfer_mat4("VP", VP_sky);
+
+	glBindVertexArray(skyboxVAO);
+	glDrawArrays(GL_TRIANGLES, 0, 36);
+	glBindVertexArray(0);
+
+	glDepthFunc(GL_LESS);
 
 }
 
