@@ -23,10 +23,15 @@ static const float HOLE_RADIUS = 0.3f;    // radio del hoyo
 void Level::load()
 {
     // Cargar texturas 
-    texCesped = cargar_textura("../../assets/cesped.png");
-    texMadera = cargar_textura("../../assets/madera.jpg");
-    texHoyo   = cargar_textura("../../assets/hoyo.png");
-    texBola   = cargar_textura("../../assets/bola.jpg");
+    texCesped = cargar_textura("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/cesped.png");
+    texMadera = cargar_textura("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/madera.jpg");
+    texHoyo   = cargar_textura("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/hoyo.png");
+    texBola   = cargar_textura("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/bola.jpg");
+
+    // texCesped = cargar_textura("../../assets/cesped.png");
+    // texMadera = cargar_textura("../../assets/madera.jpg");
+    // texHoyo   = cargar_textura("../../assets/hoyo.png");
+    // texBola   = cargar_textura("../../assets/bola.jpg");
 
 
     completed = false;
@@ -35,8 +40,8 @@ void Level::load()
     charging  = false;
 
     //  Obstáculos (posición, tamaño, ángulos euler, color)
-    //                           pos                  size               rot   color
-    obstacles.push_back(crear_box({ 4.0f,  0.0f, -0.1f}, {10.0f, 4.0f, 0.2f}, {0,0,0}, {0.3f, 0.65f, 0.3f}, true));  // suelo
+    //                                      pos                  size           rot            color
+    obstacles.push_back(crear_box({ 4.0f,  0.0f, -0.1f}, {10.0f, 4.0f, 0.2f}, {0,0,0}, {0.3f, 0.65f, 0.3f}));  // suelo
     obstacles.back().texID = texCesped; // <--- TEXTURA
 
     obstacles.push_back(crear_box({ 4.0f,  2.1f,  0.3f}, {10.0f, 0.2f, 0.6f}, {0,0,0}, {0.55f,0.35f, 0.2f}));  // pared norte
@@ -149,46 +154,68 @@ void Level::resolveFloor()
 void Level::resolveWalls()
 {
     for (const auto& obs : obstacles) {
-        if(obs.ignoreCollision) continue;
+        if (obs.ignoreCollision) continue;
 
-        // AABB del obstáculo (sin rotación – válido para paredes axis-aligned)
+        // ── 1. Rotar la posición de la bola al espacio LOCAL del obstáculo ──
+        float angle = glm::radians(obs.eulerAngles.z);
+        float cosA  =  std::cos(angle);
+        float sinA  =  std::sin(angle);
+
+        // Vector desde el centro del obstáculo hasta la bola
+        glm::vec3 d = ball.pos - obs.position;
+
+        // Rotación inversa en Z (lleva d al espacio local)
+        glm::vec3 local;
+        local.x =  cosA * d.x + sinA * d.y;
+        local.y = -sinA * d.x + cosA * d.y;
+        local.z =  d.z;
+
+        // ── 2. AABB en espacio local (inflado por radio de la bola) ─────────
         glm::vec3 half = obs.size * 0.5f;
-        glm::vec3 minB = obs.position - half;
-        glm::vec3 maxB = obs.position + half;
+        glm::vec3 minE = -(half + glm::vec3(ball.radius));
+        glm::vec3 maxE =  (half + glm::vec3(ball.radius));
 
-        // Inflar por el radio de la bola
-        glm::vec3 minE = minB - glm::vec3(ball.radius);
-        glm::vec3 maxE = maxB + glm::vec3(ball.radius);
+        if (local.x < minE.x || local.x > maxE.x) continue;
+        if (local.y < minE.y || local.y > maxE.y) continue;
+        if (local.z < minE.z || local.z > maxE.z) continue;
 
-        // ¿Hay intersección?
-        if (ball.pos.x < minE.x || ball.pos.x > maxE.x) continue;
-        if (ball.pos.y < minE.y || ball.pos.y > maxE.y) continue;
-        if (ball.pos.z < minE.z || ball.pos.z > maxE.z) continue;
-
-        // Penetración en cada eje (6 caras)
+        // ── 3. Cara de mínima penetración ───────────────────────────────────
         float pen[6] = {
-            maxE.x - ball.pos.x,  ball.pos.x - minE.x,   // +x, -x
-            maxE.y - ball.pos.y,  ball.pos.y - minE.y,   // +y, -y
-            maxE.z - ball.pos.z,  ball.pos.z - minE.z    // +z, -z
+            maxE.x - local.x,  local.x - minE.x,
+            maxE.y - local.y,  local.y - minE.y,
+            maxE.z - local.z,  local.z - minE.z
         };
 
-        // Eje de mínima penetración
         int best = 0;
         for (int i = 1; i < 6; ++i)
             if (pen[i] < pen[best]) best = i;
 
-        // Resolver
         int   axis = best / 2;
-        float sign = (best % 2 == 0) ? 1.0f : -1.0f;   // +1 empuja hacia +eje, -1 hacia -eje
+        float sign = (best % 2 == 0) ? 1.0f : -1.0f;
 
-        ball.pos[axis] += sign * pen[best];
+        // ── 4. Corregir posición en espacio local y volver al mundo ─────────
+        local[axis] += sign * pen[best];
 
-        // Reflejar velocidad si va hacia el obstáculo
-        if (sign * ball.vel[axis] < 0.0f)
-            ball.vel[axis] *= -RESTITUTION;
+        glm::vec3 corrected;
+        corrected.x = cosA * local.x - sinA * local.y;
+        corrected.y = sinA * local.x + cosA * local.y;
+        corrected.z = local.z;
+        ball.pos = obs.position + corrected;
+
+        // ── 5. Reflejar velocidad en espacio local y volver al mundo ────────
+        glm::vec3 velLocal;
+        velLocal.x =  cosA * ball.vel.x + sinA * ball.vel.y;
+        velLocal.y = -sinA * ball.vel.x + cosA * ball.vel.y;
+        velLocal.z =  ball.vel.z;
+
+        if (sign * velLocal[axis] < 0.0f)
+            velLocal[axis] *= -RESTITUTION;
+
+        ball.vel.x = cosA * velLocal.x - sinA * velLocal.y;
+        ball.vel.y = sinA * velLocal.x + cosA * velLocal.y;
+        ball.vel.z = velLocal.z;
     }
 }
-
 
 // ════════════════════════════════════════════════════════════════════════════
 //  RENDER
