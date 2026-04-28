@@ -200,6 +200,19 @@ glfw/fast:
 	$(MAKE) $(MAKESILENT) -f libs/glfw/src/CMakeFiles/glfw.dir/build.make libs/glfw/src/CMakeFiles/glfw.dir/build
 .PHONY : glfw/fast
 
+#=============================================================================
+# Target rules for targets named docs
+
+# Build rule for target.
+docs: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 docs
+.PHONY : docs
+
+# fast build rule for target.
+docs/fast:
+	$(MAKE) $(MAKESILENT) -f libs/glfw/docs/CMakeFiles/docs.dir/build.make libs/glfw/docs/CMakeFiles/docs.dir/build
+.PHONY : docs/fast
+
 libs/glad/src/glad.o: libs/glad/src/glad.c.o
 .PHONY : libs/glad/src/glad.o
 
@@ -320,6 +333,54 @@ src/obstacle.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/src/obstacle.cpp.s
 .PHONY : src/obstacle.cpp.s
 
+src/sphere.o: src/sphere.cpp.o
+.PHONY : src/sphere.o
+
+# target to build an object file
+src/sphere.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/src/sphere.cpp.o
+.PHONY : src/sphere.cpp.o
+
+src/sphere.i: src/sphere.cpp.i
+.PHONY : src/sphere.i
+
+# target to preprocess a source file
+src/sphere.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/src/sphere.cpp.i
+.PHONY : src/sphere.cpp.i
+
+src/sphere.s: src/sphere.cpp.s
+.PHONY : src/sphere.s
+
+# target to generate assembly for a file
+src/sphere.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/src/sphere.cpp.s
+.PHONY : src/sphere.cpp.s
+
+src/wallmesh.o: src/wallmesh.cpp.o
+.PHONY : src/wallmesh.o
+
+# target to build an object file
+src/wallmesh.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/src/wallmesh.cpp.o
+.PHONY : src/wallmesh.cpp.o
+
+src/wallmesh.i: src/wallmesh.cpp.i
+.PHONY : src/wallmesh.i
+
+# target to preprocess a source file
+src/wallmesh.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/src/wallmesh.cpp.i
+.PHONY : src/wallmesh.cpp.i
+
+src/wallmesh.s: src/wallmesh.cpp.s
+.PHONY : src/wallmesh.s
+
+# target to generate assembly for a file
+src/wallmesh.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/src/wallmesh.cpp.s
+.PHONY : src/wallmesh.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -332,6 +393,7 @@ help:
 	@echo "... install/strip"
 	@echo "... list_install_components"
 	@echo "... rebuild_cache"
+	@echo "... docs"
 	@echo "... uninstall"
 	@echo "... glfw"
 	@echo "... gpo_proyecto_final"
@@ -350,6 +412,12 @@ help:
 	@echo "... src/obstacle.o"
 	@echo "... src/obstacle.i"
 	@echo "... src/obstacle.s"
+	@echo "... src/sphere.o"
+	@echo "... src/sphere.i"
+	@echo "... src/sphere.s"
+	@echo "... src/wallmesh.o"
+	@echo "... src/wallmesh.i"
+	@echo "... src/wallmesh.s"
 .PHONY : help
 
 
