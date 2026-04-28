@@ -1,6 +1,7 @@
+#define _USE_MATH_DEFINES
+#include <cmath>
 #include "sphere.h"
 #include <vector>
-#include <cmath>
 #include <GpO.h>
 
 SphereObstacle crear_sphere(glm::vec3 position, float radius,

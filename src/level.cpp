@@ -29,7 +29,7 @@ void Level::load()
 
     //  Obstáculos (posición, tamaño, ángulos euler, color)
     //                           pos                  size               rot   color
-    obstacles.push_back(crear_box({ 4.0f,  0.0f, -0.1f}, {10.0f, 4.0f, 0.2f}, {0,0,0}, {0.3f, 0.65f, 0.3f}));  // suelo
+    obstacles.push_back(crear_box({ 4.0f,  0.0f, -0.1f}, {10.0f, 4.0f, 0.2f}, {0,0,0}, {0.3f, 0.65f, 0.3f}, true));  // suelo
     obstacles.push_back(crear_box({ 4.0f,  2.1f,  0.3f}, {10.0f, 0.2f, 0.6f}, {0,0,0}, {0.55f,0.35f, 0.2f}));  // pared norte
     obstacles.push_back(crear_box({ 4.0f, -2.1f,  0.3f}, {10.0f, 0.2f, 0.6f}, {0,0,0}, {0.55f,0.35f, 0.2f}));  // pared sur
     obstacles.push_back(crear_box({ 8.5f,  0.0f,  0.3f}, { 0.2f, 4.4f, 0.6f}, {0,0,0}, {0.55f,0.35f, 0.2f}));  // pared final
@@ -62,36 +62,46 @@ void Level::update(float dt)
 {
     if (!ball.moving) return;
 
-    // Gravedad
+    // Física básica
     ball.vel.z += GRAVITY * dt;
-
-    // Mover
     ball.pos += ball.vel * dt;
 
-    // Colisiones
     resolveFloor();
     resolveWalls();
 
-    // Fricción de rodadura (solo cuando está apoyada en el suelo)
-    if (ball.pos.z <= ball.radius + 0.02f) {
-        ball.vel.x *= FRICTION;
-        ball.vel.y *= FRICTION;
-    }
-
-    // Detener si va muy despacio y está en el suelo
-    float spd2 = glm::dot(ball.vel, ball.vel);
-    if (spd2 < STOP_SPEED2 && ball.pos.z <= ball.radius + 0.05f) {
-        ball.vel    = {0, 0, 0};
-        ball.pos.z  = ball.radius;
-        ball.moving = false;
-    }
-
-    // ¿Entró en el hoyo?
     glm::vec2 d2D = { ball.pos.x - holePos.x, ball.pos.y - holePos.y };
-    if (glm::length(d2D) < HOLE_RADIUS) {
-        completed   = true;
-        ball.moving = false;
-        printf("¡Nivel completado!\n");
+    bool enHoyo = (glm::length(d2D) < HOLE_RADIUS);
+
+    // Fricción y parada NORMAL (solo si no está en el agujero)
+    if (!enHoyo) {
+        if (ball.pos.z <= ball.radius + 0.02f) {
+            ball.vel.x *= FRICTION;
+            ball.vel.y *= FRICTION;
+        }
+
+        float spd2 = glm::dot(ball.vel, ball.vel);
+        if (spd2 < STOP_SPEED2 && ball.pos.z <= ball.radius + 0.05f) {
+            ball.vel    = {0, 0, 0};
+            ball.pos.z  = ball.radius;
+            ball.moving = false;
+        }
+    } 
+    // Lógica si está cayendo por el HOYO
+    else {
+        // Succión al centro para que baje recta
+        ball.vel.x = (holePos.x - ball.pos.x) * 4.0f;
+        ball.vel.y = (holePos.y - ball.pos.y) * 4.0f;
+
+        // Si ya se ha hundido suficiente, paramos el juego
+        if (ball.pos.z < -0.5f) {
+            if (!completed) {
+                completed = true;
+                printf("¡Nivel completado! Pulsa 'R' para reiniciar.\n");
+            }
+            ball.moving = false;       // Cortamos la física
+            ball.vel = {0, 0, 0};      // Quitamos velocidad
+            ball.pos.z = -0.5f;        // La dejamos atascada aquí, no cae infinito
+        }
     }
 }
 
@@ -102,6 +112,13 @@ void Level::update(float dt)
 
 void Level::resolveFloor()
 {
+    // Si la bola está en el hoyo, cancelamos el suelo para que caiga
+    glm::vec2 d2D = { ball.pos.x - holePos.x, ball.pos.y - holePos.y };
+    if (glm::length(d2D) < HOLE_RADIUS) {
+        return; 
+    }
+
+    // Suelo normal
     if (ball.pos.z < FLOOR_Z + ball.radius) {
         ball.pos.z = FLOOR_Z + ball.radius;
         if (ball.vel.z < 0.0f)
@@ -168,7 +185,7 @@ void Level::render(GLuint prog, const glm::mat4& VP)
     render_sphere(bm, prog, VP);
 
     // Indicador de dirección de disparo (caja pequeña delante de la bola)
-    if (!ball.moving) {
+    if (!ball.moving && !completed) {
         float rad = glm::radians(shotAngle);
         glm::vec3 dir = { std::cos(rad), std::sin(rad), 0.0f };
         glm::vec3 arrowPos = ball.pos + dir * (ball.radius * 3.0f);
@@ -187,7 +204,7 @@ void Level::render(GLuint prog, const glm::mat4& VP)
 // ════════════════════════════════════════════════════════════════════════════
 void Level::handleInput(GLFWwindow* window, float dt)
 {
-    if (ball.moving) return;   // no se puede disparar mientras la bola rueda
+    if (ball.moving || completed) return;   // no se puede disparar mientras la bola rueda o cuando se ha completado el nivel
 
     // ── Apuntar con flechas ────────────────────────────────────────────────
     if (glfwGetKey(window, GLFW_KEY_LEFT)  == GLFW_PRESS) shotAngle += AIM_SPEED * dt;

@@ -2,7 +2,7 @@ TODOs
 
 bola rendonda (HECHO)
 habilidad de cambiar angulo (HECHO)
-cambiar el hoyo de tipo box a tipo sphere
+cambiar el hoyo de tipo box a tipo sphere -> Lo he dejado como caja, bola cae al vacío y la idea es ponerle textura de circulo con los bordes transparentes. 
 texturas
 niveles 
 mejor navegacion (hecho)

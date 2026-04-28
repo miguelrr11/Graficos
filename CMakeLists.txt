@@ -1,4 +1,4 @@
-cmake_minimum_required ( VERSION 3.2 )
+cmake_minimum_required ( VERSION 3.5 )
 project ( GpO VERSION 0.0.1)
 set( GPO_VERSION_ABI 1 )
 
