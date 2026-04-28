@@ -1,4 +1,5 @@
 #include "level.h"
+#include "generator.h"
 #include <GpO.h>
 #include <cstdio>
 #include <cmath>
@@ -33,57 +34,60 @@ void Level::load()
     texHoyo   = cargar_textura("../../assets/hoyo.png");
     texBola   = cargar_textura("../../assets/bola.jpg");
 
-
     completed = false;
     shotAngle = 0.0f;
     shotPower = 0.0f;
     charging  = false;
 
-    // PEGAR AQUI LO DE LA HERRAMIENTA DE CRAER NIVELES
-    
-    std::vector<glm::vec2> corners = {{40.0f, 72.0f}, {45.0f, 69.0f}, {47.0f, 56.0f}, {54.0f, 49.0f}, {67.0f, 47.0f}, {69.0f, 42.0f}, {56.0f, 45.0f}, {42.0f, 40.0f}, {40.0f, 45.0f}, {45.0f, 49.0f}, {40.0f, 54.0f}, {40.0f, 67.0f}};
-    //SUELO
-    int tiling = 8;
-    obstacles.push_back(crear_box({ 54.0f,  56.0f, -0.1f}, {29.0f, 32.0f, 0.2f}, {0,0,0}, {1,1,1}, true, tiling));
+    // 2. GENERAR LA PISTA (6 segmentos de longitud)
+    // Usamos el algoritmo SAW + Anchura Variable que diseñamos
+    LevelData track = generateTrack(6);
+
+    // 3. EL CÉSPED GIGANTE 
+    // Creamos una caja inmensa para que el suelo no se acabe nunca
+    obstacles.push_back(crear_box({ track.holePos.x, track.holePos.y, FLOOR_Z - 0.1f }, 
+                                  { 300.0f, 300.0f, 0.2f }, 
+                                  {0,0,0}, {1,1,1}, true, 80));
     obstacles.back().texID = texCesped;
-    ball.pos = { 42.8f, 67.5f, ball.radius };
-    holePos = { 65.3f, 45.0f, FLOOR_Z+0.1f };
 
-    int thickness = 1.0f;
+    // 4. EL MURO VISUAL 
+    // Pasamos: (puntos, cerrado, grosor=0.4f, altura=1.0f, zBase=FLOOR_Z, uvTile=1.0f)
+    wallMesh = crear_wall_mesh(track.perimeter, true, 0.4f, 1.0f, FLOOR_Z, 1.0f);
+    wallMesh.texID = texMadera; 
 
-    // Física (invisible)
-    for (int i = 0; i < corners.size(); i++) {
-        glm::vec2 A = corners[i];
-        glm::vec2 B = corners[(i + 1) % corners.size()];
-        glm::vec2 dir  = B - A;
-        float     len  = glm::length(dir);
-        float     ang  = glm::degrees(std::atan2(dir.y, dir.x));
-        glm::vec2 ctr  = (A + B) * 0.5f;
-        auto box = crear_box({ctr.x, ctr.y, 0.3f}, {len, thickness, 0.6f}, {0,0,ang}, {1,1,1});
-        box.ignoreRender = true;
-        obstacles.push_back(box);
+    // 5. LAS FÍSICAS (Cajas invisibles rotadas)
+    for (size_t i = 0; i < track.perimeter.size(); i++) {
+        glm::vec2 pA = track.perimeter[i];
+        glm::vec2 pB = track.perimeter[(i + 1) % track.perimeter.size()];
+        
+        glm::vec2 dir = pB - pA;
+        float longitud = glm::length(dir);
+        float angulo = std::atan2(dir.y, dir.x);
+        glm::vec2 centro = (pA + pB) * 0.5f;
+
+        // Creamos la caja física: Invisible pero colisionable
+        obstacles.push_back(crear_box({ centro.x, centro.y, FLOOR_Z + 0.5f }, 
+                                      { longitud, 0.4f, 1.0f }, // Grosor del muro de 0.4f
+                                      { 0.0f, 0.0f, glm::degrees(angulo) }, 
+                                      {1,1,1}, false));
+        obstacles.back().ignoreRender = true; 
     }
 
-    // Render (un solo mesh limpio)
-    wallMesh = crear_wall_mesh(corners, /*closed=*/true, thickness, /*height=*/0.6f, 0.0f, 4.0f);
-    wallMesh.texID = texMadera;
-
-    //  Bola 
-    ball.vel    = { 0.0f, 0.0f, 0.0f };
-    ball.moving = false;
-    ball.mesh   = crear_sphere({0,0,0},
-                            ball.radius,
-                            {1.0f, 1.0f, 1.0f});
-
-    //  Hoyo (marcador visual: una caja plana oscura)
-    obstacles.push_back(crear_box(holePos + glm::vec3(0,0,-0.09f),
-                                  {HOLE_RADIUS*2, HOLE_RADIUS*2, 0.02f},
-                                  {0,0,0},
-                                  {0.05f, 0.05f, 0.05f}, true));
-    obstacles.back().texID = texHoyo; // <--- TEXTURA
+    // 6. EL HOYO
+    holePos = { track.holePos.x, track.holePos.y, FLOOR_Z + 0.02f };
+    obstacles.push_back(crear_box(holePos + glm::vec3(0,0,-0.01f),
+                                  { HOLE_RADIUS*2.5f, HOLE_RADIUS*2.5f, 0.05f },
+                                  {0,0,0}, {1,1,1}, true, 1));
+    obstacles.back().texID = texHoyo;
     obstacles.back().isHole = true;
 
-    printf("Nivel cargado. Flechas = apuntar | ESPACIO = cargar/disparar\n");
+    // 7. LA BOLA
+    ball.pos = { track.startPos.x, track.startPos.y, FLOOR_Z + ball.radius };
+    ball.vel = { 0, 0, 0 };
+    ball.moving = false;
+    ball.mesh = crear_sphere({0,0,0}, ball.radius, {1.0f, 1.0f, 1.0f});
+
+    printf("Nivel Procedural Cargado. ¡A jugar!\n");
 }
 
 
