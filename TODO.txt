@@ -3,14 +3,14 @@ TODOs
 bola rendonda (HECHO)
 habilidad de cambiar angulo (HECHO)
 cambiar el hoyo de tipo box a tipo sphere -> Lo he dejado como caja, bola cae al vacío y la idea es ponerle textura de circulo con los bordes transparentes. 
-texturas
-niveles 
+texturas (HECHO)
+niveles desde archivo de texto
 mejor navegacion (hecho)
 efectos
 texto
 sonidos
 objetos como portales, arena que te ralentiza, agua que es muerte, etc
-probar si funcionan paredes anguladas
+probar si funcionan paredes anguladas (HECHO)
 meter ILUMINACION, por lo menos simple, porque es muy feo el juego ahora mismo
 para añadirle un twist y humor al juego podemos hacer que haya enemigos que te persiguen y den patadas a la bola jajajajaaj
 
