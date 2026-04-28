@@ -10,7 +10,7 @@ static const float FRICTION    = 0.985f;  // multiplicador por frame (rolling)
 static const float FLOOR_Z     = 0.0f;    // altura del suelo
 
 // ─── Constantes de disparo ──────────────────────────────────────────────────
-static const float MAX_POWER   = 8.0f;
+static const float MAX_POWER   = 30.0f;
 static const float CHARGE_RATE = 0.8f;    // potencia acumulada por segundo
 static const float AIM_SPEED   = 90.0f;   // grados/segundo al girar la mira
 static const float STOP_SPEED2 = 0.002f;  // velocidad² mínima para detener la bola
@@ -23,7 +23,7 @@ static const float HOLE_RADIUS = 0.3f;    // radio del hoyo
 void Level::load()
 {
     // Cargar texturas 
-    texCesped = cargar_textura("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/cesped.png");
+    texCesped = cargar_textura("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/cesped.jpg");
     texMadera = cargar_textura("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/madera.jpg");
     texHoyo   = cargar_textura("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/hoyo.png");
     texBola   = cargar_textura("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/bola.jpg");
@@ -40,11 +40,14 @@ void Level::load()
     charging  = false;
 
     // PEGAR AQUI LO DE LA HERRAMIENTA DE CRAER NIVELES
-    std::vector<glm::vec2> corners = {{18.0f, 63.0f}, {18.0f, 67.0f}, {27.0f, 67.0f}, {33.0f, 72.0f}, {42.0f, 72.0f}, {49.0f, 67.0f}, {58.0f, 60.0f}, {65.0f, 58.0f}, {67.0f, 49.0f}, {72.0f, 38.0f}, {63.0f, 33.0f}, {54.0f, 27.0f}, {49.0f, 29.0f}, {54.0f, 31.0f}, {56.0f, 38.0f}, {56.0f, 45.0f}, {49.0f, 45.0f}, {49.0f, 49.0f}, {54.0f, 51.0f}, {54.0f, 56.0f}, {45.0f, 63.0f}, {38.0f, 65.0f}, {31.0f, 63.0f}, {29.0f, 58.0f}, {22.0f, 63.0f}};
-    obstacles.push_back(crear_box({ 45.0f,  49.0f, -0.1f}, {54.0f, 45.0f, 0.2f}, {0,0,0}, {1,1,1}));
+    
+    std::vector<glm::vec2> corners = {{40.0f, 72.0f}, {45.0f, 69.0f}, {47.0f, 56.0f}, {54.0f, 49.0f}, {67.0f, 47.0f}, {69.0f, 42.0f}, {56.0f, 45.0f}, {42.0f, 40.0f}, {40.0f, 45.0f}, {45.0f, 49.0f}, {40.0f, 54.0f}, {40.0f, 67.0f}};
+    //SUELO
+    int tiling = 8;
+    obstacles.push_back(crear_box({ 54.0f,  56.0f, -0.1f}, {29.0f, 32.0f, 0.2f}, {0,0,0}, {1,1,1}, false, tiling));
     obstacles.back().texID = texCesped;
-    ball.pos = { 20.3f, 65.3f, ball.radius };
-    holePos = { 54.0f, 29.3f, FLOOR_Z+0.1f };
+    ball.pos = { 42.8f, 67.5f, ball.radius };
+    holePos = { 65.3f, 45.0f, FLOOR_Z+0.1f };
 
     int thickness = 1.0f;
 

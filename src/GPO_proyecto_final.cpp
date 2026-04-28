@@ -59,38 +59,62 @@ const char* vertex_prog = GLSL(
 );
 
 const char* fragment_prog = GLSL(
-    in vec3 fragNormal;
-    in vec3 fragPos;
-    in vec2 fragUV;
-    out vec3 outputColor;
-    
-    uniform vec3  uColor      = vec3(1.0); // El color base
-    uniform sampler2D tex;                 // La foto
-    uniform int uUseTex;                   // <-- EL INTERRUPTOR
-    uniform vec3  uLightPos   = vec3(5.0, 5.0, 10.0);
-    uniform vec3  uLightColor = vec3(1.0, 1.0, 1.0);
-    uniform float uAmbient    = 0.2;
-    
-    void main() {
-        vec4 baseTex = vec4(1.0); 
-        
-        if (uUseTex >= 1) {
-            // MAGIA: Si es el hoyo (2) y es una pared lateral (la normal en Z es 0)
-            if (uUseTex == 2 && abs(fragNormal.z) < 0.5) {
-                discard; // Borramos las paredes oscuras
-            }
-            
-            baseTex = texture(tex, fragUV);
-            if (baseTex.a < 0.1) discard; // Borramos el fondo transparente
-        }
-        
-        vec3 ambient  = uAmbient * uLightColor;
-        vec3 norm     = normalize(fragNormal);
-        vec3 lightDir = normalize(uLightPos - fragPos);
-        float diff    = max(dot(norm, lightDir), 0.0);
-        
-        outputColor   = (ambient + diff * uLightColor) * (baseTex.rgb * uColor);
-    }
+	in vec3 fragNormal;
+	in vec3 fragPos;
+	in vec2 fragUV;
+	out vec3 outputColor;
+	uniform vec3  uColor       = vec3(1.0);
+	uniform sampler2D tex;
+	uniform int uUseTex;
+
+	uniform vec3  uLightPos    = vec3(5.0, 5.0, 100.0);
+	uniform vec3  uLightColor  = vec3(1.0);
+	uniform float uAmbient     = 0.4f;
+
+	// NUEVOS PARAMETROS
+	uniform float uSteps = 6.0;     // niveles toon (3–5 queda bien)
+	uniform float uPixelSize = 128.0; // tamaño pixelado (más bajo = más pixel)
+
+	uniform float uTile;
+
+	void main() {
+
+		float tile = uTile; // número de repeticiones
+
+		vec2 tiledUV = fragUV * tile;
+		vec2 pixelUV = floor(tiledUV * uPixelSize) / uPixelSize;
+
+		vec4 baseTex = texture(tex, pixelUV);
+
+		if (uUseTex >= 1) {
+
+			if (uUseTex == 2 && abs(fragNormal.z) < 0.5) {
+				discard;
+			}
+
+			baseTex = texture(tex, pixelUV);
+
+			if (baseTex.a < 0.1) discard;
+		}
+
+		vec3 norm     = normalize(fragNormal);
+		vec3 lightDir = normalize(uLightPos - fragPos);
+
+		float diff = max(dot(norm, lightDir), 0.0);
+
+		// CUANTIZACIÓN TOON
+		diff = floor(diff * uSteps) / uSteps;
+
+		vec3 ambient = uAmbient * uLightColor;
+
+		vec3 color = (ambient + diff * uLightColor) * (baseTex.rgb * uColor);
+
+		// OPCIONAL: posterización extra (reduce colores)
+		float levels = 5.0;
+		color = floor(color * levels) / levels;
+
+		outputColor = color;
+	}
 );
 
 // ─── Globals ──────────────────────────────────────────────────────────────────

@@ -51,7 +51,7 @@ static const GLuint box_indices[] = {
 };
 
 BoxObstacle crear_box(glm::vec3 position, glm::vec3 size,
-                      glm::vec3 eulerAngles, glm::vec3 color, bool ignoreCollision)
+                      glm::vec3 eulerAngles, glm::vec3 color, bool ignoreCollision, int tile)
 {
     BoxObstacle box;
     box.position    = position;
@@ -60,6 +60,7 @@ BoxObstacle crear_box(glm::vec3 position, glm::vec3 size,
     box.color       = color;
     box.ignoreCollision = ignoreCollision || false;
     box.indexCount  = 36;
+    box.tile        = tile;
 
     glGenVertexArrays(1, &box.VAO);
     glBindVertexArray(box.VAO);
@@ -114,7 +115,8 @@ void render_box(const BoxObstacle& box, GLuint prog, const glm::mat4& VP, GLuint
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, box.texID); 
     transfer_int("tex", 0);
-    
+    transfer_float("uTile", box.tile);
+
     // Si texID es 0, apagamos el interruptor. Si tiene textura, lo encendemos.
     int modoTextura = 0;
     if (texID != 0) modoTextura = 1;      // Caja normal con textura

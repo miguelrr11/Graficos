@@ -165,6 +165,7 @@ void render_wall_mesh(const WallMesh& wm, GLuint prog, const glm::mat4& VP)
     glBindTexture(GL_TEXTURE_2D, wm.texID);
     transfer_int("tex", 0);
     transfer_int("uUseTex", wm.texID ? 1 : 0);
+    transfer_float("uTile", 1.0f); // tiling del wall
 
     glBindVertexArray(wm.VAO);
     glDrawElements(GL_TRIANGLES, wm.indexCount, GL_UNSIGNED_INT, 0);

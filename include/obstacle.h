@@ -15,6 +15,7 @@ struct BoxObstacle {
     glm::vec3 size;
     glm::vec3 eulerAngles;
     glm::vec3 color;
+    int tile = 1;                  // para repetir la textura (1 = sin repetir, 2 = el doble, etc.)
     bool ignoreCollision = false;   // para obstáculos decorativos que no bloquean la bola
     bool ignoreRender = false;      // para obstáculos que sí bloquean la bola pero no se dibujan (ej. el suelo)
 
@@ -38,8 +39,10 @@ struct BoxObstacle {
 
 BoxObstacle crear_box(glm::vec3 position, glm::vec3 size,
                       glm::vec3 eulerAngles = glm::vec3(0.0f),
-                      glm::vec3 color       = glm::vec3(0.6f, 0.3f, 0.1f)
-                      , bool ignoreCollision = false);
+                      glm::vec3 color       = glm::vec3(0.6f, 0.3f, 0.1f),
+                      bool ignoreCollision = false,
+                      int tile = 1
+                    );
 
 void render_box(const BoxObstacle& box, GLuint prog, const glm::mat4& VP, GLuint texID);
 void destroy_box(BoxObstacle& box);
