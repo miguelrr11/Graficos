@@ -11,6 +11,9 @@ texto
 sonidos
 objetos como portales, arena que te ralentiza, agua que es muerte, etc
 probar si funcionan paredes anguladas
+meter ILUMINACION, por lo menos simple, porque es muy feo el juego ahora mismo
+para añadirle un twist y humor al juego podemos hacer que haya enemigos que te persiguen y den patadas a la bola jajajajaaj
+
 
 
 
@@ -28,3 +31,5 @@ make
 ./bin/gpo_proyecto_final
 
 si te da error de doxygen, te lo instalas
+
+la herramienta para crear niveles esta aqui: https://miguelrr11.github.io/Miscellaneous/levelMakerMiniGolf3d/

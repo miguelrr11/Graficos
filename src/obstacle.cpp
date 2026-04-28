@@ -111,7 +111,7 @@ void render_box(const BoxObstacle& box, GLuint prog, const glm::mat4& VP, GLuint
     if (colorLoc != -1) glUniform3fv(colorLoc, 1, &box.color[0]);
 
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texID);
+    glBindTexture(GL_TEXTURE_2D, box.texID); 
     transfer_int("tex", 0);
     
     // Si texID es 0, apagamos el interruptor. Si tiene textura, lo encendemos.
