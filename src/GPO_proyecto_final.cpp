@@ -84,16 +84,16 @@ const char* fragment_prog = GLSL(
 		vec2 tiledUV = fragUV * tile;
 		vec2 pixelUV = floor(tiledUV * uPixelSize) / uPixelSize;
 
-		vec4 baseTex = texture(tex, pixelUV);
+		// 1. Empezamos con blanco puro por defecto
+		vec4 baseTex = vec4(1.0); 
 
+		// 2. SOLO leemos la foto si el interruptor está encendido
 		if (uUseTex >= 1) {
+			baseTex = texture(tex, pixelUV);
 
 			if (uUseTex == 2 && abs(fragNormal.z) < 0.5) {
 				discard;
 			}
-
-			baseTex = texture(tex, pixelUV);
-
 			if (baseTex.a < 0.1) discard;
 		}
 

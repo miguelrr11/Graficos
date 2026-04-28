@@ -10,7 +10,7 @@ static const float FRICTION    = 0.985f;  // multiplicador por frame (rolling)
 static const float FLOOR_Z     = 0.0f;    // altura del suelo
 
 // ─── Constantes de disparo ──────────────────────────────────────────────────
-static const float MAX_POWER   = 30.0f;
+static const float MAX_POWER   = 15.0f;
 static const float CHARGE_RATE = 0.8f;    // potencia acumulada por segundo
 static const float AIM_SPEED   = 90.0f;   // grados/segundo al girar la mira
 static const float STOP_SPEED2 = 0.002f;  // velocidad² mínima para detener la bola
@@ -23,15 +23,15 @@ static const float HOLE_RADIUS = 0.3f;    // radio del hoyo
 void Level::load()
 {
     // Cargar texturas 
-    texCesped = cargar_textura("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/cesped.jpg");
-    texMadera = cargar_textura("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/madera.jpg");
-    texHoyo   = cargar_textura("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/hoyo.png");
-    texBola   = cargar_textura("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/bola.jpg");
+    // texCesped = cargar_textura("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/cesped.jpg");
+    // texMadera = cargar_textura("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/madera.jpg");
+    // texHoyo   = cargar_textura("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/hoyo.png");
+    // texBola   = cargar_textura("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/bola.jpg");
 
-    // texCesped = cargar_textura("../../assets/cesped.png");
-    // texMadera = cargar_textura("../../assets/madera.jpg");
-    // texHoyo   = cargar_textura("../../assets/hoyo.png");
-    // texBola   = cargar_textura("../../assets/bola.jpg");
+    texCesped = cargar_textura("../../assets/cesped.jpg");
+    texMadera = cargar_textura("../../assets/madera2.jpg");
+    texHoyo   = cargar_textura("../../assets/hoyo.png");
+    texBola   = cargar_textura("../../assets/bola.jpg");
 
 
     completed = false;
