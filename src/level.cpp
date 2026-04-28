@@ -39,28 +39,33 @@ void Level::load()
     shotPower = 0.0f;
     charging  = false;
 
-    //  Obstáculos (posición, tamaño, ángulos euler, color)
-    //                                      pos                  size           rot            color
-    obstacles.push_back(crear_box({ 4.0f,  0.0f, -0.1f}, {10.0f, 4.0f, 0.2f}, {0,0,0}, {0.3f, 0.65f, 0.3f}));  // suelo
-    obstacles.back().texID = texCesped; // <--- TEXTURA
+    // PEGAR AQUI LO DE LA HERRAMIENTA DE CRAER NIVELES
+    std::vector<glm::vec2> corners = {{18.0f, 63.0f}, {18.0f, 67.0f}, {27.0f, 67.0f}, {33.0f, 72.0f}, {42.0f, 72.0f}, {49.0f, 67.0f}, {58.0f, 60.0f}, {65.0f, 58.0f}, {67.0f, 49.0f}, {72.0f, 38.0f}, {63.0f, 33.0f}, {54.0f, 27.0f}, {49.0f, 29.0f}, {54.0f, 31.0f}, {56.0f, 38.0f}, {56.0f, 45.0f}, {49.0f, 45.0f}, {49.0f, 49.0f}, {54.0f, 51.0f}, {54.0f, 56.0f}, {45.0f, 63.0f}, {38.0f, 65.0f}, {31.0f, 63.0f}, {29.0f, 58.0f}, {22.0f, 63.0f}};
+    obstacles.push_back(crear_box({ 45.0f,  49.0f, -0.1f}, {54.0f, 45.0f, 0.2f}, {0,0,0}, {1,1,1}));
+    obstacles.back().texID = texCesped;
+    ball.pos = { 20.3f, 65.3f, ball.radius };
+    holePos = { 54.0f, 29.3f, FLOOR_Z+0.1f };
 
-    obstacles.push_back(crear_box({ 4.0f,  2.1f,  0.3f}, {10.0f, 0.2f, 0.6f}, {0,0,0}, {0.55f,0.35f, 0.2f}));  // pared norte
-    obstacles.back().texID = texMadera; // <--- TEXTURA
+    int thickness = 1.0f;
 
-    obstacles.push_back(crear_box({ 4.0f, -2.1f,  0.3f}, {10.0f, 0.2f, 0.6f}, {0,0,0}, {0.55f,0.35f, 0.2f}));  // pared sur
-    obstacles.back().texID = texMadera; // <--- TEXTURA
+    // Física (invisible)
+    for (int i = 0; i < corners.size(); i++) {
+        glm::vec2 A = corners[i];
+        glm::vec2 B = corners[(i + 1) % corners.size()];
+        glm::vec2 dir  = B - A;
+        float     len  = glm::length(dir);
+        float     ang  = glm::degrees(std::atan2(dir.y, dir.x));
+        glm::vec2 ctr  = (A + B) * 0.5f;
+        auto box = crear_box({ctr.x, ctr.y, 0.3f}, {len, thickness, 0.6f}, {0,0,ang}, {1,1,1});
+        box.ignoreRender = true;
+        obstacles.push_back(box);
+    }
 
-    obstacles.push_back(crear_box({ 8.5f,  0.0f,  0.3f}, { 0.2f, 4.4f, 0.6f}, {0,0,0}, {0.55f,0.35f, 0.2f}));  // pared final
-    obstacles.back().texID = texMadera; // <--- TEXTURA
-
-    obstacles.push_back(crear_box({-0.5f,  0.0f,  0.3f}, { 0.2f, 4.4f, 0.6f}, {0,0,0}, {0.55f,0.35f, 0.2f}));  // pared inicio
-    obstacles.back().texID = texMadera; // <--- TEXTURA
-
-    obstacles.push_back(crear_box({ 4.5f,  0.6f,  0.3f}, { 0.4f, 0.4f, 0.6f}, {0,0,0}, {0.8f, 0.25f, 0.25f})); // obstáculo central
-    obstacles.back().texID = texMadera; // <--- TEXTURA
+    // Render (un solo mesh limpio)
+    wallMesh = crear_wall_mesh(corners, /*closed=*/true, thickness, /*height=*/0.6f, 0.0f, 4.0f);
+    wallMesh.texID = texMadera;
 
     //  Bola 
-    ball.pos    = { 0.5f, 0.0f, ball.radius };
     ball.vel    = { 0.0f, 0.0f, 0.0f };
     ball.moving = false;
     ball.mesh   = crear_sphere({0,0,0},
@@ -68,7 +73,6 @@ void Level::load()
                             {1.0f, 1.0f, 1.0f});
 
     //  Hoyo (marcador visual: una caja plana oscura)
-    holePos = { 7.5f, 0.0f, FLOOR_Z+0.1f};
     obstacles.push_back(crear_box(holePos + glm::vec3(0,0,-0.09f),
                                   {HOLE_RADIUS*2, HOLE_RADIUS*2, 0.02f},
                                   {0,0,0},
@@ -225,6 +229,9 @@ void Level::render(GLuint prog, const glm::mat4& VP)
     // Obstáculos
     for (const auto& obs : obstacles)
         render_box(obs, prog, VP, obs.texID); // Le pasamos un 0 temporalmente
+
+    // Wall Mesh
+    render_wall_mesh(wallMesh, prog, VP);
 
     // Bola: copiamos el mesh y le actualizamos la posición antes de renderizar
     SphereObstacle bm = ball.mesh;

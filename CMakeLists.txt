@@ -38,6 +38,8 @@ set(GPO_SOURCE_FILES include/stb/stb_image.h
 					 include/obstacle.h
 					 include/level.h
 					 include/sphere.h
+					 include/wallmesh.h
+					 src/wallmesh.cpp
 					 src/sphere.cpp
 					 src/level.cpp
 					 src/GPO_proyecto_final.cpp

@@ -11,6 +11,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/gpo_proyecto_final.dir/src/obstacle.cpp.o.d"
   "CMakeFiles/gpo_proyecto_final.dir/src/sphere.cpp.o"
   "CMakeFiles/gpo_proyecto_final.dir/src/sphere.cpp.o.d"
+  "CMakeFiles/gpo_proyecto_final.dir/src/wallmesh.cpp.o"
+  "CMakeFiles/gpo_proyecto_final.dir/src/wallmesh.cpp.o.d"
   "bin/gpo_proyecto_final"
   "bin/gpo_proyecto_final.pdb"
 )

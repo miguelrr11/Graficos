@@ -98,6 +98,7 @@ BoxObstacle crear_box(glm::vec3 position, glm::vec3 size,
 
 void render_box(const BoxObstacle& box, GLuint prog, const glm::mat4& VP, GLuint texID)
 {
+    if(box.ignoreRender) return; // No renderizar este obstáculo
     glm::mat4 M   = box.modelMatrix();
     glm::mat4 MVP = VP * M;
 

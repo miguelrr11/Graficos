@@ -2,6 +2,7 @@
 #include <vector>
 #include "obstacle.h"
 #include "sphere.h"
+#include "wallmesh.h"
 
 #include <glad/glad.h> 
 
@@ -45,6 +46,8 @@ public:
     GLuint texMadera;
     GLuint texHoyo;
     GLuint texBola;
+
+    WallMesh wallMesh;
 
     // Ciclo de vida
     void load();                                            // carga el nivel hardcodeado

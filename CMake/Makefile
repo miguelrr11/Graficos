@@ -357,6 +357,30 @@ src/sphere.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/src/sphere.cpp.s
 .PHONY : src/sphere.cpp.s
 
+src/wallmesh.o: src/wallmesh.cpp.o
+.PHONY : src/wallmesh.o
+
+# target to build an object file
+src/wallmesh.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/src/wallmesh.cpp.o
+.PHONY : src/wallmesh.cpp.o
+
+src/wallmesh.i: src/wallmesh.cpp.i
+.PHONY : src/wallmesh.i
+
+# target to preprocess a source file
+src/wallmesh.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/src/wallmesh.cpp.i
+.PHONY : src/wallmesh.cpp.i
+
+src/wallmesh.s: src/wallmesh.cpp.s
+.PHONY : src/wallmesh.s
+
+# target to generate assembly for a file
+src/wallmesh.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/src/wallmesh.cpp.s
+.PHONY : src/wallmesh.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -391,6 +415,9 @@ help:
 	@echo "... src/sphere.o"
 	@echo "... src/sphere.i"
 	@echo "... src/sphere.s"
+	@echo "... src/wallmesh.o"
+	@echo "... src/wallmesh.i"
+	@echo "... src/wallmesh.s"
 .PHONY : help
 
 

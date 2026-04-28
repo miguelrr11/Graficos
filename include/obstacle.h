@@ -16,6 +16,7 @@ struct BoxObstacle {
     glm::vec3 eulerAngles;
     glm::vec3 color;
     bool ignoreCollision = false;   // para obstáculos decorativos que no bloquean la bola
+    bool ignoreRender = false;      // para obstáculos que sí bloquean la bola pero no se dibujan (ej. el suelo)
 
     GLuint VAO, VBO, EBO;
     int indexCount;
