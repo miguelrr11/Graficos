@@ -22,6 +22,13 @@ static const float HOLE_RADIUS = 0.3f;    // radio del hoyo
 // ════════════════════════════════════════════════════════════════════════════
 void Level::load()
 {
+    // Cargar texturas 
+    texCesped = cargar_textura("../../assets/cesped.png");
+    texMadera = cargar_textura("../../assets/madera.jpg");
+    texHoyo   = cargar_textura("../../assets/hoyo.png");
+    texBola   = cargar_textura("../../assets/bola.jpg");
+
+
     completed = false;
     shotAngle = 0.0f;
     shotPower = 0.0f;
@@ -30,13 +37,24 @@ void Level::load()
     //  Obstáculos (posición, tamaño, ángulos euler, color)
     //                           pos                  size               rot   color
     obstacles.push_back(crear_box({ 4.0f,  0.0f, -0.1f}, {10.0f, 4.0f, 0.2f}, {0,0,0}, {0.3f, 0.65f, 0.3f}, true));  // suelo
-    obstacles.push_back(crear_box({ 4.0f,  2.1f,  0.3f}, {10.0f, 0.2f, 0.6f}, {0,0,0}, {0.55f,0.35f, 0.2f}));  // pared norte
-    obstacles.push_back(crear_box({ 4.0f, -2.1f,  0.3f}, {10.0f, 0.2f, 0.6f}, {0,0,0}, {0.55f,0.35f, 0.2f}));  // pared sur
-    obstacles.push_back(crear_box({ 8.5f,  0.0f,  0.3f}, { 0.2f, 4.4f, 0.6f}, {0,0,0}, {0.55f,0.35f, 0.2f}));  // pared final
-    obstacles.push_back(crear_box({-0.5f,  0.0f,  0.3f}, { 0.2f, 4.4f, 0.6f}, {0,0,0}, {0.55f,0.35f, 0.2f}));  // pared inicio
-    obstacles.push_back(crear_box({ 4.5f,  0.6f,  0.3f}, { 0.4f, 0.4f, 0.6f}, {0,0,0}, {0.8f, 0.25f, 0.25f})); // obstáculo central
+    obstacles.back().texID = texCesped; // <--- TEXTURA
 
-    //  Bola
+    obstacles.push_back(crear_box({ 4.0f,  2.1f,  0.3f}, {10.0f, 0.2f, 0.6f}, {0,0,0}, {0.55f,0.35f, 0.2f}));  // pared norte
+    obstacles.back().texID = texMadera; // <--- TEXTURA
+
+    obstacles.push_back(crear_box({ 4.0f, -2.1f,  0.3f}, {10.0f, 0.2f, 0.6f}, {0,0,0}, {0.55f,0.35f, 0.2f}));  // pared sur
+    obstacles.back().texID = texMadera; // <--- TEXTURA
+
+    obstacles.push_back(crear_box({ 8.5f,  0.0f,  0.3f}, { 0.2f, 4.4f, 0.6f}, {0,0,0}, {0.55f,0.35f, 0.2f}));  // pared final
+    obstacles.back().texID = texMadera; // <--- TEXTURA
+
+    obstacles.push_back(crear_box({-0.5f,  0.0f,  0.3f}, { 0.2f, 4.4f, 0.6f}, {0,0,0}, {0.55f,0.35f, 0.2f}));  // pared inicio
+    obstacles.back().texID = texMadera; // <--- TEXTURA
+
+    obstacles.push_back(crear_box({ 4.5f,  0.6f,  0.3f}, { 0.4f, 0.4f, 0.6f}, {0,0,0}, {0.8f, 0.25f, 0.25f})); // obstáculo central
+    obstacles.back().texID = texMadera; // <--- TEXTURA
+
+    //  Bola 
     ball.pos    = { 0.5f, 0.0f, ball.radius };
     ball.vel    = { 0.0f, 0.0f, 0.0f };
     ball.moving = false;
@@ -50,6 +68,8 @@ void Level::load()
                                   {HOLE_RADIUS*2, HOLE_RADIUS*2, 0.02f},
                                   {0,0,0},
                                   {0.05f, 0.05f, 0.05f}, true));
+    obstacles.back().texID = texHoyo; // <--- TEXTURA
+    obstacles.back().isHole = true;
 
     printf("Nivel cargado. Flechas = apuntar | ESPACIO = cargar/disparar\n");
 }
@@ -177,12 +197,12 @@ void Level::render(GLuint prog, const glm::mat4& VP)
 {
     // Obstáculos
     for (const auto& obs : obstacles)
-        render_box(obs, prog, VP);
+        render_box(obs, prog, VP, obs.texID); // Le pasamos un 0 temporalmente
 
     // Bola: copiamos el mesh y le actualizamos la posición antes de renderizar
     SphereObstacle bm = ball.mesh;
     bm.position = ball.pos;
-    render_sphere(bm, prog, VP);
+    render_sphere(bm, prog, VP, texBola); // <-- AÑADIDO: Pasamos texBola
 
     // Indicador de dirección de disparo (caja pequeña delante de la bola)
     if (!ball.moving && !completed) {
@@ -194,7 +214,7 @@ void Level::render(GLuint prog, const glm::mat4& VP)
         arrow.position = arrowPos;
         arrow.radius     = ball.radius;
         arrow.color    = { 1.0f, 1.0f - shotPower, 0.0f };   // amarillo → rojo al cargar
-        render_sphere(arrow, prog, VP);
+        render_sphere(arrow, prog, VP, 0); // <-- AÑADIDO: Pasamos 0 (sin textura)
     }
 }
 

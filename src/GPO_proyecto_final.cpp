@@ -44,31 +44,52 @@ const char* skybox_fs = GLSL(
 const char* vertex_prog = GLSL(
     layout(location = 0) in vec3 pos;
     layout(location = 1) in vec3 normal;
+    layout(location = 2) in vec2 uv;
     out vec3 fragNormal;
     out vec3 fragPos;
+    out vec2 fragUV;
     uniform mat4 MVP = mat4(1.0f);
     uniform mat4 M   = mat4(1.0f);
     void main() {
         gl_Position = MVP * vec4(pos, 1.0);
         fragPos     = vec3(M * vec4(pos, 1.0));
         fragNormal  = mat3(transpose(inverse(M))) * normal;
+        fragUV      = uv;
     }
 );
 
 const char* fragment_prog = GLSL(
     in vec3 fragNormal;
     in vec3 fragPos;
+    in vec2 fragUV;
     out vec3 outputColor;
-    uniform vec3  uColor      = vec3(1.0);
+    
+    uniform vec3  uColor      = vec3(1.0); // El color base
+    uniform sampler2D tex;                 // La foto
+    uniform int uUseTex;                   // <-- EL INTERRUPTOR
     uniform vec3  uLightPos   = vec3(5.0, 5.0, 10.0);
     uniform vec3  uLightColor = vec3(1.0, 1.0, 1.0);
     uniform float uAmbient    = 0.2;
+    
     void main() {
+        vec4 baseTex = vec4(1.0); 
+        
+        if (uUseTex >= 1) {
+            // MAGIA: Si es el hoyo (2) y es una pared lateral (la normal en Z es 0)
+            if (uUseTex == 2 && abs(fragNormal.z) < 0.5) {
+                discard; // Borramos las paredes oscuras
+            }
+            
+            baseTex = texture(tex, fragUV);
+            if (baseTex.a < 0.1) discard; // Borramos el fondo transparente
+        }
+        
         vec3 ambient  = uAmbient * uLightColor;
         vec3 norm     = normalize(fragNormal);
         vec3 lightDir = normalize(uLightPos - fragPos);
         float diff    = max(dot(norm, lightDir), 0.0);
-        outputColor   = (ambient + diff * uLightColor) * uColor;
+        
+        outputColor   = (ambient + diff * uLightColor) * (baseTex.rgb * uColor);
     }
 );
 

@@ -84,3 +84,5 @@ void load_Opengl(void);
 GLFWwindow*  Init_Window(const char*);
 
 
+// FUNCION PARA CARGAR TEXTURA
+GLuint cargar_textura(const char* ruta);

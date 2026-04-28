@@ -27,5 +27,5 @@ SphereObstacle crear_sphere(glm::vec3 position, float radius,
                             bool ignoreCollision = false,
                             int stacks = 16, int slices = 16);
 
-void render_sphere(const SphereObstacle& sphere, GLuint prog, const glm::mat4& VP);
+void render_sphere(const SphereObstacle& s, GLuint prog, const glm::mat4& VP, GLuint texID);
 void destroy_sphere(SphereObstacle& sphere);

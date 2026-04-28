@@ -524,3 +524,32 @@ void vuelca_mat4(glm::mat4 M)
 	printf("--------------------------------------\n");
 }
 
+GLuint cargar_textura(const char* ruta) {
+    GLuint textureID;
+    glGenTextures(1, &textureID);
+
+    int width, height, nrComponents;
+    // Forzamos 4 componentes (RGBA) para que funcione tanto con JPG como con PNG con transparencia
+    unsigned char* data = stbi_load(ruta, &width, &height, &nrComponents, 4);
+    
+    if (data) {
+        glBindTexture(GL_TEXTURE_2D, textureID);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+
+        // Configuración de repetición (para que el césped se vea como baldosas)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        // Configuración de filtrado (para que no se vea pixelado de lejos)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        stbi_image_free(data);
+        printf("Textura cargada con exito: %s (%dx%d)\n", ruta, width, height);
+    } else {
+        printf("ERROR: No se pudo cargar la textura en la ruta: %s\n", ruta);
+        stbi_image_free(data);
+    }
+
+    return textureID;
+}

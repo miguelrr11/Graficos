@@ -8,37 +8,37 @@
 // Ahora cada vértice tiene: x, y, z, nx, ny, nz
 // Usamos 24 vértices (4 por cara) para que las normales sean correctas por cara
 static const GLfloat box_vertices[] = {
-    // pos                  // normal
+    // pos                  // normal      // UV (u, v)
     // -Z
-    -0.5f,-0.5f,-0.5f,   0, 0,-1,
-     0.5f,-0.5f,-0.5f,   0, 0,-1,
-     0.5f, 0.5f,-0.5f,   0, 0,-1,
-    -0.5f, 0.5f,-0.5f,   0, 0,-1,
+    -0.5f,-0.5f,-0.5f,   0, 0,-1,  0.0f, 0.0f,
+     0.5f,-0.5f,-0.5f,   0, 0,-1,  1.0f, 0.0f,
+     0.5f, 0.5f,-0.5f,   0, 0,-1,  1.0f, 1.0f,
+    -0.5f, 0.5f,-0.5f,   0, 0,-1,  0.0f, 1.0f,
     // +Z
-    -0.5f,-0.5f, 0.5f,   0, 0, 1,
-     0.5f,-0.5f, 0.5f,   0, 0, 1,
-     0.5f, 0.5f, 0.5f,   0, 0, 1,
-    -0.5f, 0.5f, 0.5f,   0, 0, 1,
+    -0.5f,-0.5f, 0.5f,   0, 0, 1,  0.0f, 0.0f,
+     0.5f,-0.5f, 0.5f,   0, 0, 1,  1.0f, 0.0f,
+     0.5f, 0.5f, 0.5f,   0, 0, 1,  1.0f, 1.0f,
+    -0.5f, 0.5f, 0.5f,   0, 0, 1,  0.0f, 1.0f,
     // -X
-    -0.5f,-0.5f,-0.5f,  -1, 0, 0,
-    -0.5f, 0.5f,-0.5f,  -1, 0, 0,
-    -0.5f, 0.5f, 0.5f,  -1, 0, 0,
-    -0.5f,-0.5f, 0.5f,  -1, 0, 0,
+    -0.5f, 0.5f, 0.5f,  -1, 0, 0,  1.0f, 0.0f,
+    -0.5f, 0.5f,-0.5f,  -1, 0, 0,  1.0f, 1.0f,
+    -0.5f,-0.5f,-0.5f,  -1, 0, 0,  0.0f, 1.0f,
+    -0.5f,-0.5f, 0.5f,  -1, 0, 0,  0.0f, 0.0f,
     // +X
-     0.5f,-0.5f,-0.5f,   1, 0, 0,
-     0.5f, 0.5f,-0.5f,   1, 0, 0,
-     0.5f, 0.5f, 0.5f,   1, 0, 0,
-     0.5f,-0.5f, 0.5f,   1, 0, 0,
+     0.5f, 0.5f, 0.5f,   1, 0, 0,  1.0f, 0.0f,
+     0.5f, 0.5f,-0.5f,   1, 0, 0,  1.0f, 1.0f,
+     0.5f,-0.5f,-0.5f,   1, 0, 0,  0.0f, 1.0f,
+     0.5f,-0.5f, 0.5f,   1, 0, 0,  0.0f, 0.0f,
     // -Y
-    -0.5f,-0.5f,-0.5f,   0,-1, 0,
-     0.5f,-0.5f,-0.5f,   0,-1, 0,
-     0.5f,-0.5f, 0.5f,   0,-1, 0,
-    -0.5f,-0.5f, 0.5f,   0,-1, 0,
+    -0.5f,-0.5f,-0.5f,   0,-1, 0,  0.0f, 1.0f,
+     0.5f,-0.5f,-0.5f,   0,-1, 0,  1.0f, 1.0f,
+     0.5f,-0.5f, 0.5f,   0,-1, 0,  1.0f, 0.0f,
+    -0.5f,-0.5f, 0.5f,   0,-1, 0,  0.0f, 0.0f,
     // +Y
-    -0.5f, 0.5f,-0.5f,   0, 1, 0,
-     0.5f, 0.5f,-0.5f,   0, 1, 0,
-     0.5f, 0.5f, 0.5f,   0, 1, 0,
-    -0.5f, 0.5f, 0.5f,   0, 1, 0,
+    -0.5f, 0.5f,-0.5f,   0, 1, 0,  0.0f, 1.0f,
+     0.5f, 0.5f,-0.5f,   0, 1, 0,  1.0f, 1.0f,
+     0.5f, 0.5f, 0.5f,   0, 1, 0,  1.0f, 0.0f,
+    -0.5f, 0.5f, 0.5f,   0, 1, 0,  0.0f, 0.0f
 };
 
 static const GLuint box_indices[] = {
@@ -75,7 +75,7 @@ BoxObstacle crear_box(glm::vec3 position, glm::vec3 size,
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(box_indices), box_indices, GL_STATIC_DRAW);
 
     // Atributos (IMPORTANTE: dentro del VAO)
-    int stride = 6 * sizeof(float);
+    int stride = 8 * sizeof(float);
 
     // posición (location = 0)
     glEnableVertexAttribArray(0);
@@ -85,6 +85,10 @@ BoxObstacle crear_box(glm::vec3 position, glm::vec3 size,
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, (void*)(3 * sizeof(float)));
 
+    // TEXTURA (location = 2)
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride, (void*)(6 * sizeof(float)));
+
     glBindVertexArray(0);
 
     box.indexCount = 36;
@@ -92,7 +96,7 @@ BoxObstacle crear_box(glm::vec3 position, glm::vec3 size,
     return box;
 }
 
-void render_box(const BoxObstacle& box, GLuint prog, const glm::mat4& VP)
+void render_box(const BoxObstacle& box, GLuint prog, const glm::mat4& VP, GLuint texID)
 {
     glm::mat4 M   = box.modelMatrix();
     glm::mat4 MVP = VP * M;
@@ -100,9 +104,21 @@ void render_box(const BoxObstacle& box, GLuint prog, const glm::mat4& VP)
     transfer_mat4("MVP", MVP);
 
     GLint mLoc     = glGetUniformLocation(prog, "M");
+    if (mLoc != -1) glUniformMatrix4fv(mLoc, 1, GL_FALSE, &M[0][0]);
+
+    // ARREGLO: Antes ponía "baseColor". Ahora usa el mismo que la bola.
     GLint colorLoc = glGetUniformLocation(prog, "uColor");
-    glUniformMatrix4fv(mLoc, 1, GL_FALSE, glm::value_ptr(M));
-    glUniform3fv(colorLoc, 1, glm::value_ptr(box.color));
+    if (colorLoc != -1) glUniform3fv(colorLoc, 1, &box.color[0]);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texID);
+    transfer_int("tex", 0);
+    
+    // Si texID es 0, apagamos el interruptor. Si tiene textura, lo encendemos.
+    int modoTextura = 0;
+    if (texID != 0) modoTextura = 1;      // Caja normal con textura
+    if (box.isHole) modoTextura = 2;      // Hoyo
+    transfer_int("uUseTex", modoTextura);
 
     glBindVertexArray(box.VAO);
     glDrawElements(GL_TRIANGLES, box.indexCount, GL_UNSIGNED_INT, 0);

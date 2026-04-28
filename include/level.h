@@ -40,6 +40,12 @@ public:
     float shotPower = 0.0f;   // potencia acumulada [0..1]
     bool  charging  = false;
 
+    // Texturas
+    GLuint texCesped;
+    GLuint texMadera;
+    GLuint texHoyo;
+    GLuint texBola;
+
     // Ciclo de vida
     void load();                                            // carga el nivel hardcodeado
     void update(float dt);                                  // física + comprobaciones

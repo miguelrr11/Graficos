@@ -20,6 +20,9 @@ struct BoxObstacle {
     GLuint VAO, VBO, EBO;
     int indexCount;
 
+    GLuint texID = 0;
+    bool isHole = false;
+
     glm::vec3 halfExtents() const { return size * 0.5f; }
 
     glm::mat4 modelMatrix() const {
@@ -37,5 +40,5 @@ BoxObstacle crear_box(glm::vec3 position, glm::vec3 size,
                       glm::vec3 color       = glm::vec3(0.6f, 0.3f, 0.1f)
                       , bool ignoreCollision = false);
 
-void render_box(const BoxObstacle& box, GLuint prog, const glm::mat4& VP);
+void render_box(const BoxObstacle& box, GLuint prog, const glm::mat4& VP, GLuint texID);
 void destroy_box(BoxObstacle& box);
