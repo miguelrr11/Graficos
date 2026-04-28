@@ -165,6 +165,7 @@ void init_scene()
     glfwGetFramebufferSize(window, &w, &h);
     glViewport(0, 0, w, h);
     glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
 
     // Shaders principales
     GLuint VS = compilar_shader(vertex_prog,   GL_VERTEX_SHADER);

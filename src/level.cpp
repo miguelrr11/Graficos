@@ -44,7 +44,7 @@ void Level::load()
     std::vector<glm::vec2> corners = {{40.0f, 72.0f}, {45.0f, 69.0f}, {47.0f, 56.0f}, {54.0f, 49.0f}, {67.0f, 47.0f}, {69.0f, 42.0f}, {56.0f, 45.0f}, {42.0f, 40.0f}, {40.0f, 45.0f}, {45.0f, 49.0f}, {40.0f, 54.0f}, {40.0f, 67.0f}};
     //SUELO
     int tiling = 8;
-    obstacles.push_back(crear_box({ 54.0f,  56.0f, -0.1f}, {29.0f, 32.0f, 0.2f}, {0,0,0}, {1,1,1}, false, tiling));
+    obstacles.push_back(crear_box({ 54.0f,  56.0f, -0.1f}, {29.0f, 32.0f, 0.2f}, {0,0,0}, {1,1,1}, true, tiling));
     obstacles.back().texID = texCesped;
     ball.pos = { 42.8f, 67.5f, ball.radius };
     holePos = { 65.3f, 45.0f, FLOOR_Z+0.1f };
