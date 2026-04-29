@@ -45,76 +45,103 @@ const char* vertex_prog = GLSL(
     layout(location = 0) in vec3 pos;
     layout(location = 1) in vec3 normal;
     layout(location = 2) in vec2 uv;
-    out vec3 fragNormal;
+
+    out vec3 fragNormal;       // normal en mundo (para iluminación)
+    out vec3 fragLocalNormal;  // normal en espacio objeto (para mapeo esférico)
     out vec3 fragPos;
     out vec2 fragUV;
+
     uniform mat4 MVP = mat4(1.0f);
     uniform mat4 M   = mat4(1.0f);
+
     void main() {
-        gl_Position = MVP * vec4(pos, 1.0);
-        fragPos     = vec3(M * vec4(pos, 1.0));
-        fragNormal  = mat3(transpose(inverse(M))) * normal;
-        fragUV      = uv;
+        gl_Position     = MVP * vec4(pos, 1.0);
+        fragPos         = vec3(M * vec4(pos, 1.0));
+        fragNormal      = mat3(transpose(inverse(M))) * normal;
+        fragLocalNormal = normal;     // sin transformar: gira con el objeto
+        fragUV          = uv;
     }
 );
 
 const char* fragment_prog = GLSL(
-	in vec3 fragNormal;
-	in vec3 fragPos;
-	in vec2 fragUV;
-	out vec3 outputColor;
-	uniform vec3  uColor       = vec3(1.0);
-	uniform sampler2D tex;
-	uniform int uUseTex;
+    in vec3 fragNormal;
+    in vec3 fragLocalNormal;
+    in vec3 fragPos;
+    in vec2 fragUV;
+    out vec3 outputColor;
 
-	uniform vec3  uLightPos    = vec3(5.0, 5.0, 100.0);
-	uniform vec3  uLightColor  = vec3(1.0);
-	uniform float uAmbient     = 0.4f;
+    uniform vec3      uColor      = vec3(1.0);
+    uniform sampler2D tex;
+    uniform int       uUseTex;
 
-	// NUEVOS PARAMETROS
-	uniform float uSteps = 6.0;     // niveles toon (3–5 queda bien)
-	uniform float uPixelSize = 128.0; // tamaño pixelado (más bajo = más pixel)
+    uniform vec3  uLightPos   = vec3(5.0, 5.0, 100.0);
+    uniform vec3  uLightColor = vec3(1.0);
+    uniform float uAmbient    = 0.4f;
 
-	uniform float uTile;
+    uniform float uSteps     = 6.0;
+    uniform float uPixelSize = 128.0;
 
-	void main() {
+    uniform float uTile;
+    uniform vec2  uTexOffset;
+    uniform int   uUseTexOffset;
+    uniform int   uMappingType; // 0 = UV normal, 1 = mapeo esférico
 
-		float tile = uTile; // número de repeticiones
+    void main() {
+        vec2 uv      = fragUV;
+        vec4 baseTex = vec4(1.0);
 
-		vec2 tiledUV = fragUV * tile;
-		vec2 pixelUV = floor(tiledUV * uPixelSize) / uPixelSize;
+        if (uUseTex >= 1) {
 
-		// 1. Empezamos con blanco puro por defecto
-		vec4 baseTex = vec4(1.0); 
+            if (uMappingType == 0) {
+                // --- UV normal (cajas, planos) ---
+                if (uUseTexOffset == 1) {
+                    uv += uTexOffset;
+                }
 
-		// 2. SOLO leemos la foto si el interruptor está encendido
-		if (uUseTex >= 1) {
-			baseTex = texture(tex, pixelUV);
+                vec2 tiledUV = uv * uTile;
 
-			if (uUseTex == 2 && abs(fragNormal.z) < 0.5) {
-				discard;
-			}
-			if (baseTex.a < 0.1) discard;
-		}
+                vec2 finalUV = (uPixelSize > 1.0)
+                    ? floor(tiledUV * uPixelSize) / uPixelSize
+                    : tiledUV;
 
-		vec3 norm     = normalize(fragNormal);
-		vec3 lightDir = normalize(uLightPos - fragPos);
+                baseTex = texture(tex, finalUV);
+            }
+            else if (uMappingType == 1) {
+                // --- mapeo esférico por normal local (esferas) ---
+                vec3 n = normalize(fragLocalNormal);
 
-		float diff = max(dot(norm, lightDir), 0.0);
+                vec2 sphUV = vec2(
+                    atan(n.z, n.x) / 6.2831853 + 0.5,  // longitud
+                    asin(n.y)      / 3.1415927 + 0.5   // latitud
+                );
 
-		// CUANTIZACIÓN TOON
-		diff = floor(diff * uSteps) / uSteps;
+                vec2 tiledUV = sphUV * uTile;
 
-		vec3 ambient = uAmbient * uLightColor;
+                vec2 finalUV = (uPixelSize > 1.0)
+                    ? floor(tiledUV * uPixelSize) / uPixelSize
+                    : tiledUV;
 
-		vec3 color = (ambient + diff * uLightColor) * (baseTex.rgb * uColor);
+                baseTex = texture(tex, finalUV);
+            }
 
-		// OPCIONAL: posterización extra (reduce colores)
-		float levels = 5.0;
-		color = floor(color * levels) / levels;
+            if (uUseTex == 2 && abs(fragNormal.z) < 0.5) discard;
+            if (baseTex.a < 0.1) discard;
+        }
 
-		outputColor = color;
-	}
+        vec3 norm     = normalize(fragNormal);
+        vec3 lightDir = normalize(uLightPos - fragPos);
+
+        float diff = max(dot(norm, lightDir), 0.0);
+        diff = floor(diff * uSteps) / uSteps;
+
+        vec3 ambient = uAmbient * uLightColor;
+        vec3 color   = (ambient + diff * uLightColor) * (baseTex.rgb * uColor);
+
+        float levels = 5.0;
+        color = floor(color * levels) / levels;
+
+        outputColor = color;
+    }
 );
 
 // ─── Globals ──────────────────────────────────────────────────────────────────
@@ -136,6 +163,7 @@ float cam_distance = 3.0f;   // distancia a la bola
 
 // Tiempo para deltaTime real
 float lastFrameTime = 0.0f;
+float dt = 0.0f;
 
 
 // ─── Skybox helper ───────────────────────────────────────────────────────────
@@ -201,7 +229,7 @@ void render_scene()
 
     // deltaTime real
     float now = (float)glfwGetTime();
-    float dt  = now - lastFrameTime;
+    dt  = now - lastFrameTime;
     lastFrameTime = now;
     if (dt > 0.05f) dt = 0.05f;  // cap para evitar saltos si la ventana se mueve
 

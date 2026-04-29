@@ -112,6 +112,12 @@ void render_sphere(const SphereObstacle& s, GLuint prog, const glm::mat4& VP, GL
     // Si tiene una textura (como en la bola), mandamos un 1.
     transfer_int("uUseTex", (texID == 0) ? 0 : 1);
 
+    transfer_int("uMappingType", 1); // 1 para triplanar (esferas)
+    transfer_int("uUseTexOffset", 1);   //1 para que use el offset, 0 para que no lo use
+    glm::vec2 offset = glm::vec2(s.position.x, s.position.y) * 0.1f;
+    glUniform2fv(glGetUniformLocation(prog, "uTexOffset"), 1, &offset[0]);  
+    
+
     // 5. Dibujamos
     glBindVertexArray(s.VAO);
     glDrawElements(GL_TRIANGLES, s.indexCount, GL_UNSIGNED_INT, 0);

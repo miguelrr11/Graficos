@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 struct SphereObstacle {
     glm::vec3 position;
@@ -12,12 +13,16 @@ struct SphereObstacle {
     glm::vec3 color;
     bool ignoreCollision = false;
 
+    // Rotación acumulada de rodadura (quaternion unitario)
+    glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+
     GLuint VAO, VBO, EBO;
     int indexCount;
 
     glm::mat4 modelMatrix() const {
         glm::mat4 M = glm::translate(glm::mat4(1.0f), position);
-        M = glm::scale(M, glm::vec3(radius * 2.0f)); // diámetro
+        M = M * glm::mat4_cast(rotation); // aplica la rotación antes del scale
+        M = glm::scale(M, glm::vec3(radius * 2.0f));
         return M;
     }
 };

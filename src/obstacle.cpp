@@ -121,7 +121,9 @@ void render_box(const BoxObstacle& box, GLuint prog, const glm::mat4& VP, GLuint
     int modoTextura = 0;
     if (texID != 0) modoTextura = 1;      // Caja normal con textura
     if (box.isHole) modoTextura = 2;      // Hoyo
+    transfer_int("uMappingType", 0); // Para cajas, siempre usar mapeo UV normal
     transfer_int("uUseTex", modoTextura);
+    transfer_int("uUseTexOffset", 0); // Por defecto, no usar desplazamiento de textura
 
     glBindVertexArray(box.VAO);
     glDrawElements(GL_TRIANGLES, box.indexCount, GL_UNSIGNED_INT, 0);

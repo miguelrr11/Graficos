@@ -29,10 +29,15 @@ void Level::load()
     // texHoyo   = cargar_textura("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/hoyo.png");
     // texBola   = cargar_textura("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/bola.jpg");
 
-    texCesped = cargar_textura("../../assets/cesped.jpg");
-    texMadera = cargar_textura("../../assets/madera2.jpg");
-    texHoyo   = cargar_textura("../../assets/hoyo.png");
-    texBola   = cargar_textura("../../assets/bola.jpg");
+    // texCesped = cargar_textura("../../assets/cesped.jpg");
+    // texMadera = cargar_textura("../../assets/madera2.jpg");
+    // texHoyo   = cargar_textura("../../assets/hoyo.png");
+    // texBola   = cargar_textura("../../assets/bola.jpg");
+
+    texCesped = cargar_textura("C:\\Users\\mrodriguez\\Desktop\\Graficos\\assets\\cesped.jpg");
+    texMadera = cargar_textura("C:\\Users\\mrodriguez\\Desktop\\Graficos\\assets\\madera2.jpg");
+    texHoyo   = cargar_textura("C:\\Users\\mrodriguez\\Desktop\\Graficos\\assets\\hoyo.png");
+    texBola   = cargar_textura("C:\\Users\\mrodriguez\\Desktop\\Graficos\\assets\\bola2.png");
 
     completed = false;
     shotAngle = 0.0f;
@@ -82,10 +87,11 @@ void Level::load()
     obstacles.back().isHole = true;
 
     // 7. LA BOLA
-    ball.pos = { track.startPos.x, track.startPos.y, FLOOR_Z + ball.radius };
-    ball.vel = { 0, 0, 0 };
-    ball.moving = false;
-    ball.mesh = crear_sphere({0,0,0}, ball.radius, {1.0f, 1.0f, 1.0f});
+    ball.pos      = { track.startPos.x, track.startPos.y, FLOOR_Z + ball.radius };
+    ball.vel      = { 0, 0, 0 };
+    ball.moving   = false;
+    ball.rollQuat = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+    ball.mesh     = crear_sphere({0,0,0}, ball.radius, {1.0f, 1.0f, 1.0f});
 
     printf("Nivel Procedural Cargado. ¡A jugar!\n");
 }
@@ -104,6 +110,19 @@ void Level::update(float dt)
 
     resolveFloor();
     resolveWalls();
+
+    // Rotación de rodadura: eje perpendicular a la velocidad horizontal (Z arriba)
+    // ω = (-vy, vx, 0) / radius  →  eje = normalize(-vy, vx, 0), ángulo = speed/radius * dt
+    {
+        glm::vec3 horizVel = { ball.vel.x, ball.vel.y, 0.0f };
+        float speed = glm::length(horizVel);
+        if (speed > 0.001f) {
+            glm::vec3 rollAxis = glm::vec3(-ball.vel.y, ball.vel.x, 0.0f) / speed;
+            float rollAngle    = speed * dt / ball.radius;
+            glm::quat dRot     = glm::angleAxis(rollAngle, rollAxis);
+            ball.rollQuat      = glm::normalize(dRot * ball.rollQuat);
+        }
+    }
 
     glm::vec2 d2D = { ball.pos.x - holePos.x, ball.pos.y - holePos.y };
     bool enHoyo = (glm::length(d2D) < HOLE_RADIUS);
@@ -240,10 +259,11 @@ void Level::render(GLuint prog, const glm::mat4& VP)
     // Wall Mesh
     render_wall_mesh(wallMesh, prog, VP);
 
-    // Bola: copiamos el mesh y le actualizamos la posición antes de renderizar
+    // Bola: copiamos el mesh, actualizamos posición y rotación acumulada
     SphereObstacle bm = ball.mesh;
     bm.position = ball.pos;
-    render_sphere(bm, prog, VP, texBola); // <-- AÑADIDO: Pasamos texBola
+    bm.rotation = ball.rollQuat;
+    render_sphere(bm, prog, VP, texBola);
 
     // Indicador de dirección de disparo (caja pequeña delante de la bola)
     if (!ball.moving && !completed) {

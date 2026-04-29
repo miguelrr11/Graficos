@@ -10,10 +10,11 @@
 #include <GLFW/glfw3.h>
 
 
-// GLM LIB 
+// GLM LIB
 #include <glm/glm.hpp>
-#include <glm/gtx/transform.hpp> 
+#include <glm/gtx/transform.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 // ─────────────────────────────────────────
 //  Ball  –  estado simple de la bola
@@ -23,7 +24,10 @@ struct Ball {
     glm::vec3 vel    = { 0.0f, 0.0f, 0.0f  };
     float     radius = 0.15f;
     bool      moving = false;
-    SphereObstacle mesh;           // renderizamos la bola como una caja pequeña (por ahora)
+    SphereObstacle mesh;
+
+    // Rotación acumulada de rodadura: se actualiza cada frame según la velocidad
+    glm::quat rollQuat = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 };
 
 // ─────────────────────────────────────────
