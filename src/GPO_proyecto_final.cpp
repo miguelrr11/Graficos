@@ -8,7 +8,7 @@ ATG, 2019
 #include <vector>
 
 // TAMAÑO y TITULO INICIAL de la VENTANA
-int ANCHO = 800, ALTO = 600;
+int ANCHO = 800*2, ALTO = 600*2;
 const char* prac = "MiniGolf 3D (GpO)";
 
 #define GLSL(src) "#version 330 core\n" #src
@@ -23,7 +23,7 @@ GLuint shadow_prog;
 // ─── Post-proceso ─────────────────────────────────────────────────────────────
 GLuint quad_prog;
 GLuint quadVAO, quadVBO;
-GLuint fbo, fboColorTex, fboDepthRB;
+GLuint fbo, fboColorTex, fboDepthTex;
 float  pixelSize = 3.0f;   // píxeles de pantalla por "píxel de juego"
 
 const char* skybox_vs = GLSL(
@@ -62,15 +62,68 @@ const char* quad_vs = GLSL(
 const char* quad_fs = GLSL(
     in vec2 fragUV;
     out vec4 FragColor;
+
     uniform sampler2D screenTex;
+    uniform sampler2D depthTex;
     uniform vec2  resolution;
-    uniform float pixelSize;  // pixela todo
+    uniform float pixelSize;
+    uniform float uNear;
+    uniform float uFar;
+    uniform float uFogStart;
+    uniform float uFogEnd;
+    uniform vec3  uFogColor;
+
+    float linearDepth(float d) {
+        return uNear * uFar / (uFar - d * (uFar - uNear));
+    }
 
     void main() {
-        // Redondea al centro del bloque de pixelSize x pixelSize
+        // ── 1. Pixelación ──────────────────────────────────────────────────
         vec2 block = floor(fragUV * resolution / pixelSize);
         vec2 uv    = (block * pixelSize + pixelSize * 0.5) / resolution;
-        FragColor  = vec4(texture(screenTex, uv).rgb, 1.0);
+        vec3 color = texture(screenTex, uv).rgb;
+
+        // ── 2. Outlines (bordes por diferencia de profundidad lineal) ─────────
+        vec2 off = pixelSize / resolution;
+        float rawD = texture(depthTex, uv).r;
+        float d    = linearDepth(rawD);
+        float dR   = linearDepth(texture(depthTex, uv + vec2(off.x,  0.0)).r);
+        float dU   = linearDepth(texture(depthTex, uv + vec2(0.0,  off.y)).r);
+        float dL   = linearDepth(texture(depthTex, uv - vec2(off.x,  0.0)).r);
+        float dD   = linearDepth(texture(depthTex, uv - vec2(0.0,  off.y)).r);
+        float edge = max(max(abs(d-dR), abs(d-dL)), max(abs(d-dU), abs(d-dD)));
+        color = mix(color, vec3(0.04, 0.04, 0.08), step(0.15, edge) * 0.88);
+
+        // ── 3. Scanlines (una línea oscura cada 2 filas de píxeles) ────────
+        float row = mod(block.y, 2.0);
+        color *= (row < 1.0) ? 0.84 : 1.0;
+
+        // ── 4. Niebla con dithering ordenado (Bayer 4x4) ───────────────────
+        float linD = d;  // ya linearizado arriba
+        float fogF = clamp((uFogEnd - linD) / (uFogEnd - uFogStart), 0.0, 1.0);
+
+        float bayer[16];
+        bayer[0]  =  0.0/16.0; bayer[1]  =  8.0/16.0;
+        bayer[2]  =  2.0/16.0; bayer[3]  = 10.0/16.0;
+        bayer[4]  = 12.0/16.0; bayer[5]  =  4.0/16.0;
+        bayer[6]  = 14.0/16.0; bayer[7]  =  6.0/16.0;
+        bayer[8]  =  3.0/16.0; bayer[9]  = 11.0/16.0;
+        bayer[10] =  1.0/16.0; bayer[11] =  9.0/16.0;
+        bayer[12] = 15.0/16.0; bayer[13] =  7.0/16.0;
+        bayer[14] = 13.0/16.0; bayer[15] =  5.0/16.0;
+
+        int bx = int(mod(block.x, 4.0));
+        int by = int(mod(block.y, 4.0));
+        if (fogF < bayer[by * 4 + bx]) color = uFogColor;
+
+        // ── 5. Vignette ────────────────────────────────────────────────────
+        vec2  vc = fragUV - 0.5;
+        float dist = dot(vc, vc);
+        float v = smoothstep(0.8, 0.2, dist);
+
+        color *= v;
+
+        FragColor = vec4(color, 1.0);
     }
 );
 
@@ -240,10 +293,14 @@ void setup_fbo(int w, int h)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fboColorTex, 0);
 
-    glGenRenderbuffers(1, &fboDepthRB);
-    glBindRenderbuffer(GL_RENDERBUFFER, fboDepthRB);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, w, h);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, fboDepthRB);
+    glGenTextures(1, &fboDepthTex);
+    glBindTexture(GL_TEXTURE_2D, fboDepthTex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, w, h, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, fboDepthTex, 0);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
@@ -251,7 +308,7 @@ void setup_fbo(int w, int h)
 void destroy_fbo()
 {
     glDeleteTextures(1, &fboColorTex);
-    glDeleteRenderbuffers(1, &fboDepthRB);
+    glDeleteTextures(1, &fboDepthTex);
     glDeleteFramebuffers(1, &fbo);
 }
 
@@ -421,8 +478,16 @@ void render_scene()
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, fboColorTex);
     glUniform1i(glGetUniformLocation(quad_prog, "screenTex"), 0);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, fboDepthTex);
+    glUniform1i(glGetUniformLocation(quad_prog, "depthTex"), 1);
     glUniform2f(glGetUniformLocation(quad_prog, "resolution"), (float)ANCHO, (float)ALTO);
-    glUniform1f(glGetUniformLocation(quad_prog, "pixelSize"), pixelSize);
+    glUniform1f(glGetUniformLocation(quad_prog, "pixelSize"),  pixelSize);
+    glUniform1f(glGetUniformLocation(quad_prog, "uNear"),      0.5f);
+    glUniform1f(glGetUniformLocation(quad_prog, "uFar"),       40.0f);
+    glUniform1f(glGetUniformLocation(quad_prog, "uFogStart"),  12.0f);
+    glUniform1f(glGetUniformLocation(quad_prog, "uFogEnd"),    25.0f);
+    glUniform3f(glGetUniformLocation(quad_prog, "uFogColor"),  0.82f, 0.87f, 0.96f);
 
     glBindVertexArray(quadVAO);
     glDrawArrays(GL_TRIANGLES, 0, 6);

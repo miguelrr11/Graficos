@@ -43,6 +43,14 @@ void Level::load()
     // 2. GENERAR LA PISTA (6 segmentos de longitud)
     // Usamos el algoritmo SAW + Anchura Variable que diseñamos
     LevelData track = generateTrack(6);
+    // std::vector<glm::vec2> corners = {{45.0f, 76.0f}, {49.0f, 76.0f}, {51.0f, 74.0f}, {56.0f, 69.0f}, {58.0f, 65.0f}, {58.0f, 58.0f}, {58.0f, 51.0f}, {56.0f, 45.0f}, {51.0f, 40.0f}, {42.0f, 40.0f}, {36.0f, 38.0f}, {31.0f, 31.0f}, {29.0f, 24.0f}, {31.0f, 18.0f}, {38.0f, 15.0f}, {38.0f, 11.0f}, {36.0f, 6.0f}, {29.0f, 6.0f}, {29.0f, 9.0f}, {29.0f, 15.0f}, {27.0f, 22.0f}, {24.0f, 24.0f}, {20.0f, 31.0f}, {22.0f, 38.0f}, {24.0f, 47.0f}, {31.0f, 49.0f}, {40.0f, 51.0f}, {40.0f, 54.0f}, {49.0f, 56.0f}, {49.0f, 58.0f}, {47.0f, 60.0f}, {40.0f, 63.0f}, {33.0f, 60.0f}, {27.0f, 58.0f}, {24.0f, 60.0f}, {22.0f, 63.0f}, {24.0f, 63.0f}, {29.0f, 63.0f}, {38.0f, 65.0f}, {38.0f, 69.0f}, {38.0f, 74.0f}};
+    // track.perimeter = corners;
+    // glm::vec3 ballPosAux = { 27.0f, 60.8f, ball.radius };
+    // glm::vec3 holePosAux = { 33.8f, 9.0f, FLOOR_Z+0.1f };
+    // track.startPos = { ballPosAux.x, ballPosAux.y };
+    // track.holePos  = { holePosAux.x, holePosAux.y };
+
+
 
     // 3. EL CÉSPED GIGANTE 
     // Creamos una caja inmensa para que el suelo no se acabe nunca
@@ -284,7 +292,7 @@ void Level::render(GLuint prog, const glm::mat4& VP)
         // arrow.color    = { 1.0f, 1.0f - shotPower, 0.0f };   // amarillo → rojo al cargar
         //render_sphere(arrow, prog, VP, 0); // <-- AÑADIDO: Pasamos 0 (sin textura)
 
-        int numSegments = fmax(3, floor(shotPower * 10.0f)); // De 0 a 10 segmentos según la potencia
+        int numSegments = fmax(1, floor(shotPower * 10.0f)); // De 0 a 10 segmentos según la potencia
         for(int i = 1; i <= numSegments; ++i) {
             glm::vec3 segPos = ball.pos + dir * (ball.radius * (3.0f + i));
             arrow.position = segPos;
