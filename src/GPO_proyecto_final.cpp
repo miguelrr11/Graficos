@@ -430,7 +430,7 @@ void render_scene()
     camPos.y = target.y + cam_distance * cos(glm::radians(cam_pitch)) * sin(glm::radians(cam_yaw));
     camPos.z = target.z + cam_distance * sin(glm::radians(cam_pitch));
 
-    mat4 P  = perspective(glm::radians(fov), aspect, 0.5f, 40.0f);
+    mat4 P  = perspective(glm::radians(fov), aspect, 0.5f, 1000.0f);
     mat4 V  = lookAt(camPos, target, up);
     mat4 VP = P * V;
 
@@ -487,8 +487,8 @@ void render_scene()
     glUniform1f(glGetUniformLocation(quad_prog, "pixelSize"),  pixelSize);
     glUniform1f(glGetUniformLocation(quad_prog, "uNear"),      0.5f);
     glUniform1f(glGetUniformLocation(quad_prog, "uFar"),       40.0f);
-    glUniform1f(glGetUniformLocation(quad_prog, "uFogStart"),  12.0f);
-    glUniform1f(glGetUniformLocation(quad_prog, "uFogEnd"),    25.0f);
+    glUniform1f(glGetUniformLocation(quad_prog, "uFogStart"),  1200.0f);
+    glUniform1f(glGetUniformLocation(quad_prog, "uFogEnd"),    2500.0f);
     glUniform3f(glGetUniformLocation(quad_prog, "uFogColor"),  0.82f, 0.87f, 0.96f);
 
     glBindVertexArray(quadVAO);

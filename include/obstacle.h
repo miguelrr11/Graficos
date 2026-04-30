@@ -23,7 +23,7 @@ struct BoxObstacle {
     int indexCount;
 
     GLuint texID = 0;
-    bool isHole = false;
+    bool isHole  = false;
 
     glm::vec3 halfExtents() const { return size * 0.5f; }
 

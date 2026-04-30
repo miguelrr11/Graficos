@@ -4,6 +4,7 @@
 #include "sphere.h"
 #include "wallmesh.h"
 #include "floormesh.h"
+#include "generator.h"
 
 #include <glad/glad.h> 
 
@@ -38,7 +39,8 @@ class Level {
 public:
     std::vector<BoxObstacle> obstacles;
     Ball      ball;
-    glm::vec3 holePos   = { 7.0f, 0.0f, 0.0f };
+    glm::vec3 holePos      = { 7.0f, 0.0f, 0.0f };
+    float     currentFloorZ = 0.0f;
     bool      completed = false;
 
     // Estado del golpe (público para que el HUD lo pueda leer si hiciera falta)
@@ -52,8 +54,9 @@ public:
     GLuint texHoyo;
     GLuint texBola;
 
-    WallMesh  wallMesh;
-    FloorMesh floorMesh;
+    std::vector<WallMesh>  wallMeshes;
+    std::vector<FloorMesh> floorMeshes;
+    std::vector<LevelData> tracks;
 
     // Ciclo de vida
     void load();                                            // carga el nivel hardcodeado

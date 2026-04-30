@@ -7,6 +7,9 @@ struct FloorMesh {
     GLuint VAO = 0, VBO = 0, EBO = 0;
     int    indexCount = 0;
     GLuint texID = 0;
+
+    std::vector<glm::vec2> perimeter;
+    float zBase = 0.0f;
 };
 
 // Triangula el polígono del perímetro y crea un mesh plano en z=zBase.

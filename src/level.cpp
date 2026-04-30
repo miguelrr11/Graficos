@@ -1,5 +1,4 @@
 #include "level.h"
-#include "generator.h"
 #include <GpO.h>
 #include <cstdio>
 #include <cmath>
@@ -40,64 +39,78 @@ void Level::load()
     shotPower = 0.0f;
     charging  = false;
 
-    // 2. GENERAR LA PISTA (6 segmentos de longitud)
-    // Usamos el algoritmo SAW + Anchura Variable que diseñamos
-    LevelData track = generateTrack(6);
-    // std::vector<glm::vec2> corners = {{45.0f, 76.0f}, {49.0f, 76.0f}, {51.0f, 74.0f}, {56.0f, 69.0f}, {58.0f, 65.0f}, {58.0f, 58.0f}, {58.0f, 51.0f}, {56.0f, 45.0f}, {51.0f, 40.0f}, {42.0f, 40.0f}, {36.0f, 38.0f}, {31.0f, 31.0f}, {29.0f, 24.0f}, {31.0f, 18.0f}, {38.0f, 15.0f}, {38.0f, 11.0f}, {36.0f, 6.0f}, {29.0f, 6.0f}, {29.0f, 9.0f}, {29.0f, 15.0f}, {27.0f, 22.0f}, {24.0f, 24.0f}, {20.0f, 31.0f}, {22.0f, 38.0f}, {24.0f, 47.0f}, {31.0f, 49.0f}, {40.0f, 51.0f}, {40.0f, 54.0f}, {49.0f, 56.0f}, {49.0f, 58.0f}, {47.0f, 60.0f}, {40.0f, 63.0f}, {33.0f, 60.0f}, {27.0f, 58.0f}, {24.0f, 60.0f}, {22.0f, 63.0f}, {24.0f, 63.0f}, {29.0f, 63.0f}, {38.0f, 65.0f}, {38.0f, 69.0f}, {38.0f, 74.0f}};
-    // track.perimeter = corners;
-    // glm::vec3 ballPosAux = { 27.0f, 60.8f, ball.radius };
-    // glm::vec3 holePosAux = { 33.8f, 9.0f, FLOOR_Z+0.1f };
-    // track.startPos = { ballPosAux.x, ballPosAux.y };
-    // track.holePos  = { holePosAux.x, holePosAux.y };
+    std::vector<std::vector<glm::vec2>> trackPerimeters = {
+        {{45.0f, 67.0f}, {45.0f, 78.0f}, {49.0f, 78.0f}, {49.0f, 67.0f}},
+        {{45.0f, 65.0f}, {49.0f, 65.0f}, {49.0f, 56.0f}, {45.0f, 56.0f}},
+        {{45.0f, 54.0f}, {49.0f, 54.0f}, {49.0f, 45.0f}, {45.0f, 45.0f}},
+        {{45.0f, 42.0f}, {49.0f, 42.0f}, {49.0f, 33.0f}, {45.0f, 33.0f}},
+        {{45.0f, 31.0f}, {49.0f, 31.0f}, {49.0f, 22.0f}, {45.0f, 22.0f}},
+    };
+    
 
+    size_t numTracks = trackPerimeters.size();
+    int heightChange = 1;
+    for(size_t t = 0; t < numTracks; ++t) {
+        // 2. GENERAR LA PISTA (6 segmentos de longitud)
+        // Usamos el algoritmo SAW + Anchura Variable que diseñamos
+        LevelData track;
+        track.perimeter = trackPerimeters[t];
+        tracks.push_back(track);
 
+        // 3. CÉSPED SOLO EN EL AREA DEL PERIMETRO
+        floorMeshes.push_back(crear_floor_mesh(tracks.back().perimeter, FLOOR_Z + t*heightChange, 2.0f));
+        floorMeshes.back().texID = texCesped;
+        floorMeshes.back().perimeter = trackPerimeters[t];
+        floorMeshes.back().zBase     = FLOOR_Z + t * heightChange;
 
-    // 3. EL CÉSPED GIGANTE 
-    // Creamos una caja inmensa para que el suelo no se acabe nunca
-    // obstacles.push_back(crear_box({ track.holePos.x, track.holePos.y, FLOOR_Z - 0.1f }, 
-    //                               { 300.0f, 300.0f, 0.2f }, 
-    //                               {0,0,0}, {1,1,1}, true, 80));
-    // obstacles.back().texID = texCesped;
-    floorMesh = crear_floor_mesh(track.perimeter, FLOOR_Z, 2.0f);
-    floorMesh.texID = texCesped;
+        // 4. EL MURO VISUAL
+        // Pasamos: (puntos, cerrado, grosor=0.4f, altura=1.0f, zBase=FLOOR_Z, uvTile=1.0f)
+        wallMeshes.push_back(crear_wall_mesh(tracks.back().perimeter, true, 0.4f, 0.5f, FLOOR_Z + t*heightChange, 1.0f));
+        wallMeshes.back().texID = texMadera;
 
-    // 4. EL MURO VISUAL 
-    // Pasamos: (puntos, cerrado, grosor=0.4f, altura=1.0f, zBase=FLOOR_Z, uvTile=1.0f)
-    wallMesh = crear_wall_mesh(track.perimeter, true, 0.4f, 0.5f, FLOOR_Z, 1.0f);
-    wallMesh.texID = texMadera; 
-
-    // 5. LAS FÍSICAS (Cajas invisibles rotadas)
-    for (size_t i = 0; i < track.perimeter.size(); i++) {
-        glm::vec2 pA = track.perimeter[i];
-        glm::vec2 pB = track.perimeter[(i + 1) % track.perimeter.size()];
-        
-        glm::vec2 dir = pB - pA;
-        float longitud = glm::length(dir);
-        float angulo = std::atan2(dir.y, dir.x);
-        glm::vec2 centro = (pA + pB) * 0.5f;
-
-        // Creamos la caja física: Invisible pero colisionable
-        obstacles.push_back(crear_box({ centro.x, centro.y, FLOOR_Z + 0.5f }, 
-                                      { longitud, 0.4f, 1.0f }, // Grosor del muro de 0.4f
-                                      { 0.0f, 0.0f, glm::degrees(angulo) }, 
-                                      {1,1,1}, false));
-        obstacles.back().ignoreRender = true; 
+        // 6. EL HOYO
+        if(t == numTracks - 1){
+            //holePos = { 0, 0, FLOOR_Z + 0.02f };
+            obstacles.push_back(crear_box(holePos + glm::vec3(0,0,-0.01f),
+                                        { HOLE_RADIUS*2.5f, HOLE_RADIUS*2.5f, 0.05f },
+                                        {0,0,0}, {1,1,1}, true, 1));
+            obstacles.back().texID = texHoyo;
+            obstacles.back().isHole = true;
+        }
     }
 
-    // 6. EL HOYO
-    holePos = { track.holePos.x, track.holePos.y, FLOOR_Z + 0.02f };
-    obstacles.push_back(crear_box(holePos + glm::vec3(0,0,-0.01f),
-                                  { HOLE_RADIUS*2.5f, HOLE_RADIUS*2.5f, 0.05f },
-                                  {0,0,0}, {1,1,1}, true, 1));
-    obstacles.back().texID = texHoyo;
-    obstacles.back().isHole = true;
-
     // 7. LA BOLA
-    ball.pos      = { track.startPos.x, track.startPos.y, FLOOR_Z + ball.radius };
+    //ball.pos      = { 15, 70, FLOOR_Z + ball.radius };
     ball.vel      = { 0, 0, 0 };
     ball.moving   = false;
     ball.rollQuat = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
     ball.mesh     = crear_sphere({0,0,0}, ball.radius, {1.0f, 1.0f, 1.0f});
+
+    ball.pos = { 47.3f, 76.5f, 0*heightChange };
+    holePos = { 47.3f, 24.8f, (FLOOR_Z+0.1f)+4*heightChange };
+
+    // 5. LAS FÍSICAS (Cajas invisibles rotadas)
+    for(size_t t = 0; t < tracks.size(); t++) {
+        const LevelData& track = this->tracks[t];
+        for (size_t i = 0; i < track.perimeter.size(); i++) {
+            glm::vec2 pA = track.perimeter[i];
+            glm::vec2 pB = track.perimeter[(i + 1) % track.perimeter.size()];
+            
+            glm::vec2 dir = pB - pA;
+            float longitud = glm::length(dir);
+            float angulo = std::atan2(dir.y, dir.x);
+            glm::vec2 centro = (pA + pB) * 0.5f;
+
+            // Creamos la caja física: Invisible pero colisionable
+            obstacles.push_back(crear_box({ centro.x, centro.y, FLOOR_Z + t*heightChange }, 
+                                        { longitud, 0.4f, 1.0f }, // Grosor del muro de 0.4f
+                                        { 0.0f, 0.0f, glm::degrees(angulo) }, 
+                                        {1,1,1}, false));
+            obstacles.back().ignoreRender = true; 
+        }
+    }
+
+    
 
     printf("Nivel Procedural Cargado. ¡A jugar!\n");
 }
@@ -135,15 +148,15 @@ void Level::update(float dt)
 
     // Fricción y parada NORMAL (solo si no está en el agujero)
     if (!enHoyo) {
-        if (ball.pos.z <= ball.radius + 0.02f) {
+        if (ball.pos.z <= currentFloorZ + ball.radius + 0.02f) {
             ball.vel.x *= FRICTION;
             ball.vel.y *= FRICTION;
         }
 
         float spd2 = glm::dot(ball.vel, ball.vel);
-        if (spd2 < STOP_SPEED2 && ball.pos.z <= ball.radius + 0.05f) {
+        if (spd2 < STOP_SPEED2 && ball.pos.z <= currentFloorZ + ball.radius + 0.05f) {
             ball.vel    = {0, 0, 0};
-            ball.pos.z  = ball.radius;
+            ball.pos.z  = currentFloorZ + ball.radius;
             ball.moving = false;
         }
     } 
@@ -178,19 +191,45 @@ void Level::update(float dt)
 //  COLISIONES
 // ════════════════════════════════════════════════════════════════════════════
 
+static bool pointInTriangle(glm::vec2 p, glm::vec2 a, glm::vec2 b, glm::vec2 c)
+{
+    float d1 = (p.x - b.x) * (a.y - b.y) - (a.x - b.x) * (p.y - b.y);
+    float d2 = (p.x - c.x) * (b.y - c.y) - (b.x - c.x) * (p.y - c.y);
+    float d3 = (p.x - a.x) * (c.y - a.y) - (c.x - a.x) * (p.y - a.y);
+    bool hasNeg = (d1 < 0) || (d2 < 0) || (d3 < 0);
+    bool hasPos = (d1 > 0) || (d2 > 0) || (d3 > 0);
+    return !(hasNeg && hasPos);
+}
+
 void Level::resolveFloor()
 {
     // Si la bola está en el hoyo, cancelamos el suelo para que caiga
-    glm::vec2 d2D = { ball.pos.x - holePos.x, ball.pos.y - holePos.y };
-    if (glm::length(d2D) < HOLE_RADIUS) {
-        return; 
+    glm::vec2 ballXY = { ball.pos.x, ball.pos.y };
+    glm::vec2 d2D    = ballXY - glm::vec2(holePos.x, holePos.y);
+    if (glm::length(d2D) < HOLE_RADIUS) return;
+
+    // Buscar el floor mesh más alto cuyo polígono contiene la posición XY de la bola
+    float bestZ = -1e9f;
+    for (const auto& floor : floorMeshes) {
+        if (floor.zBase > ball.pos.z + ball.radius) continue; // suelo sobre la bola, ignorar
+        if (floor.zBase <= bestZ) continue;                   // ya encontramos uno más alto
+        const auto& poly = floor.perimeter;
+        // Fan-triangulation desde el vértice 0, igual que crear_floor_mesh
+        for (size_t i = 1; i + 1 < poly.size(); ++i) {
+            if (pointInTriangle(ballXY, poly[0], poly[i], poly[i + 1])) {
+                bestZ = floor.zBase;
+                break;
+            }
+        }
     }
 
-    // Suelo normal
-    if (ball.pos.z < FLOOR_Z + ball.radius) {
-        ball.pos.z = FLOOR_Z + ball.radius;
-        if (ball.vel.z < 0.0f)
-            ball.vel.z *= -RESTITUTION;
+    if (bestZ > -1e9f) {
+        currentFloorZ = bestZ;
+        if (ball.pos.z < bestZ + ball.radius) {
+            ball.pos.z = bestZ + ball.radius;
+            if (ball.vel.z < 0.0f)
+                ball.vel.z *= -RESTITUTION;
+        }
     }
 }
 
@@ -269,10 +308,15 @@ void Level::render(GLuint prog, const glm::mat4& VP)
     for (const auto& obs : obstacles)
         render_box(obs, prog, VP, obs.texID); // Le pasamos un 0 temporalmente
 
-    render_floor_mesh(floorMesh, prog, VP);
-   
-        // Wall Mesh
-    render_wall_mesh(wallMesh, prog, VP);
+    // Suelos
+    for (const auto& floorMesh : floorMeshes) {
+        render_floor_mesh(floorMesh, prog, VP);
+    }
+
+    // Wall Mesh
+    for (const auto& wallMesh : wallMeshes) {
+        render_wall_mesh(wallMesh, prog, VP);
+    }
 
     // Bola: copiamos el mesh, actualizamos posición y rotación acumulada
     SphereObstacle bm = ball.mesh;
@@ -322,7 +366,7 @@ void Level::renderShadows(GLuint shadow_prog, const glm::mat4& VP, const glm::ma
     }
 
     // Wall mesh
-    {
+    for(const auto& wallMesh : wallMeshes) {
         glm::mat4 MVP = VP * shadowMat;   // model = identidad
         transfer_mat4("MVP", MVP);
         glBindVertexArray(wallMesh.VAO);
@@ -351,7 +395,8 @@ void Level::handleInput(GLFWwindow* window, float dt)
 {
     // debug: si se presiona espacio, se aplica una velocidad instantanea hacia arriba (salto basicamente)
     static bool prevSpace = false;
-    if(glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && !prevSpace && ball.pos.z <= ball.radius + 0.05f) {
+    bool inAir = (ball.pos.z > ball.radius + 0.02f);
+    if(glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && !prevSpace) {  // && !prevSpace && !inAir
         ball.vel.z += 5.0f; // impulso hacia arriba
         ball.moving = true;
     }
@@ -404,6 +449,12 @@ void Level::destroy()
     for (auto& obs : obstacles) destroy_box(obs);
     obstacles.clear();
     destroy_sphere(ball.mesh);
-    destroy_floor_mesh(floorMesh);
-    destroy_wall_mesh(wallMesh);
+    for (auto& floorMesh : floorMeshes) {
+        destroy_floor_mesh(floorMesh);
+    }
+    floorMeshes.clear();
+    for (auto& wallMesh : wallMeshes) {
+        destroy_wall_mesh(wallMesh);
+    }
+    wallMeshes.clear();
 }
