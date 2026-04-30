@@ -59,9 +59,10 @@ void Level::load()
 
         // 3. CÉSPED SOLO EN EL AREA DEL PERIMETRO
         floorMeshes.push_back(crear_floor_mesh(tracks.back().perimeter, FLOOR_Z + t*heightChange, 2.0f));
-        floorMeshes.back().texID = texCesped;
-        floorMeshes.back().perimeter = trackPerimeters[t];
-        floorMeshes.back().zBase     = FLOOR_Z + t * heightChange;
+        floorMeshes.back().texID          = texCesped;
+        floorMeshes.back().perimeter      = trackPerimeters[t];
+        floorMeshes.back().zBase          = FLOOR_Z + t * heightChange;
+        floorMeshes.back().useCheckerboard = true;
 
         // 4. EL MURO VISUAL
         // Pasamos: (puntos, cerrado, grosor=0.4f, altura=1.0f, zBase=FLOOR_Z, uvTile=1.0f)

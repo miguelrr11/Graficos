@@ -186,7 +186,8 @@ const char* fragment_prog = GLSL(
     uniform float uTile;
     uniform vec2  uTexOffset;
     uniform int   uUseTexOffset;
-    uniform int   uMappingType; // 0 = UV normal, 1 = mapeo esférico
+    uniform int   uMappingType;    // 0 = UV normal, 1 = mapeo esférico
+    uniform int   uCheckerboard;   // 1 = aplicar patrón ajedrez sobre la textura
 
     void main() {
         vec2 uv      = fragUV;
@@ -207,6 +208,12 @@ const char* fragment_prog = GLSL(
                     : tiledUV;
 
                 baseTex = texture(tex, finalUV);
+
+                if (uCheckerboard == 1) {
+                    ivec2 cell = ivec2(floor(tiledUV));
+                    if (((cell.x + cell.y) & 1) == 1)
+                        baseTex.rgb *= 0.78;
+                }
             }
             else if (uMappingType == 1) {
                 // --- mapeo esférico por normal local (esferas) ---

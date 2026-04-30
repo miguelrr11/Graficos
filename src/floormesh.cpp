@@ -173,6 +173,7 @@ void render_floor_mesh(const FloorMesh& fm, GLuint prog, const glm::mat4& VP)
     transfer_int("uMappingType",  0);
     transfer_int("uUseTexOffset", 0);
     transfer_float("uTile", 1.0f); // UVs ya escaladas en el vértice
+    transfer_int("uCheckerboard", fm.useCheckerboard ? 1 : 0);
 
     glBindVertexArray(fm.VAO);
     glDrawElements(GL_TRIANGLES, fm.indexCount, GL_UNSIGNED_INT, 0);
