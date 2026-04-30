@@ -20,20 +20,20 @@ static const float HOLE_RADIUS = 0.3f;    // radio del hoyo
 void Level::load()
 {
     // Cargar texturas 
-    // texCesped = cargar_textura("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/cesped.jpg");
-    // texMadera = cargar_textura("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/madera.jpg");
-    // texHoyo   = cargar_textura("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/hoyo.png");
-    // texBola   = cargar_textura("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/bola.jpg");
+    texCesped = cargar_textura("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/cesped.jpg");
+    texMadera = cargar_textura("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/madera2.jpg");
+    texHoyo   = cargar_textura("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/hoyo.png");
+    texBola   = cargar_textura("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/bola2.png");
 
     // texCesped = cargar_textura("../../assets/cesped.jpg");
     // texMadera = cargar_textura("../../assets/madera2.jpg");
     // texHoyo   = cargar_textura("../../assets/hoyo.png");
     // texBola   = cargar_textura("../../assets/bola.jpg");
 
-    texCesped = cargar_textura("C:\\Users\\mrodriguez\\Desktop\\Graficos\\assets\\cesped.jpg");
-    texMadera = cargar_textura("C:\\Users\\mrodriguez\\Desktop\\Graficos\\assets\\madera2.jpg");
-    texHoyo   = cargar_textura("C:\\Users\\mrodriguez\\Desktop\\Graficos\\assets\\hoyo.png");
-    texBola   = cargar_textura("C:\\Users\\mrodriguez\\Desktop\\Graficos\\assets\\bola2.png");
+    // texCesped = cargar_textura("C:\\Users\\mrodriguez\\Desktop\\Graficos\\assets\\cesped.jpg");
+    // texMadera = cargar_textura("C:\\Users\\mrodriguez\\Desktop\\Graficos\\assets\\madera2.jpg");
+    // texHoyo   = cargar_textura("C:\\Users\\mrodriguez\\Desktop\\Graficos\\assets\\hoyo.png");
+    // texBola   = cargar_textura("C:\\Users\\mrodriguez\\Desktop\\Graficos\\assets\\bola2.png");
 
     completed = false;
     shotAngle = 0.0f;

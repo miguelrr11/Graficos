@@ -8,7 +8,7 @@ ATG, 2019
 #include <vector>
 
 // TAMAÑO y TITULO INICIAL de la VENTANA
-int ANCHO = 800*2, ALTO = 600*2;
+int ANCHO = 800, ALTO = 600;
 const char* prac = "MiniGolf 3D (GpO)";
 
 #define GLSL(src) "#version 330 core\n" #src
@@ -355,6 +355,8 @@ void init_scene()
     int w, h;
     glfwGetFramebufferSize(window, &w, &h);
     glViewport(0, 0, w, h);
+    ANCHO = w; ALTO = h;
+    aspect = (float)w / (float)h;
     glEnable(GL_DEPTH_TEST);
 
     // Shaders principales
@@ -371,7 +373,7 @@ void init_scene()
     level.load();
 
     // FBO + quad de post-proceso
-    setup_fbo(ANCHO, ALTO);
+    setup_fbo(w, h);
     setup_quad();
     {
         GLuint QVS = compilar_shader(quad_vs, GL_VERTEX_SHADER);
