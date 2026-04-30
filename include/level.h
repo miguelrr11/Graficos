@@ -57,6 +57,7 @@ public:
     void load();                                            // carga el nivel hardcodeado
     void update(float dt);                                  // física + comprobaciones
     void render(GLuint prog, const glm::mat4& VP);          // dibuja obstáculos + bola
+    void renderShadows(GLuint shadow_prog, const glm::mat4& VP, const glm::mat4& shadowMat);
     void handleInput(GLFWwindow* window, float dt);         // input del jugador
     void destroy();                                         // libera GPU resources
 

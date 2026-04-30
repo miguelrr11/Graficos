@@ -17,6 +17,15 @@ const char* prac = "MiniGolf 3D (GpO)";
 GLuint skybox_prog;
 GLuint skyboxVAO, skyboxVBO;
 
+// ─── Sombras ──────────────────────────────────────────────────────────────────
+GLuint shadow_prog;
+
+// ─── Post-proceso ─────────────────────────────────────────────────────────────
+GLuint quad_prog;
+GLuint quadVAO, quadVBO;
+GLuint fbo, fboColorTex, fboDepthRB;
+float  pixelSize = 3.0f;   // píxeles de pantalla por "píxel de juego"
+
 const char* skybox_vs = GLSL(
     layout(location = 0) in vec3 pos;
     out vec3 dir;
@@ -37,6 +46,46 @@ const char* skybox_fs = GLSL(
         vec3 skyTop    = vec3(0.2, 0.5, 0.9);
         vec3 skyBottom = vec3(0.9, 0.9, 1.0);
         FragColor = vec4(mix(skyBottom, skyTop, t), 1.0);
+    }
+);
+
+const char* quad_vs = GLSL(
+    layout(location = 0) in vec2 pos;
+    layout(location = 1) in vec2 uv;
+    out vec2 fragUV;
+    void main() {
+        fragUV      = uv;
+        gl_Position = vec4(pos, 0.0, 1.0);
+    }
+);
+
+const char* quad_fs = GLSL(
+    in vec2 fragUV;
+    out vec4 FragColor;
+    uniform sampler2D screenTex;
+    uniform vec2  resolution;
+    uniform float pixelSize;
+
+    void main() {
+        // Redondea al centro del bloque de pixelSize x pixelSize
+        vec2 block = floor(fragUV * resolution / pixelSize);
+        vec2 uv    = (block * pixelSize + pixelSize * 0.5) / resolution;
+        FragColor  = vec4(texture(screenTex, uv).rgb, 1.0);
+    }
+);
+
+const char* shadow_vs = GLSL(
+    layout(location = 0) in vec3 pos;
+    uniform mat4 MVP;
+    void main() {
+        gl_Position = MVP * vec4(pos, 1.0);
+    }
+);
+
+const char* shadow_fs = GLSL(
+    out vec4 FragColor;
+    void main() {
+        FragColor = vec4(0.0, 0.0, 0.0, 0.45);
     }
 );
 
@@ -166,6 +215,63 @@ float lastFrameTime = 0.0f;
 float dt = 0.0f;
 
 
+// Proyecta geometría sobre el plano z=0 desde la posición de luz L
+static glm::mat4 makeShadowMatrix(glm::vec3 L)
+{
+    float lx = L.x, ly = L.y, lz = L.z;
+    return glm::mat4(
+         lz,  0.f, 0.f, 0.f,   // col 0
+         0.f, lz,  0.f, 0.f,   // col 1
+        -lx, -ly,  0.f,-1.f,   // col 2
+         0.f, 0.f, 0.f, lz     // col 3
+    );
+}
+
+// ─── FBO para post-proceso ───────────────────────────────────────────────────
+void setup_fbo(int w, int h)
+{
+    glGenFramebuffers(1, &fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+    glGenTextures(1, &fboColorTex);
+    glBindTexture(GL_TEXTURE_2D, fboColorTex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fboColorTex, 0);
+
+    glGenRenderbuffers(1, &fboDepthRB);
+    glBindRenderbuffer(GL_RENDERBUFFER, fboDepthRB);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, w, h);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, fboDepthRB);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void destroy_fbo()
+{
+    glDeleteTextures(1, &fboColorTex);
+    glDeleteRenderbuffers(1, &fboDepthRB);
+    glDeleteFramebuffers(1, &fbo);
+}
+
+void setup_quad()
+{
+    float v[] = {
+        -1.f,-1.f, 0.f,0.f,   1.f,-1.f, 1.f,0.f,   1.f, 1.f, 1.f,1.f,
+        -1.f,-1.f, 0.f,0.f,   1.f, 1.f, 1.f,1.f,  -1.f, 1.f, 0.f,1.f
+    };
+    glGenVertexArrays(1, &quadVAO);  glBindVertexArray(quadVAO);
+    glGenBuffers(1, &quadVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(v), v, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4*sizeof(float), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4*sizeof(float), (void*)(2*sizeof(float)));
+    glBindVertexArray(0);
+}
+
 // ─── Skybox helper ───────────────────────────────────────────────────────────
 void crear_skybox()
 {
@@ -207,6 +313,30 @@ void init_scene()
     // Cargar nivel
     level.load();
 
+    // FBO + quad de post-proceso
+    setup_fbo(ANCHO, ALTO);
+    setup_quad();
+    {
+        GLuint QVS = compilar_shader(quad_vs, GL_VERTEX_SHADER);
+        GLuint QFS = compilar_shader(quad_fs, GL_FRAGMENT_SHADER);
+        quad_prog = glCreateProgram();
+        glAttachShader(quad_prog, QVS);  glAttachShader(quad_prog, QFS);
+        glLinkProgram(quad_prog);        check_errores_programa(quad_prog);
+        glDetachShader(quad_prog, QVS);  glDeleteShader(QVS);
+        glDetachShader(quad_prog, QFS);  glDeleteShader(QFS);
+    }
+
+    // Shader de sombras
+    {
+        GLuint SVS = compilar_shader(shadow_vs, GL_VERTEX_SHADER);
+        GLuint SFS = compilar_shader(shadow_fs, GL_FRAGMENT_SHADER);
+        shadow_prog = glCreateProgram();
+        glAttachShader(shadow_prog, SVS);  glAttachShader(shadow_prog, SFS);
+        glLinkProgram(shadow_prog);        check_errores_programa(shadow_prog);
+        glDetachShader(shadow_prog, SVS);  glDeleteShader(SVS);
+        glDetachShader(shadow_prog, SFS);  glDeleteShader(SFS);
+    }
+
     // Skybox
     crear_skybox();
     GLuint SVS = compilar_shader(skybox_vs, GL_VERTEX_SHADER);
@@ -224,48 +354,79 @@ void init_scene()
 // ─── Render ───────────────────────────────────────────────────────────────────
 void render_scene()
 {
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
     // deltaTime real
     float now = (float)glfwGetTime();
     dt  = now - lastFrameTime;
     lastFrameTime = now;
-    if (dt > 0.05f) dt = 0.05f;  // cap para evitar saltos si la ventana se mueve
+    if (dt > 0.05f) dt = 0.05f;
 
-    // Input de juego (flechas + espacio)
     level.handleInput(window, dt);
-
-    // Física
     level.update(dt);
 
-	//camara sigue a la bola
-	vec3 target = level.ball.pos;
+    vec3 target = level.ball.pos;
+    vec3 camPos;
+    camPos.x = target.x + cam_distance * cos(glm::radians(cam_pitch)) * cos(glm::radians(cam_yaw));
+    camPos.y = target.y + cam_distance * cos(glm::radians(cam_pitch)) * sin(glm::radians(cam_yaw));
+    camPos.z = target.z + cam_distance * sin(glm::radians(cam_pitch));
 
-	vec3 camPos;
-
-	camPos.x = target.x + cam_distance * cos(glm::radians(cam_pitch)) * cos(glm::radians(cam_yaw));
-	camPos.y = target.y + cam_distance * cos(glm::radians(cam_pitch)) * sin(glm::radians(cam_yaw));
-	camPos.z = target.z + cam_distance * sin(glm::radians(cam_pitch));
-
-    // Matrices
-    mat4 P = perspective(glm::radians(fov), aspect, 0.5f, 40.0f);
-    mat4 V = lookAt(camPos, target, up);
+    mat4 P  = perspective(glm::radians(fov), aspect, 0.5f, 40.0f);
+    mat4 V  = lookAt(camPos, target, up);
     mat4 VP = P * V;
 
-    // Renderizar nivel (obstáculos + bola + indicador de disparo)
+    // ── 1. Renderizar escena al FBO ───────────────────────────────────────────
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glEnable(GL_DEPTH_TEST);
+
+    // Objetos (sin pixelación por textura: la hace el post-proceso)
     glUseProgram(prog);
+    transfer_float("uPixelSize", 1.0f);
     level.render(prog, VP);
+
+    // Sombras
+    {
+        static const glm::vec3 LIGHT_POS = {12.0f, 5.0f, 10.0f};
+        glm::mat4 shadowMat = makeShadowMatrix(LIGHT_POS);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glDepthFunc(GL_LEQUAL);
+        glDepthMask(GL_FALSE);
+        glEnable(GL_POLYGON_OFFSET_FILL);
+        glPolygonOffset(-1.0f, -1.0f);
+        level.renderShadows(shadow_prog, VP, shadowMat);
+        glDisable(GL_POLYGON_OFFSET_FILL);
+        glDepthMask(GL_TRUE);
+        glDepthFunc(GL_LESS);
+        glDisable(GL_BLEND);
+    }
 
     // Skybox
     glDepthFunc(GL_LEQUAL);
     glUseProgram(skybox_prog);
-    mat4 VP_sky = P * mat4(mat3(V));    // sin traslación
-    transfer_mat4("VP", VP_sky);
+    transfer_mat4("VP", P * mat4(mat3(V)));
     glBindVertexArray(skyboxVAO);
     glDrawArrays(GL_TRIANGLES, 0, 36);
     glBindVertexArray(0);
     glDepthFunc(GL_LESS);
+
+    // ── 2. Post-proceso: pixelación sobre el framebuffer por defecto ──────────
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glDisable(GL_DEPTH_TEST);
+
+    glUseProgram(quad_prog);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, fboColorTex);
+    glUniform1i(glGetUniformLocation(quad_prog, "screenTex"), 0);
+    glUniform2f(glGetUniformLocation(quad_prog, "resolution"), (float)ANCHO, (float)ALTO);
+    glUniform1f(glGetUniformLocation(quad_prog, "pixelSize"), pixelSize);
+
+    glBindVertexArray(quadVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(0);
+
+    glEnable(GL_DEPTH_TEST);
 }
 
 
@@ -317,6 +478,8 @@ void ResizeCallback(GLFWwindow* window, int width, int height)
     glViewport(0, 0, width, height);
     ALTO = height; ANCHO = width;
     aspect = (float)width / (float)height;
+    destroy_fbo();
+    setup_fbo(width, height);
 }
 
 static void KeyCallback(GLFWwindow* window, int key, int code, int action, int mode)

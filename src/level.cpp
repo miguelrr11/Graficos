@@ -17,10 +17,6 @@ static const float AIM_SPEED   = 90.0f;   // grados/segundo al girar la mira
 static const float STOP_SPEED2 = 0.002f;  // velocidad² mínima para detener la bola
 static const float HOLE_RADIUS = 0.3f;    // radio del hoyo
 
-
-// ════════════════════════════════════════════════════════════════════════════
-//  LOAD – nivel 1 hardcodeado: un pasillo recto con un obstáculo central
-// ════════════════════════════════════════════════════════════════════════════
 void Level::load()
 {
     // Cargar texturas 
@@ -273,9 +269,58 @@ void Level::render(GLuint prog, const glm::mat4& VP)
 
         SphereObstacle arrow = ball.mesh;
         arrow.position = arrowPos;
-        arrow.radius     = ball.radius;
-        arrow.color    = { 1.0f, 1.0f - shotPower, 0.0f };   // amarillo → rojo al cargar
-        render_sphere(arrow, prog, VP, 0); // <-- AÑADIDO: Pasamos 0 (sin textura)
+        arrow.radius     = ball.radius * 0.25f;
+        // arrow.color    = { 1.0f, 1.0f - shotPower, 0.0f };   // amarillo → rojo al cargar
+        //render_sphere(arrow, prog, VP, 0); // <-- AÑADIDO: Pasamos 0 (sin textura)
+
+        int numSegments = fmax(3, floor(shotPower * 10.0f)); // De 0 a 10 segmentos según la potencia
+        for(int i = 1; i <= numSegments; ++i) {
+            glm::vec3 segPos = ball.pos + dir * (ball.radius * (3.0f + i));
+            arrow.position = segPos;
+            arrow.color = { 1.0f, ((1.0f - shotPower)*i/numSegments), 0.0f }; // semitransparente
+            render_sphere(arrow, prog, VP, 0);
+        }
+    }
+}
+
+
+// ════════════════════════════════════════════════════════════════════════════
+//  SHADOWS
+// ════════════════════════════════════════════════════════════════════════════
+void Level::renderShadows(GLuint shadow_prog, const glm::mat4& VP, const glm::mat4& shadowMat)
+{
+    glUseProgram(shadow_prog);
+
+    // Obstáculos: excluir invisibles y el suelo (área XY > 50 u²)
+    for (const auto& obs : obstacles) {
+        if (obs.ignoreRender) continue;
+        if (obs.size.x * obs.size.y > 50.0f) continue;
+        glm::mat4 MVP = VP * shadowMat * obs.modelMatrix();
+        transfer_mat4("MVP", MVP);
+        glBindVertexArray(obs.VAO);
+        glDrawElements(GL_TRIANGLES, obs.indexCount, GL_UNSIGNED_INT, 0);
+        glBindVertexArray(0);
+    }
+
+    // Wall mesh
+    {
+        glm::mat4 MVP = VP * shadowMat;   // model = identidad
+        transfer_mat4("MVP", MVP);
+        glBindVertexArray(wallMesh.VAO);
+        glDrawElements(GL_TRIANGLES, wallMesh.indexCount, GL_UNSIGNED_INT, 0);
+        glBindVertexArray(0);
+    }
+
+    // Bola
+    {
+        SphereObstacle bm = ball.mesh;
+        bm.position = ball.pos;
+        bm.rotation = ball.rollQuat;
+        glm::mat4 MVP = VP * shadowMat * bm.modelMatrix();
+        transfer_mat4("MVP", MVP);
+        glBindVertexArray(bm.VAO);
+        glDrawElements(GL_TRIANGLES, bm.indexCount, GL_UNSIGNED_INT, 0);
+        glBindVertexArray(0);
     }
 }
 
