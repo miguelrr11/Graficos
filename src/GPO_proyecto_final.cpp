@@ -64,7 +64,7 @@ const char* quad_fs = GLSL(
     out vec4 FragColor;
     uniform sampler2D screenTex;
     uniform vec2  resolution;
-    uniform float pixelSize;
+    uniform float pixelSize;  // pixela todo
 
     void main() {
         // Redondea al centro del bloque de pixelSize x pixelSize
@@ -360,6 +360,8 @@ void render_scene()
     lastFrameTime = now;
     if (dt > 0.05f) dt = 0.05f;
 
+    // La mira sigue la dirección de la cámara (el mouse apunta)
+    level.shotAngle = cam_yaw + 180.0f;
     level.handleInput(window, dt);
     level.update(dt);
 
@@ -503,7 +505,7 @@ void MouseCallback(GLFWwindow* window, double xpos, double ypos)
     float dx = (float)xpos - lastX;
     float dy = (float)ypos - lastY;
 
-    cam_yaw   += dx * mouseSensitivity;
+    cam_yaw   -= dx * mouseSensitivity;
     cam_pitch -= -dy * mouseSensitivity;  // invertido (más natural)
 
     cam_pitch = glm::clamp(cam_pitch, -89.0f, 89.0f);

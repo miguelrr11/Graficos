@@ -46,14 +46,16 @@ void Level::load()
 
     // 3. EL CÉSPED GIGANTE 
     // Creamos una caja inmensa para que el suelo no se acabe nunca
-    obstacles.push_back(crear_box({ track.holePos.x, track.holePos.y, FLOOR_Z - 0.1f }, 
-                                  { 300.0f, 300.0f, 0.2f }, 
-                                  {0,0,0}, {1,1,1}, true, 80));
-    obstacles.back().texID = texCesped;
+    // obstacles.push_back(crear_box({ track.holePos.x, track.holePos.y, FLOOR_Z - 0.1f }, 
+    //                               { 300.0f, 300.0f, 0.2f }, 
+    //                               {0,0,0}, {1,1,1}, true, 80));
+    // obstacles.back().texID = texCesped;
+    floorMesh = crear_floor_mesh(track.perimeter, FLOOR_Z, 2.0f);
+    floorMesh.texID = texCesped;
 
     // 4. EL MURO VISUAL 
     // Pasamos: (puntos, cerrado, grosor=0.4f, altura=1.0f, zBase=FLOOR_Z, uvTile=1.0f)
-    wallMesh = crear_wall_mesh(track.perimeter, true, 0.4f, 1.0f, FLOOR_Z, 1.0f);
+    wallMesh = crear_wall_mesh(track.perimeter, true, 0.4f, 0.5f, FLOOR_Z, 1.0f);
     wallMesh.texID = texMadera; 
 
     // 5. LAS FÍSICAS (Cajas invisibles rotadas)
@@ -142,6 +144,13 @@ void Level::update(float dt)
         // Succión al centro para que baje recta
         ball.vel.x = (holePos.x - ball.pos.x) * 4.0f;
         ball.vel.y = (holePos.y - ball.pos.y) * 4.0f;
+
+        //magnitud de la velocidad
+        float spd = glm::length(ball.vel);
+        if(spd < 2.0f) {
+            ball.vel.x = 0;
+            ball.vel.y = 0;
+        }
 
         // Si ya se ha hundido suficiente, paramos el juego
         if (ball.pos.z < -0.5f) {
@@ -252,7 +261,9 @@ void Level::render(GLuint prog, const glm::mat4& VP)
     for (const auto& obs : obstacles)
         render_box(obs, prog, VP, obs.texID); // Le pasamos un 0 temporalmente
 
-    // Wall Mesh
+    render_floor_mesh(floorMesh, prog, VP);
+   
+        // Wall Mesh
     render_wall_mesh(wallMesh, prog, VP);
 
     // Bola: copiamos el mesh, actualizamos posición y rotación acumulada
@@ -332,26 +343,22 @@ void Level::handleInput(GLFWwindow* window, float dt)
 {
     if (ball.moving || completed) return;   // no se puede disparar mientras la bola rueda o cuando se ha completado el nivel
 
-    // ── Apuntar con flechas ────────────────────────────────────────────────
-    if (glfwGetKey(window, GLFW_KEY_LEFT)  == GLFW_PRESS) shotAngle += AIM_SPEED * dt;
-    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) shotAngle -= AIM_SPEED * dt;
+    // ── Disparar con click izquierdo ──────────────────────────────────────
+    static bool prevClick = false;
+    bool curClick = (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS);
 
-    // ── Cargar y disparar con ESPACIO ──────────────────────────────────────
-    static bool prevSpace = false;
-    bool curSpace = (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS);
-
-    if (curSpace && !prevSpace) {
+    if (curClick && !prevClick) {
         // Empieza a cargar
         charging  = true;
         shotPower = 0.0f;
     }
 
-    if (charging && curSpace) {
+    if (charging && curClick) {
         shotPower += CHARGE_RATE * dt;
         if (shotPower > 1.0f) shotPower = 1.0f;
     }
 
-    if (charging && !curSpace && prevSpace) {
+    if (charging && !curClick && prevClick) {
         // Suelta el espacio → disparar
         float rad   = glm::radians(shotAngle);
         float power = shotPower * MAX_POWER;
@@ -367,7 +374,7 @@ void Level::handleInput(GLFWwindow* window, float dt)
         printf("Disparo → ángulo: %.1f°  potencia: %.1f m/s\n", shotAngle, power);
     }
 
-    prevSpace = curSpace;
+    prevClick = curClick;
 }
 
 
@@ -379,4 +386,6 @@ void Level::destroy()
     for (auto& obs : obstacles) destroy_box(obs);
     obstacles.clear();
     destroy_sphere(ball.mesh);
+    destroy_floor_mesh(floorMesh);
+    destroy_wall_mesh(wallMesh);
 }

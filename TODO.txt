@@ -14,6 +14,8 @@ probar si funcionan paredes anguladas (HECHO)
 meter ILUMINACION, por lo menos simple, porque es muy feo el juego ahora mismo
 para añadirle un twist y humor al juego podemos hacer que haya enemigos que te persiguen y den patadas a la bola jajajajaaj
 
+se controla con el mouse solamente ahora
+
 COMANDOS que uso:
 si añades archivos:
 primero tienes que modificar el CMakeLists.txt (el que esta en la raiz) para incluirlos en la compilación, luego haces:
