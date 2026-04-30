@@ -11,8 +11,13 @@ texto
 sonidos
 objetos como portales, arena que te ralentiza, agua que es muerte, etc
 probar si funcionan paredes anguladas (HECHO)
-meter ILUMINACION, por lo menos simple, porque es muy feo el juego ahora mismo
+meter ILUMINACION, por lo menos simple, porque es muy feo el juego ahora mismo (HECHO)
 para añadirle un twist y humor al juego podemos hacer que haya enemigos que te persiguen y den patadas a la bola jajajajaaj
+
+la bola ahora puede saltar, entonces igual molaria hacer como un parkour, y para esto necesitamos
+cambios estructurales importantes:
+    - un nivel deberia poder tener mas de un perimetro, esto implica hacer mas de un
+    wall mesh y floor mesh.
 
 se controla con el mouse solamente ahora
 

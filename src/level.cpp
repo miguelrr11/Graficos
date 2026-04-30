@@ -6,7 +6,7 @@
 
 // ─── Constantes de física ───────────────────────────────────────────────────
 static const float GRAVITY     = -9.8f;
-static const float RESTITUTION = 0.25f;   // rebote en paredes/suelo
+static const float RESTITUTION = 0.5f;   // rebote en paredes/suelo
 static const float FRICTION    = 0.985f;  // multiplicador por frame (rolling)
 static const float FLOOR_Z     = 0.0f;    // altura del suelo
 
@@ -349,6 +349,14 @@ void Level::renderShadows(GLuint shadow_prog, const glm::mat4& VP, const glm::ma
 // ════════════════════════════════════════════════════════════════════════════
 void Level::handleInput(GLFWwindow* window, float dt)
 {
+    // debug: si se presiona espacio, se aplica una velocidad instantanea hacia arriba (salto basicamente)
+    static bool prevSpace = false;
+    if(glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && !prevSpace && ball.pos.z <= ball.radius + 0.05f) {
+        ball.vel.z += 5.0f; // impulso hacia arriba
+        ball.moving = true;
+    }
+    prevSpace = (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS);
+
     if (ball.moving || completed) return;   // no se puede disparar mientras la bola rueda o cuando se ha completado el nivel
 
     // ── Disparar con click izquierdo ──────────────────────────────────────
@@ -365,6 +373,8 @@ void Level::handleInput(GLFWwindow* window, float dt)
         shotPower += CHARGE_RATE * dt;
         if (shotPower > 1.0f) shotPower = 1.0f;
     }
+
+    
 
     if (charging && !curClick && prevClick) {
         // Suelta el espacio → disparar
