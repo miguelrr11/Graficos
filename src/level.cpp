@@ -20,15 +20,15 @@ static const float HOLE_RADIUS = 0.3f;    // radio del hoyo
 void Level::load()
 {
     // Cargar texturas 
-    texCesped = cargar_textura("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/cesped.jpg");
-    texMadera = cargar_textura("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/madera2.jpg");
-    texHoyo   = cargar_textura("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/hoyo.png");
-    texBola   = cargar_textura("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/bola2.png");
+    // texCesped = cargar_textura("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/cesped.jpg");
+    // texMadera = cargar_textura("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/madera2.jpg");
+    // texHoyo   = cargar_textura("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/hoyo.png");
+    // texBola   = cargar_textura("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/bola2.png");
 
-    // texCesped = cargar_textura("../../assets/cesped.jpg");
-    // texMadera = cargar_textura("../../assets/madera2.jpg");
-    // texHoyo   = cargar_textura("../../assets/hoyo.png");
-    // texBola   = cargar_textura("../../assets/bola.jpg");
+    texCesped = cargar_textura("../../assets/cesped.jpg");
+    texMadera = cargar_textura("../../assets/madera2.jpg");
+    texHoyo   = cargar_textura("../../assets/hoyo.png");
+    texBola   = cargar_textura("../../assets/bola.jpg");
 
     // texCesped = cargar_textura("C:\\Users\\mrodriguez\\Desktop\\Graficos\\assets\\cesped.jpg");
     // texMadera = cargar_textura("C:\\Users\\mrodriguez\\Desktop\\Graficos\\assets\\madera2.jpg");
@@ -185,16 +185,23 @@ void Level::update(float dt)
             ball.vel.y = 0;
         }
 
-        // Si ya se ha hundido suficiente, paramos el juego
+        // Si ya se ha hundido suficiente, ¡PASAMOS DE NIVEL!
         if (ball.pos.z < -0.5f) {
-            if (!completed) {
-                completed = true;
-                printf("¡Nivel completado! Pulsa 'R' para reiniciar.\n");
-            }
-            ball.moving = false;       // Cortamos la física
-            ball.vel = {0, 0, 0};      // Quitamos velocidad
-            ball.pos.z = -0.5f;        // La dejamos atascada aquí, no cae infinito
+            printf("¡NIVEL %d COMPLETADO! Avanzando...\n", currentLevel);
+            currentLevel++;  // Subimos la dificultad
+            destroy();       // Limpiamos la memoria del nivel anterior
+            load();          // Generamos el nuevo nivel
+            return;          // Salimos del update inmediatamente
         }
+    
+    }
+    // --- NUEVA CONDICIÓN DE DERROTA ---
+    if (ball.pos.z < -3.0f) {
+        printf("¡TE HAS CAÍDO AL VACÍO! Game Over. Vuelta al Nivel 1.\n");
+        currentLevel = 1; // Castigo brutal
+        destroy();
+        load();
+        return;
     }
 }
 

@@ -42,6 +42,7 @@ public:
     glm::vec3 holePos      = { 7.0f, 0.0f, 0.0f };
     float     currentFloorZ = 0.0f;
     bool      completed = false;
+    int currentLevel = 1;
 
     // Estado del golpe (público para que el HUD lo pueda leer si hiciera falta)
     float shotAngle = 0.0f;   // ángulo de disparo en grados (plano XY)
