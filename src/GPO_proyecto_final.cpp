@@ -92,11 +92,11 @@ const char* quad_fs = GLSL(
         float dL   = linearDepth(texture(depthTex, uv - vec2(off.x,  0.0)).r);
         float dD   = linearDepth(texture(depthTex, uv - vec2(0.0,  off.y)).r);
         float edge = max(max(abs(d-dR), abs(d-dL)), max(abs(d-dU), abs(d-dD)));
-        color = mix(color, vec3(0.04, 0.04, 0.08), step(0.15, edge) * 0.88);
+        color = mix(color, vec3(0.04, 0.04, 0.08), step(0.15, edge / max(d, 0.1)) * 0.88);
 
         // ── 3. Scanlines (una línea oscura cada 2 filas de píxeles) ────────
         float row = mod(block.y, 2.0);
-        color *= (row < 1.0) ? 0.84 : 1.0;
+        color *= (row < 1.0) ? 0.9 : 1.0;
 
         // ── 4. Niebla con dithering ordenado (Bayer 4x4) ───────────────────
         float linD = d;  // ya linearizado arriba
@@ -210,9 +210,10 @@ const char* fragment_prog = GLSL(
                 baseTex = texture(tex, finalUV);
 
                 if (uCheckerboard == 1) {
-                    ivec2 cell = ivec2(floor(tiledUV));
+                    ivec2 cell = ivec2(floor(tiledUV*2));
                     if (((cell.x + cell.y) & 1) == 1)
-                        baseTex.rgb *= 0.78;
+                        baseTex.rgb *= 0.7;
+
                 }
             }
             else if (uMappingType == 1) {
@@ -437,7 +438,7 @@ void render_scene()
     camPos.y = target.y + cam_distance * cos(glm::radians(cam_pitch)) * sin(glm::radians(cam_yaw));
     camPos.z = target.z + cam_distance * sin(glm::radians(cam_pitch));
 
-    mat4 P  = perspective(glm::radians(fov), aspect, 0.5f, 1000.0f);
+    mat4 P  = perspective(glm::radians(fov), aspect, 0.5f, 100.0f);
     mat4 V  = lookAt(camPos, target, up);
     mat4 VP = P * V;
 
@@ -454,7 +455,7 @@ void render_scene()
 
     // Sombras
     {
-        static const glm::vec3 LIGHT_POS = {12.0f, 5.0f, 10.0f};
+        static const glm::vec3 LIGHT_POS = {12.0f, 5.0f, 100.0f};
         glm::mat4 shadowMat = makeShadowMatrix(LIGHT_POS);
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -494,8 +495,8 @@ void render_scene()
     glUniform1f(glGetUniformLocation(quad_prog, "pixelSize"),  pixelSize);
     glUniform1f(glGetUniformLocation(quad_prog, "uNear"),      0.5f);
     glUniform1f(glGetUniformLocation(quad_prog, "uFar"),       40.0f);
-    glUniform1f(glGetUniformLocation(quad_prog, "uFogStart"),  1200.0f);
-    glUniform1f(glGetUniformLocation(quad_prog, "uFogEnd"),    2500.0f);
+    glUniform1f(glGetUniformLocation(quad_prog, "uFogStart"),  12.0f);
+    glUniform1f(glGetUniformLocation(quad_prog, "uFogEnd"),    25.0f);
     glUniform3f(glGetUniformLocation(quad_prog, "uFogColor"),  0.82f, 0.87f, 0.96f);
 
     glBindVertexArray(quadVAO);

@@ -5,15 +5,16 @@
 
 // ─── Constantes de física ───────────────────────────────────────────────────
 static const float GRAVITY     = -9.8f;
-static const float RESTITUTION = 0.5f;   // rebote en paredes/suelo
-static const float FRICTION    = 0.985f;  // multiplicador por frame (rolling)
+static const float RESTITUTION = 0.35f;   // rebote en paredes/suelo
+static const float FRICTION    = 0.983f;  // multiplicador por frame (rolling)
+static const float FRICTION_AIR = 0.995f; // fricción mientras está en el aire 
 static const float FLOOR_Z     = 0.0f;    // altura del suelo
 
 // ─── Constantes de disparo ──────────────────────────────────────────────────
 static const float MAX_POWER   = 15.0f;
 static const float CHARGE_RATE = 0.8f;    // potencia acumulada por segundo
 static const float AIM_SPEED   = 90.0f;   // grados/segundo al girar la mira
-static const float STOP_SPEED2 = 0.002f;  // velocidad² mínima para detener la bola
+static const float STOP_SPEED2 = 0.05f;  // velocidad mínima para detener la bola
 static const float HOLE_RADIUS = 0.3f;    // radio del hoyo
 
 void Level::load()
@@ -39,17 +40,23 @@ void Level::load()
     shotPower = 0.0f;
     charging  = false;
 
+    int heightChange = 1;
+
     std::vector<std::vector<glm::vec2>> trackPerimeters = {
-        {{45.0f, 67.0f}, {45.0f, 78.0f}, {49.0f, 78.0f}, {49.0f, 67.0f}},
-        {{45.0f, 65.0f}, {49.0f, 65.0f}, {49.0f, 56.0f}, {45.0f, 56.0f}},
-        {{45.0f, 54.0f}, {49.0f, 54.0f}, {49.0f, 45.0f}, {45.0f, 45.0f}},
-        {{45.0f, 42.0f}, {49.0f, 42.0f}, {49.0f, 33.0f}, {45.0f, 33.0f}},
-        {{45.0f, 31.0f}, {49.0f, 31.0f}, {49.0f, 22.0f}, {45.0f, 22.0f}},
+    {{63.0f, 81.0f}, {67.0f, 83.0f}, {69.0f, 81.0f}, {69.0f, 76.0f}, {67.0f, 72.0f}, {63.0f, 72.0f}, {56.0f, 67.0f}, {56.0f, 69.0f}, {60.0f, 74.0f}},
+
+    {{51.0f, 67.0f}, {54.0f, 65.0f}, {47.0f, 56.0f}, {42.0f, 58.0f}, {42.0f, 63.0f}},
+    {{40.0f, 56.0f}, {47.0f, 54.0f}, {47.0f, 51.0f}, {42.0f, 49.0f}, {40.0f, 49.0f}, {38.0f, 54.0f}},
+    {{45.0f, 47.0f}, {49.0f, 49.0f}, {56.0f, 49.0f}, {58.0f, 42.0f}, {54.0f, 40.0f}, {54.0f, 45.0f}},
+    {{56.0f, 38.0f}, {60.0f, 42.0f}, {65.0f, 40.0f}, {63.0f, 36.0f}, {58.0f, 33.0f}}
+
     };
+    ball.pos = { 67.5f, 81.0f, 0*heightChange };
+    holePos = { 60.8f, 38.3f, (FLOOR_Z+0.1f)+4*heightChange };
     
 
     size_t numTracks = trackPerimeters.size();
-    int heightChange = 1;
+    
     for(size_t t = 0; t < numTracks; ++t) {
         // 2. GENERAR LA PISTA (6 segmentos de longitud)
         // Usamos el algoritmo SAW + Anchura Variable que diseñamos
@@ -83,12 +90,11 @@ void Level::load()
     // 7. LA BOLA
     //ball.pos      = { 15, 70, FLOOR_Z + ball.radius };
     ball.vel      = { 0, 0, 0 };
-    ball.moving   = false;
+    ball.moving   = true;
     ball.rollQuat = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
     ball.mesh     = crear_sphere({0,0,0}, ball.radius, {1.0f, 1.0f, 1.0f});
 
-    ball.pos = { 47.3f, 76.5f, 0*heightChange };
-    holePos = { 47.3f, 24.8f, (FLOOR_Z+0.1f)+4*heightChange };
+    ball.pos.z += ball.radius + 0.25f; // para que empiece ligeramente por encima del suelo
 
     // 5. LAS FÍSICAS (Cajas invisibles rotadas)
     for(size_t t = 0; t < tracks.size(); t++) {
@@ -152,6 +158,11 @@ void Level::update(float dt)
         if (ball.pos.z <= currentFloorZ + ball.radius + 0.02f) {
             ball.vel.x *= FRICTION;
             ball.vel.y *= FRICTION;
+        }
+        else{
+            ball.vel.x *= FRICTION_AIR;
+            ball.vel.y *= FRICTION_AIR;
+            //ball.vel.z *= FRICTION_AIR;
         }
 
         float spd2 = glm::dot(ball.vel, ball.vel);
@@ -326,7 +337,7 @@ void Level::render(GLuint prog, const glm::mat4& VP)
     render_sphere(bm, prog, VP, texBola);
 
     // Indicador de dirección de disparo (caja pequeña delante de la bola)
-    if (!ball.moving && !completed) {
+    //if (!ball.moving && !completed) {
         float rad = glm::radians(shotAngle);
         glm::vec3 dir = { std::cos(rad), std::sin(rad), 0.0f };
         glm::vec3 arrowPos = ball.pos + dir * (ball.radius * 3.0f);
@@ -344,7 +355,7 @@ void Level::render(GLuint prog, const glm::mat4& VP)
             arrow.color = { 1.0f, ((1.0f - shotPower)*i/numSegments), 0.0f }; // semitransparente
             render_sphere(arrow, prog, VP, 0);
         }
-    }
+    //}
 }
 
 
@@ -398,12 +409,12 @@ void Level::handleInput(GLFWwindow* window, float dt)
     static bool prevSpace = false;
     bool inAir = (ball.pos.z > ball.radius + 0.02f);
     if(glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && !prevSpace) {  // && !prevSpace && !inAir
-        ball.vel.z += 5.0f; // impulso hacia arriba
+        ball.vel.z += 7.0f; // impulso hacia arriba
         ball.moving = true;
     }
     prevSpace = (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS);
 
-    if (ball.moving || completed) return;   // no se puede disparar mientras la bola rueda o cuando se ha completado el nivel
+    //if (ball.moving || completed) return;   // no se puede disparar mientras la bola rueda o cuando se ha completado el nivel
 
     // ── Disparar con click izquierdo ──────────────────────────────────────
     static bool prevClick = false;
@@ -427,8 +438,8 @@ void Level::handleInput(GLFWwindow* window, float dt)
         float rad   = glm::radians(shotAngle);
         float power = shotPower * MAX_POWER;
 
-        ball.vel.x  = std::cos(rad) * power;
-        ball.vel.y  = std::sin(rad) * power;
+        ball.vel.x  += std::cos(rad) * power;
+        ball.vel.y  += std::sin(rad) * power;
         ball.vel.z  = 0.3f;         // pequeño bote inicial
 
         ball.moving = true;
