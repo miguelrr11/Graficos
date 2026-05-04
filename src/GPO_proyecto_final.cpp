@@ -845,7 +845,9 @@ static void KeyCallback(GLFWwindow* window, int key, int code, int action, int m
     }
     
     // F11: Alternar Pantalla Completa
-    if (key == GLFW_KEY_F && action == GLFW_PRESS) {
+    static bool prevPressedF = false;
+    if (key == GLFW_KEY_F && action == GLFW_PRESS && !prevPressedF) {
+        prevPressedF = true;
         static bool isFullScreen = false;
         static int windowed_x, windowed_y, windowed_width, windowed_height;
 

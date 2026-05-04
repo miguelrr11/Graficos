@@ -333,29 +333,29 @@ libs/soloud/src/audiosource/wav/stb_vorbis.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/audiosource/wav/stb_vorbis.c.s
 .PHONY : libs/soloud/src/audiosource/wav/stb_vorbis.c.s
 
-libs/soloud/src/backend/coreaudio/soloud_coreaudio.o: libs/soloud/src/backend/coreaudio/soloud_coreaudio.cpp.o
-.PHONY : libs/soloud/src/backend/coreaudio/soloud_coreaudio.o
+libs/soloud/src/backend/miniaudio/soloud_miniaudio.o: libs/soloud/src/backend/miniaudio/soloud_miniaudio.cpp.o
+.PHONY : libs/soloud/src/backend/miniaudio/soloud_miniaudio.o
 
 # target to build an object file
-libs/soloud/src/backend/coreaudio/soloud_coreaudio.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/backend/coreaudio/soloud_coreaudio.cpp.o
-.PHONY : libs/soloud/src/backend/coreaudio/soloud_coreaudio.cpp.o
+libs/soloud/src/backend/miniaudio/soloud_miniaudio.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/backend/miniaudio/soloud_miniaudio.cpp.o
+.PHONY : libs/soloud/src/backend/miniaudio/soloud_miniaudio.cpp.o
 
-libs/soloud/src/backend/coreaudio/soloud_coreaudio.i: libs/soloud/src/backend/coreaudio/soloud_coreaudio.cpp.i
-.PHONY : libs/soloud/src/backend/coreaudio/soloud_coreaudio.i
+libs/soloud/src/backend/miniaudio/soloud_miniaudio.i: libs/soloud/src/backend/miniaudio/soloud_miniaudio.cpp.i
+.PHONY : libs/soloud/src/backend/miniaudio/soloud_miniaudio.i
 
 # target to preprocess a source file
-libs/soloud/src/backend/coreaudio/soloud_coreaudio.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/backend/coreaudio/soloud_coreaudio.cpp.i
-.PHONY : libs/soloud/src/backend/coreaudio/soloud_coreaudio.cpp.i
+libs/soloud/src/backend/miniaudio/soloud_miniaudio.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/backend/miniaudio/soloud_miniaudio.cpp.i
+.PHONY : libs/soloud/src/backend/miniaudio/soloud_miniaudio.cpp.i
 
-libs/soloud/src/backend/coreaudio/soloud_coreaudio.s: libs/soloud/src/backend/coreaudio/soloud_coreaudio.cpp.s
-.PHONY : libs/soloud/src/backend/coreaudio/soloud_coreaudio.s
+libs/soloud/src/backend/miniaudio/soloud_miniaudio.s: libs/soloud/src/backend/miniaudio/soloud_miniaudio.cpp.s
+.PHONY : libs/soloud/src/backend/miniaudio/soloud_miniaudio.s
 
 # target to generate assembly for a file
-libs/soloud/src/backend/coreaudio/soloud_coreaudio.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/backend/coreaudio/soloud_coreaudio.cpp.s
-.PHONY : libs/soloud/src/backend/coreaudio/soloud_coreaudio.cpp.s
+libs/soloud/src/backend/miniaudio/soloud_miniaudio.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/backend/miniaudio/soloud_miniaudio.cpp.s
+.PHONY : libs/soloud/src/backend/miniaudio/soloud_miniaudio.cpp.s
 
 libs/soloud/src/core/soloud.o: libs/soloud/src/core/soloud.cpp.o
 .PHONY : libs/soloud/src/core/soloud.o
@@ -1060,9 +1060,9 @@ help:
 	@echo "... libs/soloud/src/audiosource/wav/stb_vorbis.o"
 	@echo "... libs/soloud/src/audiosource/wav/stb_vorbis.i"
 	@echo "... libs/soloud/src/audiosource/wav/stb_vorbis.s"
-	@echo "... libs/soloud/src/backend/coreaudio/soloud_coreaudio.o"
-	@echo "... libs/soloud/src/backend/coreaudio/soloud_coreaudio.i"
-	@echo "... libs/soloud/src/backend/coreaudio/soloud_coreaudio.s"
+	@echo "... libs/soloud/src/backend/miniaudio/soloud_miniaudio.o"
+	@echo "... libs/soloud/src/backend/miniaudio/soloud_miniaudio.i"
+	@echo "... libs/soloud/src/backend/miniaudio/soloud_miniaudio.s"
 	@echo "... libs/soloud/src/core/soloud.o"
 	@echo "... libs/soloud/src/core/soloud.i"
 	@echo "... libs/soloud/src/core/soloud.s"
