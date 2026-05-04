@@ -254,18 +254,18 @@ void Level::update(float dt)
         if (leafTimer <= 0.0f && horizSpd > 0.5f) {
             leafTimer = 0.07f;
             EmitParams ep;
-            ep.pos        = ball.pos;
-            ep.vel        = {-ball.vel.x * 0.05f, -ball.vel.y * 0.05f, 0.4f + rf() * 0.4f};
+            ep.pos        = {ball.pos.x + rf() * 0.1f, ball.pos.y + rf() * 0.1f, ball.pos.z - ball.radius * 0.5f};
+            ep.vel        = {-ball.vel.x * 0.05f + rf() * 0.5, -ball.vel.y * 0.05f + rf() * 0.5, 0.4f + rf() * 0.4f};
             ep.velSpread  = {0.2f, 0.2f, 0.1f};
-            ep.acc        = {0, 0, -4.0f};
+            ep.acc        = {0, 0, 5.0f};
             ep.life       = 0.35f;
             ep.lifeSpread = 0.12f;
-            ep.size       = 0.035f + rf() * 0.025f;
+            ep.size       = 0.015f + rf() * 0.025f;
             ep.endSize    = 0.0f;
             ep.color      = {0.2f, 0.6f + rf() * 0.3f, 0.1f, 1.0f};
             ep.endColor   = {0.4f, 0.85f, 0.1f, 0.0f};
             ep.rotVelSpread = 8.0f;
-            ep.count      = 2;
+            ep.count      = 20;
             particles.emit(ep);
         }
     }
