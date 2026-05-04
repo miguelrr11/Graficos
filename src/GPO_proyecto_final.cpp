@@ -8,6 +8,11 @@ ATG, 2019
 #include <vector>
 #include <cstring>
 #include <algorithm>
+#include "soloud.h"
+#include "soloud_wavstream.h"
+
+SoLoud::Soloud gSoloud;
+SoLoud::WavStream gMusic;
 
 // TAMAÑO y TITULO INICIAL de la VENTANA
 int ANCHO = 800*1.25, ALTO = 600*1.25;
@@ -780,6 +785,11 @@ int main(int argc, char* argv[])
     load_Opengl();
     init_scene();
 
+    gSoloud.init();
+    gMusic.load("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/Balatro.mp3");
+    gMusic.setLooping(true);
+    gSoloud.play(gMusic);
+
     glfwSwapInterval(1);
     while (!glfwWindowShouldClose(window)) {
         render_scene();
@@ -788,6 +798,7 @@ int main(int argc, char* argv[])
         show_info();
     }
 
+    gSoloud.deinit();
     level.destroy();
     glfwTerminate();
     exit(EXIT_SUCCESS);
