@@ -389,7 +389,7 @@ float cam_distance = 3.0f;   // distancia a la bola
 
 // Tiempo para deltaTime real
 float lastFrameTime = 0.0f;
-float gameTimer     = 30.0f;
+float gameTimer     = 60.0f;
 int   currentLevel = 1;
 float dt = 0.0f;
 
@@ -756,11 +756,11 @@ void render_scene()
     // completed, the timer adds 10 seconds. If the timer reaches 0, the game is lost and resets to level 1.
     if(level.currentLevel != currentLevel) {
         currentLevel = level.currentLevel;
-        gameTimer += 15.0f; // add 10 seconds for each completed level (esto se puede ir ajustando)
+        gameTimer += 30.0f; // add 10 seconds for each completed level (esto se puede ir ajustando)
     }
     gameTimer -= dt;
     if (gameTimer <= 0) {
-        gameTimer = 30.0f;
+        gameTimer = 60.0f;
         level.destroy();
         level.load();
     }
@@ -788,7 +788,7 @@ int main(int argc, char* argv[])
 
     int initErr = gSoloud->init(SoLoud::Soloud::CLIP_ROUNDOFF, SoLoud::Soloud::MINIAUDIO);
     printf("SoLoud init error: %d\n", initErr);
-    int error = gMusic.load("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/Balatro.mp3");
+    int error = gMusic.load(getAssetPath("Balatro.mp3").c_str());
     printf("Audio load error: %d\n", error);
     gMusic.setLooping(true);
     int handle = gSoloud->play(gMusic);

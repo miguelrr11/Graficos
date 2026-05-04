@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <string>
 
 
 //###include <glad\glad.h> 
@@ -87,6 +88,9 @@ GLFWwindow*  Init_Window(const char*);
 
 // FUNCION PARA CARGAR TEXTURA
 GLuint cargar_textura(const char* ruta);
+
+// Buscador de rutas universal
+std::string getAssetPath(const std::string& filename);
 
 float map(float value, float inMin, float inMax, float outMin, float outMax);
 float lerp(float a, float b, float t);

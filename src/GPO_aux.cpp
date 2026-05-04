@@ -6,6 +6,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 //####include <stb\stb_image.h>
 #include <stb_image.h>
+#include <string>
+#include <vector>
 
 ////////////////////   
 
@@ -172,6 +174,28 @@ GLuint Compile_Link_Shaders(const char* vertexShader_source,const char*fragmentS
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////  AUXILIARES 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+std::string getAssetPath(const std::string& filename) {
+    // Lista de posibles rutas relativas dependiendo de dónde se ejecute el programa
+    std::vector<std::string> searchPaths = {
+        "assets/",
+        "../assets/",
+        "../../assets/",
+        "../../../assets/"
+    };
+
+    for (const auto& basePath : searchPaths) {
+        std::string fullPath = basePath + filename;
+        FILE* file = fopen(fullPath.c_str(), "r");
+        if (file) {
+            fclose(file);
+            return fullPath; // ¡Lo encontramos!
+        }
+    }
+    
+    // Si no lo encuentra en ningún lado, devuelve el nombre tal cual para que salte el error normal
+    return filename; 
+}
 
 GLuint cargar_textura(const char * imagepath, GLuint tex_unit)
 {
