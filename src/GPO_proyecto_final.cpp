@@ -130,9 +130,89 @@ const char* quad_fs = GLSL(
     uniform float uFar;
     uniform float uFogStart;
     uniform float uFogEnd;
+    uniform float uGameTimer;
+    uniform float uScaleFont;
 
     float linearDepth(float d) {
         return uNear * uFar / (uFar - d * (uFar - uNear));
+    }
+
+    /* ── FONT: replace getFontRow to swap fonts ─────────────────────────────
+       Each row is a 5-bit mask: bit4=left col, bit0=right col.
+       Digits 0-9, 7 rows each.                                              */
+    int getFontRow(int digit, int row) {
+        if (digit == 0) {
+            if (row==0) return 14; if (row==1) return 17; if (row==2) return 17;
+            if (row==3) return 17; if (row==4) return 17; if (row==5) return 17;
+            return 14;
+        }
+        if (digit == 1) {
+            if (row==0) return 4;  if (row==1) return 12; if (row==2) return 4;
+            if (row==3) return 4;  if (row==4) return 4;  if (row==5) return 4;
+            return 14;
+        }
+        if (digit == 2) {
+            if (row==0) return 14; if (row==1) return 17; if (row==2) return 1;
+            if (row==3) return 6;  if (row==4) return 8;  if (row==5) return 16;
+            return 31;
+        }
+        if (digit == 3) {
+            if (row==0) return 14; if (row==1) return 17; if (row==2) return 1;
+            if (row==3) return 6;  if (row==4) return 1;  if (row==5) return 17;
+            return 14;
+        }
+        if (digit == 4) {
+            if (row==0) return 17; if (row==1) return 17; if (row==2) return 17;
+            if (row==3) return 31; if (row==4) return 1;  if (row==5) return 1;
+            return 1;
+        }
+        if (digit == 5) {
+            if (row==0) return 31; if (row==1) return 16; if (row==2) return 30;
+            if (row==3) return 1;  if (row==4) return 1;  if (row==5) return 17;
+            return 14;
+        }
+        if (digit == 6) {
+            if (row==0) return 14; if (row==1) return 16; if (row==2) return 16;
+            if (row==3) return 30; if (row==4) return 17; if (row==5) return 17;
+            return 14;
+        }
+        if (digit == 7) {
+            if (row==0) return 31; if (row==1) return 1;  if (row==2) return 2;
+            if (row==3) return 4;  if (row==4) return 8;  if (row==5) return 8;
+            return 8;
+        }
+        if (digit == 8) {
+            if (row==0) return 14; if (row==1) return 17; if (row==2) return 17;
+            if (row==3) return 14; if (row==4) return 17; if (row==5) return 17;
+            return 14;
+        }
+        if (digit == 9) {
+            if (row==0) return 14; if (row==1) return 17; if (row==2) return 17;
+            if (row==3) return 15; if (row==4) return 1;  if (row==5) return 1;
+            return 14;
+        }
+        return 0;
+    }
+
+    bool timerPixelFilled(int px, int py, int tens, int units, float scale) {
+        float DW     = 5.0 * scale;
+        float DH     = 7.0 * scale;
+        float GAP    = scale;
+        float TW     = 2.0 * DW + GAP;
+        float startX = resolution.x * 0.5 - TW * 0.5;
+        float startY = 10.0;
+        float lx = float(px) - startX;
+        float ly = float(py) - startY;
+        if (lx < 0.0 || lx >= TW || ly < 0.0 || ly >= DH) return false;
+        int   digit = -1;
+        float dlx   = 0.0;
+        if      (lx < DW)        { digit = tens;  dlx = lx; }
+        else if (lx >= DW + GAP) { digit = units; dlx = lx - DW - GAP; }
+        else return false;
+        int col     = int(dlx / scale);
+        int row     = int(ly  / scale);
+        int rowBits = getFontRow(digit, row);
+        return ((rowBits >> (4 - col)) & 1) == 1;
     }
 
     void main() {
@@ -164,7 +244,7 @@ const char* quad_fs = GLSL(
         color.b = mix(color.b, aB, abMask);
 
         // ── 2. Outlines (bordes por diferencia de profundidad lineal) ─────────
-        vec2 off = pixelSize / resolution;
+        vec2 off = (pixelSize / resolution);
         float rawD = texture(depthTex, uv).r;
         float d    = linearDepth(rawD);
         float dR   = linearDepth(texture(depthTex, uv + vec2(off.x,  0.0)).r);
@@ -172,7 +252,7 @@ const char* quad_fs = GLSL(
         float dL   = linearDepth(texture(depthTex, uv - vec2(off.x,  0.0)).r);
         float dD   = linearDepth(texture(depthTex, uv - vec2(0.0,  off.y)).r);
         float edge = max(max(abs(d-dR), abs(d-dL)), max(abs(d-dU), abs(d-dD)));
-        color = mix(color, vec3(0.04, 0.04, 0.08), step(0.15, edge / max(d, 0.1)) * 0.88);
+        color = mix(color, vec3(0.04, 0.04, 0.08), step(0.15, edge / max(d, 0.01)) * 0.88);
 
         // ── 3. Scanlines (una línea oscura cada 2 filas de píxeles) ────────
         float row = mod(block.y, 2.0);
@@ -211,6 +291,33 @@ const char* quad_fs = GLSL(
         float v = smoothstep(0.8, 0.2, dist);
 
         color *= v;
+
+        {
+            int timerSec = int(ceil(uGameTimer));
+            timerSec     = max(timerSec, 0);
+            int tens     = timerSec / 10;
+            int units    = timerSec - tens * 10;
+            int px = int(fragUV.x * resolution.x);
+            int py = int((1.0 - fragUV.y) * resolution.y);
+            bool filled = timerPixelFilled(px, py, tens, units, uScaleFont);
+            const int STROKE = 4;
+            bool stroke = false;
+            if (!filled) {
+                for (int dy = -STROKE; dy <= STROKE; dy++) {
+                    for (int dx = -STROKE; dx <= STROKE; dx++) {
+                        if (dx == 0 && dy == 0) continue;
+                        if (timerPixelFilled(px+dx, py+dy, tens, units, uScaleFont)) {
+                            stroke = true;
+                        }
+                    }
+                }
+            }
+            if (filled) {
+                if(timerSec >= 5) color = vec3(1.0, 1.0, 1.0);
+                else color = vec3(1.0, 0.2, 0.2);
+            }
+            else if (stroke) color = vec3(0.0, 0.0, 0.0);
+        }
 
         FragColor = vec4(color, 1.0);
     }
@@ -362,6 +469,8 @@ float cam_distance = 3.0f;   // distancia a la bola
 
 // Tiempo para deltaTime real
 float lastFrameTime = 0.0f;
+float gameTimer     = 30.0f;
+int   currentLevel = 1;
 float dt = 0.0f;
 
 
@@ -619,12 +728,41 @@ void render_scene()
     glUniform1f(glGetUniformLocation(quad_prog, "uFar"),       40.0f);
     glUniform1f(glGetUniformLocation(quad_prog, "uFogStart"),  100.0f);
     glUniform1f(glGetUniformLocation(quad_prog, "uFogEnd"),    200.0f);
+    glUniform1f(glGetUniformLocation(quad_prog, "uGameTimer"), gameTimer);
+
+    static float scaleFont = 6.0f;
+    if(gameTimer < 10.0f) scaleFont = lerp(scaleFont, 10.0f, 0.1);
+    if(gameTimer < 5.0f){
+        scaleFont += cos(now * 20.0f) * 0.5f;
+    }
+    glUniform1f(glGetUniformLocation(quad_prog, "uScaleFont"), scaleFont);
 
     glBindVertexArray(quadVAO);
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
 
     glEnable(GL_DEPTH_TEST);
+
+    // the gameplay loop: a timer starts at the start of execution (30 seconds), and goes down. Every time a level is 
+    // completed, the timer adds 10 seconds. If the timer reaches 0, the game is lost and resets to level 1.
+    if(level.currentLevel != currentLevel) {
+        currentLevel = level.currentLevel;
+        gameTimer += 10.0f; // add 10 seconds for each completed level (esto se puede ir ajustando)
+    }
+    gameTimer -= dt;
+    if (gameTimer <= 0) {
+        gameTimer = 30.0f;
+        level.destroy();
+        level.load();
+    }
+}
+
+float map(float value, float inMin, float inMax, float outMin, float outMax) {
+    return (value - inMin) / (inMax - inMin) * (outMax - outMin) + outMin;
+}
+
+float lerp(float a, float b, float t) {
+    return a + t * (b - a);
 }
 
 

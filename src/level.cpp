@@ -12,8 +12,8 @@ static const float FRICTION_AIR = 0.995f; // fricción mientras está en el aire
 static const float FLOOR_Z     = 0.0f;    // altura del suelo
 
 // ─── Constantes de disparo ──────────────────────────────────────────────────
-static const float MAX_POWER   = 15.0f;
-static const float CHARGE_RATE = 0.8f;    // potencia acumulada por segundo
+static const float MAX_POWER   = 12.0f;
+static const float CHARGE_RATE = 0.7f;    // potencia acumulada por segundo
 static const float AIM_SPEED   = 90.0f;   // grados/segundo al girar la mira
 static const float STOP_SPEED2 = 0.05f;  // velocidad mínima para detener la bola
 static const float HOLE_RADIUS = 0.3f;    // radio del hoyo
@@ -129,7 +129,7 @@ void Level::load()
 
     // --- EL DIRECTOR DE ARCHIPIÉLAGOS ---
     // En Nivel 1 y 2 habrá 2 islas. En Nivel 3 y 4 habrá 3 islas, etc.
-    int numIslands = 2 + (currentLevel - 1) / 2; 
+    int numIslands = int((2 + (currentLevel - 1) / 2) * 1.5); 
     
     // El hueco crece con la dificultad (empieza en 3m, sube 0.5m por nivel)
     float jumpDistance = 3.0f + (currentLevel * 0.5f); 
@@ -545,6 +545,8 @@ void Level::handleInput(GLFWwindow* window, float dt)
 
     if (charging && curClick) {
         shotPower += CHARGE_RATE * dt;
+        // dont make it linear
+        shotPower *= 1.01f;
         if (shotPower > 1.0f) shotPower = 1.0f;
     }
 

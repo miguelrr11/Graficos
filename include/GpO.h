@@ -36,6 +36,7 @@
 using namespace glm;
 
 
+
 // DEclaraciones  de tipos
 typedef struct {GLuint VAO; GLuint Ni; GLuint Nv; GLuint Nt; GLuint tipo_indice; } objeto;
 
@@ -86,3 +87,6 @@ GLFWwindow*  Init_Window(const char*);
 
 // FUNCION PARA CARGAR TEXTURA
 GLuint cargar_textura(const char* ruta);
+
+float map(float value, float inMin, float inMax, float outMin, float outMax);
+float lerp(float a, float b, float t);
