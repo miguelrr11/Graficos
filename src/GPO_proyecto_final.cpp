@@ -6,6 +6,8 @@ ATG, 2019
 #include "obstacle.h"
 #include "level.h"       // <-- nivel de minigolf
 #include <vector>
+#include <cstring>
+#include <algorithm>
 
 // TAMAÑO y TITULO INICIAL de la VENTANA
 int ANCHO = 800*1.25, ALTO = 600*1.25;
@@ -132,87 +134,10 @@ const char* quad_fs = GLSL(
     uniform float uFogEnd;
     uniform float uGameTimer;
     uniform float uScaleFont;
+    uniform sampler2D timerTex;  // 13x9 CPU-baked digit texture, updated once per second
 
     float linearDepth(float d) {
         return uNear * uFar / (uFar - d * (uFar - uNear));
-    }
-
-    /* ── FONT: replace getFontRow to swap fonts ─────────────────────────────
-       Each row is a 5-bit mask: bit4=left col, bit0=right col.
-       Digits 0-9, 7 rows each.                                              */
-    int getFontRow(int digit, int row) {
-        if (digit == 0) {
-            if (row==0) return 14; if (row==1) return 17; if (row==2) return 17;
-            if (row==3) return 17; if (row==4) return 17; if (row==5) return 17;
-            return 14;
-        }
-        if (digit == 1) {
-            if (row==0) return 4;  if (row==1) return 12; if (row==2) return 4;
-            if (row==3) return 4;  if (row==4) return 4;  if (row==5) return 4;
-            return 14;
-        }
-        if (digit == 2) {
-            if (row==0) return 14; if (row==1) return 17; if (row==2) return 1;
-            if (row==3) return 6;  if (row==4) return 8;  if (row==5) return 16;
-            return 31;
-        }
-        if (digit == 3) {
-            if (row==0) return 14; if (row==1) return 17; if (row==2) return 1;
-            if (row==3) return 6;  if (row==4) return 1;  if (row==5) return 17;
-            return 14;
-        }
-        if (digit == 4) {
-            if (row==0) return 17; if (row==1) return 17; if (row==2) return 17;
-            if (row==3) return 31; if (row==4) return 1;  if (row==5) return 1;
-            return 1;
-        }
-        if (digit == 5) {
-            if (row==0) return 31; if (row==1) return 16; if (row==2) return 30;
-            if (row==3) return 1;  if (row==4) return 1;  if (row==5) return 17;
-            return 14;
-        }
-        if (digit == 6) {
-            if (row==0) return 14; if (row==1) return 16; if (row==2) return 16;
-            if (row==3) return 30; if (row==4) return 17; if (row==5) return 17;
-            return 14;
-        }
-        if (digit == 7) {
-            if (row==0) return 31; if (row==1) return 1;  if (row==2) return 2;
-            if (row==3) return 4;  if (row==4) return 8;  if (row==5) return 8;
-            return 8;
-        }
-        if (digit == 8) {
-            if (row==0) return 14; if (row==1) return 17; if (row==2) return 17;
-            if (row==3) return 14; if (row==4) return 17; if (row==5) return 17;
-            return 14;
-        }
-        if (digit == 9) {
-            if (row==0) return 14; if (row==1) return 17; if (row==2) return 17;
-            if (row==3) return 15; if (row==4) return 1;  if (row==5) return 1;
-            return 14;
-        }
-        return 0;
-    }
-
-    bool timerPixelFilled(int px, int py, int tens, int units, float scale) {
-        float DW     = 5.0 * scale;
-        float DH     = 7.0 * scale;
-        float GAP    = scale;
-        float TW     = 2.0 * DW + GAP;
-        float startX = resolution.x * 0.5 - TW * 0.5;
-        float startY = 10.0;
-        float lx = float(px) - startX;
-        float ly = float(py) - startY;
-        if (lx < 0.0 || lx >= TW || ly < 0.0 || ly >= DH) return false;
-        int   digit = -1;
-        float dlx   = 0.0;
-        if      (lx < DW)        { digit = tens;  dlx = lx; }
-        else if (lx >= DW + GAP) { digit = units; dlx = lx - DW - GAP; }
-        else return false;
-        int col     = int(dlx / scale);
-        int row     = int(ly  / scale);
-        int rowBits = getFontRow(digit, row);
-        return ((rowBits >> (4 - col)) & 1) == 1;
     }
 
     void main() {
@@ -292,31 +217,23 @@ const char* quad_fs = GLSL(
 
         color *= v;
 
+        // Timer overlay – CPU-baked 13x9 texture, one lookup per pixel
         {
-            int timerSec = int(ceil(uGameTimer));
-            timerSec     = max(timerSec, 0);
-            int tens     = timerSec / 10;
-            int units    = timerSec - tens * 10;
+            float sc = uScaleFont;
+            // Texture is 13 wide (1px stroke border + 11px digits + 1px stroke border)
+            // Digits are horizontally centered; texture top row is 1 font-pixel above startY=10
+            float sx = resolution.x * 0.5 - 6.5 * sc;
+            float sy = 10.0 - sc;
+            float tw = 13.0 * sc;
+            float th = 9.0 * sc;
             int px = int(fragUV.x * resolution.x);
             int py = int((1.0 - fragUV.y) * resolution.y);
-            bool filled = timerPixelFilled(px, py, tens, units, uScaleFont);
-            const int STROKE = 4;
-            bool stroke = false;
-            if (!filled) {
-                for (int dy = -STROKE; dy <= STROKE; dy++) {
-                    for (int dx = -STROKE; dx <= STROKE; dx++) {
-                        if (dx == 0 && dy == 0) continue;
-                        if (timerPixelFilled(px+dx, py+dy, tens, units, uScaleFont)) {
-                            stroke = true;
-                        }
-                    }
-                }
+            float lx = float(px) - sx;
+            float ly = float(py) - sy;
+            if (lx >= 0.0 && lx < tw && ly >= 0.0 && ly < th) {
+                vec4 tc = texture(timerTex, vec2(lx / tw, ly / th));
+                if (tc.a > 0.5) color = tc.rgb;
             }
-            if (filled) {
-                if(timerSec >= 5) color = vec3(1.0, 1.0, 1.0);
-                else color = vec3(1.0, 0.2, 0.2);
-            }
-            else if (stroke) color = vec3(0.0, 0.0, 0.0);
         }
 
         FragColor = vec4(color, 1.0);
@@ -472,6 +389,81 @@ float lastFrameTime = 0.0f;
 float gameTimer     = 30.0f;
 int   currentLevel = 1;
 float dt = 0.0f;
+
+// ─── Timer texture (CPU-baked, 13×9 RGBA, updated once per integer second) ──
+GLuint timerTex     = 0;
+int    lastTimerSec = -1;
+
+static const uint8_t FONT_ROWS[10][7] = {
+    {14,17,17,17,17,17,14}, {4,12,4,4,4,4,14},
+    {14,17,1,6,8,16,31},    {14,17,1,6,1,17,14},
+    {17,17,17,31,1,1,1},    {31,16,30,1,1,17,14},
+    {14,16,16,30,17,17,14}, {31,1,2,4,8,8,8},
+    {14,17,17,14,17,17,14}, {14,17,17,15,1,1,14}
+};
+
+// Texture layout: 13 wide x 9 tall (font pixels).
+// Digit area: columns 1-5 (tens) and 7-11 (units), rows 1-7. Border row/col = stroke.
+static void bakeTimerTex(int sec) {
+    static uint8_t buf[13 * 9 * 4];
+    memset(buf, 0, sizeof(buf));
+
+    bool urgent = (sec < 5);
+    uint8_t fr = 255, fg = urgent ? 51 : 255, fb = urgent ? 51 : 255;
+
+    int tens  = sec / 10;
+    int units = sec % 10;
+
+    // Draw fill pixels for each digit (offset by (1,1) for stroke border)
+    for (int d = 0; d < 2; d++) {
+        int digit  = (d == 0) ? tens : units;
+        int startX = 1 + d * 6;  // tens at x=1, units at x=7
+        for (int row = 0; row < 7; row++) {
+            int bits = FONT_ROWS[digit][row];
+            for (int col = 0; col < 5; col++) {
+                if ((bits >> (4 - col)) & 1) {
+                    int px = startX + col, py = 1 + row;
+                    int i  = (py * 13 + px) * 4;
+                    buf[i]=fr; buf[i+1]=fg; buf[i+2]=fb; buf[i+3]=255;
+                }
+            }
+        }
+    }
+
+    // Stroke pass: snap the alpha channel to use as reference
+    uint8_t filled[13 * 9];
+    for (int i = 0; i < 13 * 9; i++) filled[i] = buf[i * 4 + 3];
+
+    for (int y = 0; y < 9; y++) {
+        for (int x = 0; x < 13; x++) {
+            if (filled[y * 13 + x]) continue;
+            bool stroke = false;
+            for (int dy = -1; dy <= 1 && !stroke; dy++)
+                for (int dx = -1; dx <= 1 && !stroke; dx++) {
+                    if (dx == 0 && dy == 0) continue;
+                    int nx = x+dx, ny = y+dy;
+                    if (nx>=0 && nx<13 && ny>=0 && ny<9)
+                        if (filled[ny*13+nx]) stroke = true;
+                }
+            if (stroke) {
+                int i = (y * 13 + x) * 4;
+                buf[i]=0; buf[i+1]=0; buf[i+2]=0; buf[i+3]=255;
+            }
+        }
+    }
+
+    if (!timerTex) {
+        glGenTextures(1, &timerTex);
+        glBindTexture(GL_TEXTURE_2D, timerTex);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    } else {
+        glBindTexture(GL_TEXTURE_2D, timerTex);
+    }
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 13, 9, 0, GL_RGBA, GL_UNSIGNED_BYTE, buf);
+}
 
 
 // Proyecta geometría sobre el plano z=0 desde la posición de luz L
@@ -654,6 +646,10 @@ void render_scene()
     mat4 V  = lookAt(camPos, target, up);
     mat4 VP = P * V;
 
+    // Billboard vectors for particle rendering (extracted from view matrix rows)
+    level.camRight = glm::normalize(glm::vec3(V[0][0], V[1][0], V[2][0]));
+    level.camUp    = glm::normalize(glm::vec3(V[0][1], V[1][1], V[2][1]));
+
     // ── 0. Skybox solo al sky FBO (usado después para el color de niebla) ────
     glBindFramebuffer(GL_FRAMEBUFFER, skyFBO);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -729,6 +725,16 @@ void render_scene()
     glUniform1f(glGetUniformLocation(quad_prog, "uFogStart"),  100.0f);
     glUniform1f(glGetUniformLocation(quad_prog, "uFogEnd"),    200.0f);
     glUniform1f(glGetUniformLocation(quad_prog, "uGameTimer"), gameTimer);
+
+    // Bake timer texture only when the displayed integer changes
+    int timerSecNow = std::max((int)std::ceil(gameTimer), 0);
+    if (timerSecNow != lastTimerSec) {
+        lastTimerSec = timerSecNow;
+        bakeTimerTex(timerSecNow);
+    }
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, timerTex);
+    glUniform1i(glGetUniformLocation(quad_prog, "timerTex"), 3);
 
     static float scaleFont = 6.0f;
     if(gameTimer < 10.0f) scaleFont = lerp(scaleFont, 10.0f, 0.1);

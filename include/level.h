@@ -5,6 +5,7 @@
 #include "wallmesh.h"
 #include "floormesh.h"
 #include "generator.h"
+#include "particles.h"
 
 #include <glad/glad.h> 
 
@@ -62,6 +63,10 @@ public:
     std::vector<FloorMesh> floorMeshes;
     std::vector<LevelData> tracks;
 
+    ParticleSystem particles;
+    glm::vec3 camRight = {1,0,0};  // set each frame by render_scene for billboard facing
+    glm::vec3 camUp    = {0,0,1};
+
     // Ciclo de vida
     void load();                                            // carga el nivel hardcodeado
     void update(float dt);                                  // física + comprobaciones
@@ -72,6 +77,7 @@ public:
     void restartLevel();                                    // reinicia el estado de la bola para volver a empezar el mismo nivel
 
 private:
-    void resolveFloor();        // colisión con el suelo plano (z = 0)
-    void resolveWalls();        // colisión con los obstáculos (AABB simple)
+    void resolveFloor();
+    void resolveWalls();
+    bool fireworksEmitted_ = false;
 };

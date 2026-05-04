@@ -41,6 +41,7 @@ set(GPO_SOURCE_FILES include/stb/stb_image.h
 					 include/wallmesh.h
 					 include/floormesh.h
 					 include/generator.h
+					 include/particles.h
 					 src/wallmesh.cpp
 					 src/sphere.cpp
 					 src/level.cpp
@@ -49,6 +50,7 @@ set(GPO_SOURCE_FILES include/stb/stb_image.h
 					 src/GPO_aux.cpp
 					 src/generator.cpp
 					 src/floormesh.cpp
+					 src/particles.cpp
 					 )
 add_executable(gpo_proyecto_final ${GPO_SOURCE_FILES})
 target_link_libraries(gpo_proyecto_final PRIVATE ${OPENGL_LIBRARIES} glfw glm glad_interface)

@@ -5,6 +5,16 @@
 #include <ctime>
 
 // ─── Constantes de física ───────────────────────────────────────────────────
+static float rf() { return (float)rand() / (float)RAND_MAX; }
+
+// HSV → RGBA helper for firework colors
+static glm::vec4 hsv4(float h, float s, float v) {
+    float r = glm::clamp(std::fabs(std::fmod(h*6.0f+0.0f, 6.0f)-3.0f)-1.0f, 0.0f, 1.0f);
+    float g = glm::clamp(std::fabs(std::fmod(h*6.0f+4.0f, 6.0f)-3.0f)-1.0f, 0.0f, 1.0f);
+    float b = glm::clamp(std::fabs(std::fmod(h*6.0f+2.0f, 6.0f)-3.0f)-1.0f, 0.0f, 1.0f);
+    return glm::vec4(v*glm::mix(1.0f,r,s), v*glm::mix(1.0f,g,s), v*glm::mix(1.0f,b,s), 1.0f);
+}
+
 static const float GRAVITY     = -12.0f;
 static const float RESTITUTION = 0.35f;   // rebote en paredes/suelo
 static const float FRICTION    = 0.985f;  // multiplicador por frame (rolling)
@@ -205,6 +215,9 @@ void Level::load()
         }
     }
 
+    particles.init();
+    fireworksEmitted_ = false;
+
     printf("Archipielago Nivel %d Generado. ¡A saltar!\n", currentLevel);
 }
 void Level::restartLevel() {
@@ -220,6 +233,8 @@ void Level::restartLevel() {
 // ════════════════════════════════════════════════════════════════════════════
 void Level::update(float dt)
 {
+    particles.update(dt);   // always ticks, even when ball is stopped
+
     ball.prevPos  = ball.pos;
     ball.onGround = false;
     if (!ball.moving) return;
@@ -230,6 +245,30 @@ void Level::update(float dt)
 
     resolveFloor();
     resolveWalls();
+
+    // ── Partículas: hojas al rodar ────────────────────────────────────────────
+    if (ball.onGround && ball.moving) {
+        static float leafTimer = 0.0f;
+        leafTimer -= dt;
+        float horizSpd = glm::length(glm::vec2(ball.vel.x, ball.vel.y));
+        if (leafTimer <= 0.0f && horizSpd > 0.5f) {
+            leafTimer = 0.07f;
+            EmitParams ep;
+            ep.pos        = ball.pos;
+            ep.vel        = {-ball.vel.x * 0.05f, -ball.vel.y * 0.05f, 0.4f + rf() * 0.4f};
+            ep.velSpread  = {0.2f, 0.2f, 0.1f};
+            ep.acc        = {0, 0, -4.0f};
+            ep.life       = 0.35f;
+            ep.lifeSpread = 0.12f;
+            ep.size       = 0.035f + rf() * 0.025f;
+            ep.endSize    = 0.0f;
+            ep.color      = {0.2f, 0.6f + rf() * 0.3f, 0.1f, 1.0f};
+            ep.endColor   = {0.4f, 0.85f, 0.1f, 0.0f};
+            ep.rotVelSpread = 8.0f;
+            ep.count      = 2;
+            particles.emit(ep);
+        }
+    }
 
     // Rotación de rodadura: eje perpendicular a la velocidad horizontal (Z arriba)
     // ω = (-vy, vx, 0) / radius  →  eje = normalize(-vy, vx, 0), ángulo = speed/radius * dt
@@ -246,6 +285,29 @@ void Level::update(float dt)
 
     glm::vec2 d2D = { ball.pos.x - holePos.x, ball.pos.y - holePos.y };
     bool enHoyo = (glm::length(d2D) < HOLE_RADIUS);
+
+    // ── Partículas: fuegos artificiales al caer en el hoyo ────────────────────
+    if (enHoyo && !fireworksEmitted_) {
+        fireworksEmitted_ = true;
+        for (int i = 0; i < 8; i++) {
+            float angle = (float)i / 8.0f * 6.2831853f;
+            glm::vec4 col = hsv4((float)i / 8.0f, 1.0f, 1.0f);
+            EmitParams ep;
+            ep.pos        = holePos + glm::vec3(0, 0, 0.15f);
+            ep.vel        = {std::cos(angle) * 1.5f, std::sin(angle) * 1.5f, 3.5f};
+            ep.velSpread  = {0.6f, 0.6f, 0.8f};
+            ep.acc        = {0, 0, -6.0f};
+            ep.life       = 1.4f;
+            ep.lifeSpread = 0.4f;
+            ep.size       = 0.13f;
+            ep.endSize    = 0.02f;
+            ep.color      = col;
+            ep.endColor   = {col.r, col.g, col.b, 0.0f};
+            ep.rotVelSpread = 6.0f;
+            ep.count      = 8;
+            particles.emit(ep);
+        }
+    }
 
     // Fricción y parada NORMAL (solo si no está en el agujero)
     if (!enHoyo) {
@@ -463,6 +525,8 @@ void Level::render(GLuint prog, const glm::mat4& VP)
             render_sphere(arrow, prog, VP, 0);
         }
     //}
+
+    particles.render(VP, camRight, camUp);
 }
 
 
@@ -595,4 +659,5 @@ void Level::destroy()
         destroy_wall_mesh(wallMesh);
     }
     wallMeshes.clear();
+    particles.destroy();
 }
