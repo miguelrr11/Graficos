@@ -107,6 +107,16 @@ LevelData generateTrack(glm::vec2 startPos, float startAngle, int numSegments, i
         rightSide.push_back(spine[i].pos - perp * (spine[i].width * 0.5f));
     }
 
+    // --- NUEVO: CONSTRUIR LAS BALDOSAS DEL SUELO (Trapecios) ---
+    for (size_t i = 0; i < spine.size() - 1; i++) {
+        std::vector<glm::vec2> tile;
+        tile.push_back(leftSide[i]);       // Arriba Izquierda
+        tile.push_back(rightSide[i]);      // Arriba Derecha
+        tile.push_back(rightSide[i+1]);    // Abajo Derecha
+        tile.push_back(leftSide[i+1]);     // Abajo Izquierda
+        level.floorTiles.push_back(tile);
+    }
+
     // Construir el polígono final (Vamos por la izquierda y volvemos por la derecha)
     for (size_t i = 0; i < leftSide.size(); i++) {
         level.perimeter.push_back(leftSide[i]);

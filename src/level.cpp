@@ -166,13 +166,14 @@ int heightChange = 1;
     for(size_t t = 0; t < tracks.size(); ++t) {
         float alturaIsla = FLOOR_Z + t * heightChange;
 
-        // Césped
-        floorMeshes.push_back(crear_floor_mesh(tracks[t].perimeter, alturaIsla, 2.0f));
-        floorMeshes.back().texID = texCesped;
-        floorMeshes.back().perimeter = tracks[t].perimeter;
-        floorMeshes.back().zBase = alturaIsla;
-        floorMeshes.back().useCheckerboard = true;
-
+        // Césped (Ahora lo montamos baldosa a baldosa)
+        for (const auto& tile : tracks[t].floorTiles) {
+            floorMeshes.push_back(crear_floor_mesh(tile, alturaIsla, 2.0f));
+            floorMeshes.back().texID = texCesped;
+            floorMeshes.back().perimeter = tile; // El "perímetro" físico de esta baldosa
+            floorMeshes.back().zBase = alturaIsla;
+            floorMeshes.back().useCheckerboard = true;
+        }
         // Muros visuales
         wallMeshes.push_back(crear_wall_mesh(tracks[t].perimeter, true, 0.4f, 0.5f, alturaIsla, 1.0f));
         wallMeshes.back().texID = texMadera;
