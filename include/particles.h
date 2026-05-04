@@ -18,7 +18,7 @@ struct Particle {
     bool      alive  = false;
 };
 
-// Fill in what you want and call particles.emit(ep)
+
 struct EmitParams {
     glm::vec3 pos          = {};
     glm::vec3 vel          = {};
@@ -42,11 +42,12 @@ public:
     void render(const glm::mat4& VP, const glm::vec3& camRight, const glm::vec3& camUp);
     void destroy();
 
+// pooling para mejorar rendimiento
 private:
     std::vector<Particle> pool_;
     std::vector<float>    instBuf_;
     int    maxP_    = 0;
-    int    next_    = 0;   // ring-buffer cursor
+    int    next_    = 0;
     GLuint vao_     = 0;
     GLuint quadVBO_ = 0;
     GLuint instVBO_ = 0;

@@ -753,7 +753,7 @@ void render_scene()
     // completed, the timer adds 10 seconds. If the timer reaches 0, the game is lost and resets to level 1.
     if(level.currentLevel != currentLevel) {
         currentLevel = level.currentLevel;
-        gameTimer += 10.0f; // add 10 seconds for each completed level (esto se puede ir ajustando)
+        gameTimer += 15.0f; // add 10 seconds for each completed level (esto se puede ir ajustando)
     }
     gameTimer -= dt;
     if (gameTimer <= 0) {
@@ -834,7 +834,7 @@ static void KeyCallback(GLFWwindow* window, int key, int code, int action, int m
     }
     
     // F11: Alternar Pantalla Completa
-    if (key == GLFW_KEY_F11 && action == GLFW_PRESS) {
+    if (key == GLFW_KEY_F && action == GLFW_PRESS) {
         static bool isFullScreen = false;
         static int windowed_x, windowed_y, windowed_width, windowed_height;
 

@@ -6,6 +6,7 @@
 
 // ─── Constantes de física ───────────────────────────────────────────────────
 static float rf() { return (float)rand() / (float)RAND_MAX; }
+static float rc() { return rf() * 2.0f - 1.0f; }
 
 // HSV → RGBA helper for firework colors
 static glm::vec4 hsv4(float h, float s, float v) {
@@ -17,7 +18,7 @@ static glm::vec4 hsv4(float h, float s, float v) {
 
 static const float GRAVITY     = -12.0f;
 static const float RESTITUTION = 0.35f;   // rebote en paredes/suelo
-static const float FRICTION    = 0.985f;  // multiplicador por frame (rolling)
+static const float FRICTION    = 0.988f;  // multiplicador por frame (rolling)
 static const float FRICTION_AIR = 0.995f; // fricción mientras está en el aire 
 static const float FLOOR_Z     = 0.0f;    // altura del suelo
 
@@ -31,20 +32,20 @@ static const float HOLE_RADIUS = 0.3f;    // radio del hoyo
 void Level::load()
 {
     // Cargar texturas 
-    // texCesped = cargar_textura("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/cesped.jpg");
-    // texMadera = cargar_textura("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/madera2.jpg");
-    // texHoyo   = cargar_textura("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/hoyo.png");
-    // texBola   = cargar_textura("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/bola2.png");
+    texCesped = cargar_textura("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/cesped.jpg");
+    texMadera = cargar_textura("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/madera2.jpg");
+    texHoyo   = cargar_textura("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/hoyo.png");
+    texBola   = cargar_textura("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/bola2.png");
 
     // texCesped = cargar_textura("../../assets/cesped.jpg");
     // texMadera = cargar_textura("../../assets/madera2.jpg");
     // texHoyo   = cargar_textura("../../assets/hoyo.png");
     // texBola   = cargar_textura("../../assets/bola.jpg");
 
-    texCesped = cargar_textura("C:\\Users\\mrodriguez\\Desktop\\Graficos\\assets\\cesped.jpg");
-    texMadera = cargar_textura("C:\\Users\\mrodriguez\\Desktop\\Graficos\\assets\\madera2.jpg");
-    texHoyo   = cargar_textura("C:\\Users\\mrodriguez\\Desktop\\Graficos\\assets\\hoyo.png");
-    texBola   = cargar_textura("C:\\Users\\mrodriguez\\Desktop\\Graficos\\assets\\bola2.png");
+    // texCesped = cargar_textura("C:\\Users\\mrodriguez\\Desktop\\Graficos\\assets\\cesped.jpg");
+    // texMadera = cargar_textura("C:\\Users\\mrodriguez\\Desktop\\Graficos\\assets\\madera2.jpg");
+    // texHoyo   = cargar_textura("C:\\Users\\mrodriguez\\Desktop\\Graficos\\assets\\hoyo.png");
+    // texBola   = cargar_textura("C:\\Users\\mrodriguez\\Desktop\\Graficos\\assets\\bola2.png");
 
     completed = false;
     shotAngle = 0.0f;
@@ -251,21 +252,24 @@ void Level::update(float dt)
         static float leafTimer = 0.0f;
         leafTimer -= dt;
         float horizSpd = glm::length(glm::vec2(ball.vel.x, ball.vel.y));
-        if (leafTimer <= 0.0f && horizSpd > 0.5f) {
-            leafTimer = 0.07f;
+        if (horizSpd > 0.5f) {  // leafTimer <= 0.0f && 
+            leafTimer = 0.03f;
             EmitParams ep;
-            ep.pos        = {ball.pos.x + rf() * 0.1f, ball.pos.y + rf() * 0.1f, ball.pos.z - ball.radius * 0.5f};
-            ep.vel        = {-ball.vel.x * 0.05f + rf() * 0.5, -ball.vel.y * 0.05f + rf() * 0.5, 0.4f + rf() * 0.4f};
+            ep.pos        = {ball.pos.x + rc() * 0.1f, ball.pos.y + rc() * 0.1f, ball.pos.z - ball.radius * 0.5f};
+            ep.vel        = {-ball.vel.x * 0.05f + rc() * 0.5, -ball.vel.y * 0.05f + rc() * 0.5, 0.4f + rc() * 0.4f};
+            //normalize ep.vel
+            ep.vel = glm::normalize(ep.vel) * (0.5f + rc() * 0.5f);
+            ep.vel.z = 1.0f + rc() * 0.2f; // velocidad vertical más alta para que se vean mejor
             ep.velSpread  = {0.2f, 0.2f, 0.1f};
-            ep.acc        = {0, 0, 5.0f};
-            ep.life       = 0.35f;
+            ep.acc        = {0, 0, 1.0f};
+            ep.life       = 0.65f;
             ep.lifeSpread = 0.12f;
-            ep.size       = 0.015f + rf() * 0.025f;
+            ep.size       = 0.05f + rc() * 0.025f;
             ep.endSize    = 0.0f;
-            ep.color      = {0.2f, 0.6f + rf() * 0.3f, 0.1f, 1.0f};
+            ep.color      = {0.2f, 0.6f + rc() * 0.3f, 0.1f, 1.0f};
             ep.endColor   = {0.4f, 0.85f, 0.1f, 0.0f};
             ep.rotVelSpread = 8.0f;
-            ep.count      = 20;
+            ep.count      = 5;
             particles.emit(ep);
         }
     }
