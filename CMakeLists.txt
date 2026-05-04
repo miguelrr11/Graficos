@@ -68,6 +68,9 @@ target_include_directories(gpo_proyecto_final PRIVATE
 
 if(WIN32)
     target_link_libraries(gpo_proyecto_final PRIVATE ${OPENGL_LIBRARIES} glfw glm glad_interface)
+elseif(APPLE)
+    target_link_libraries(gpo_proyecto_final PRIVATE ${OPENGL_LIBRARIES} glfw glm glad_interface
+        "-framework AudioUnit" "-framework CoreAudio" "-framework AudioToolbox" "-framework CoreFoundation")
 else()
     target_link_libraries(gpo_proyecto_final PRIVATE ${OPENGL_LIBRARIES} glfw glm glad_interface
         pthread dl m)
@@ -77,7 +80,8 @@ set_target_properties(gpo_proyecto_final
   PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-file(COPY data DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/bin)
-
-file(GLOB MY_CONTENT "data/*")
-file(COPY ${MY_CONTENT} DESTINATION "${CMAKE_BINARY_DIR}/bin/data")
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/data")
+    file(COPY data DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/bin)
+    file(GLOB MY_CONTENT "data/*")
+    file(COPY ${MY_CONTENT} DESTINATION "${CMAKE_BINARY_DIR}/bin/data")
+endif()

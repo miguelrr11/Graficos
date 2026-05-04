@@ -11,8 +11,6 @@ ATG, 2019
 #include "soloud.h"
 #include "soloud_wavstream.h"
 
-SoLoud::Soloud gSoloud;
-SoLoud::WavStream gMusic;
 
 // TAMAÑO y TITULO INICIAL de la VENTANA
 int ANCHO = 800*1.25, ALTO = 600*1.25;
@@ -785,10 +783,17 @@ int main(int argc, char* argv[])
     load_Opengl();
     init_scene();
 
-    gSoloud.init();
-    gMusic.load("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/Balatro.mp3");
+    SoLoud::Soloud *gSoloud = new SoLoud::Soloud; // object created
+    SoLoud::WavStream gMusic;
+
+    int initErr = gSoloud->init(SoLoud::Soloud::CLIP_ROUNDOFF, SoLoud::Soloud::MINIAUDIO);
+    printf("SoLoud init error: %d\n", initErr);
+    int error = gMusic.load("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/Balatro.mp3");
+    printf("Audio load error: %d\n", error);
     gMusic.setLooping(true);
-    gSoloud.play(gMusic);
+    int handle = gSoloud->play(gMusic);
+
+    gSoloud->setVolume(handle, 1.0f);
 
     glfwSwapInterval(1);
     while (!glfwWindowShouldClose(window)) {
@@ -798,10 +803,11 @@ int main(int argc, char* argv[])
         show_info();
     }
 
-    gSoloud.deinit();
+    gSoloud->deinit();
+    delete gSoloud;
     level.destroy();
     glfwTerminate();
-    exit(EXIT_SUCCESS);
+    return 0;
 }
 
 
