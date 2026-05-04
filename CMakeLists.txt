@@ -35,7 +35,7 @@ include_directories(${PROJECT_SOURCE_DIR}/libs/soloud/include)
 include_directories(${PROJECT_SOURCE_DIR}/libs/soloud/src/audiosource/wav)
 
 file(GLOB SOLOUD_CORE_SRC     libs/soloud/src/core/*.cpp)
-file(GLOB SOLOUD_BACKEND_SRC  libs/soloud/src/backend/coreaudio/*.cpp)
+file(GLOB SOLOUD_BACKEND_SRC  libs/soloud/src/backend/miniaudio/*.cpp)
 file(GLOB SOLOUD_WAV_SRC      libs/soloud/src/audiosource/wav/*.cpp
                                libs/soloud/src/audiosource/wav/*.c)
 
@@ -62,9 +62,16 @@ set(GPO_SOURCE_FILES include/stb/stb_image.h
 					 ${SOLOUD_SRC}
 					 )
 add_executable(gpo_proyecto_final ${GPO_SOURCE_FILES})
-target_compile_definitions(gpo_proyecto_final PRIVATE WITH_COREAUDIO)
-target_link_libraries(gpo_proyecto_final PRIVATE ${OPENGL_LIBRARIES} glfw glm glad_interface
-    "-framework AudioUnit" "-framework CoreAudio" "-framework AudioToolbox")
+target_compile_definitions(gpo_proyecto_final PRIVATE WITH_MINIAUDIO)
+target_include_directories(gpo_proyecto_final PRIVATE
+    ${PROJECT_SOURCE_DIR}/libs/soloud/src/backend/miniaudio)
+
+if(WIN32)
+    target_link_libraries(gpo_proyecto_final PRIVATE ${OPENGL_LIBRARIES} glfw glm glad_interface)
+else()
+    target_link_libraries(gpo_proyecto_final PRIVATE ${OPENGL_LIBRARIES} glfw glm glad_interface
+        pthread dl m)
+endif()
 
 set_target_properties(gpo_proyecto_final
   PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
