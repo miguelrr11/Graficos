@@ -237,6 +237,582 @@ libs/glad/src/glad.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/glad/src/glad.c.s
 .PHONY : libs/glad/src/glad.c.s
 
+libs/soloud/src/audiosource/wav/dr_impl.o: libs/soloud/src/audiosource/wav/dr_impl.cpp.o
+.PHONY : libs/soloud/src/audiosource/wav/dr_impl.o
+
+# target to build an object file
+libs/soloud/src/audiosource/wav/dr_impl.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/audiosource/wav/dr_impl.cpp.o
+.PHONY : libs/soloud/src/audiosource/wav/dr_impl.cpp.o
+
+libs/soloud/src/audiosource/wav/dr_impl.i: libs/soloud/src/audiosource/wav/dr_impl.cpp.i
+.PHONY : libs/soloud/src/audiosource/wav/dr_impl.i
+
+# target to preprocess a source file
+libs/soloud/src/audiosource/wav/dr_impl.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/audiosource/wav/dr_impl.cpp.i
+.PHONY : libs/soloud/src/audiosource/wav/dr_impl.cpp.i
+
+libs/soloud/src/audiosource/wav/dr_impl.s: libs/soloud/src/audiosource/wav/dr_impl.cpp.s
+.PHONY : libs/soloud/src/audiosource/wav/dr_impl.s
+
+# target to generate assembly for a file
+libs/soloud/src/audiosource/wav/dr_impl.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/audiosource/wav/dr_impl.cpp.s
+.PHONY : libs/soloud/src/audiosource/wav/dr_impl.cpp.s
+
+libs/soloud/src/audiosource/wav/soloud_wav.o: libs/soloud/src/audiosource/wav/soloud_wav.cpp.o
+.PHONY : libs/soloud/src/audiosource/wav/soloud_wav.o
+
+# target to build an object file
+libs/soloud/src/audiosource/wav/soloud_wav.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/audiosource/wav/soloud_wav.cpp.o
+.PHONY : libs/soloud/src/audiosource/wav/soloud_wav.cpp.o
+
+libs/soloud/src/audiosource/wav/soloud_wav.i: libs/soloud/src/audiosource/wav/soloud_wav.cpp.i
+.PHONY : libs/soloud/src/audiosource/wav/soloud_wav.i
+
+# target to preprocess a source file
+libs/soloud/src/audiosource/wav/soloud_wav.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/audiosource/wav/soloud_wav.cpp.i
+.PHONY : libs/soloud/src/audiosource/wav/soloud_wav.cpp.i
+
+libs/soloud/src/audiosource/wav/soloud_wav.s: libs/soloud/src/audiosource/wav/soloud_wav.cpp.s
+.PHONY : libs/soloud/src/audiosource/wav/soloud_wav.s
+
+# target to generate assembly for a file
+libs/soloud/src/audiosource/wav/soloud_wav.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/audiosource/wav/soloud_wav.cpp.s
+.PHONY : libs/soloud/src/audiosource/wav/soloud_wav.cpp.s
+
+libs/soloud/src/audiosource/wav/soloud_wavstream.o: libs/soloud/src/audiosource/wav/soloud_wavstream.cpp.o
+.PHONY : libs/soloud/src/audiosource/wav/soloud_wavstream.o
+
+# target to build an object file
+libs/soloud/src/audiosource/wav/soloud_wavstream.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/audiosource/wav/soloud_wavstream.cpp.o
+.PHONY : libs/soloud/src/audiosource/wav/soloud_wavstream.cpp.o
+
+libs/soloud/src/audiosource/wav/soloud_wavstream.i: libs/soloud/src/audiosource/wav/soloud_wavstream.cpp.i
+.PHONY : libs/soloud/src/audiosource/wav/soloud_wavstream.i
+
+# target to preprocess a source file
+libs/soloud/src/audiosource/wav/soloud_wavstream.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/audiosource/wav/soloud_wavstream.cpp.i
+.PHONY : libs/soloud/src/audiosource/wav/soloud_wavstream.cpp.i
+
+libs/soloud/src/audiosource/wav/soloud_wavstream.s: libs/soloud/src/audiosource/wav/soloud_wavstream.cpp.s
+.PHONY : libs/soloud/src/audiosource/wav/soloud_wavstream.s
+
+# target to generate assembly for a file
+libs/soloud/src/audiosource/wav/soloud_wavstream.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/audiosource/wav/soloud_wavstream.cpp.s
+.PHONY : libs/soloud/src/audiosource/wav/soloud_wavstream.cpp.s
+
+libs/soloud/src/audiosource/wav/stb_vorbis.o: libs/soloud/src/audiosource/wav/stb_vorbis.c.o
+.PHONY : libs/soloud/src/audiosource/wav/stb_vorbis.o
+
+# target to build an object file
+libs/soloud/src/audiosource/wav/stb_vorbis.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/audiosource/wav/stb_vorbis.c.o
+.PHONY : libs/soloud/src/audiosource/wav/stb_vorbis.c.o
+
+libs/soloud/src/audiosource/wav/stb_vorbis.i: libs/soloud/src/audiosource/wav/stb_vorbis.c.i
+.PHONY : libs/soloud/src/audiosource/wav/stb_vorbis.i
+
+# target to preprocess a source file
+libs/soloud/src/audiosource/wav/stb_vorbis.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/audiosource/wav/stb_vorbis.c.i
+.PHONY : libs/soloud/src/audiosource/wav/stb_vorbis.c.i
+
+libs/soloud/src/audiosource/wav/stb_vorbis.s: libs/soloud/src/audiosource/wav/stb_vorbis.c.s
+.PHONY : libs/soloud/src/audiosource/wav/stb_vorbis.s
+
+# target to generate assembly for a file
+libs/soloud/src/audiosource/wav/stb_vorbis.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/audiosource/wav/stb_vorbis.c.s
+.PHONY : libs/soloud/src/audiosource/wav/stb_vorbis.c.s
+
+libs/soloud/src/backend/coreaudio/soloud_coreaudio.o: libs/soloud/src/backend/coreaudio/soloud_coreaudio.cpp.o
+.PHONY : libs/soloud/src/backend/coreaudio/soloud_coreaudio.o
+
+# target to build an object file
+libs/soloud/src/backend/coreaudio/soloud_coreaudio.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/backend/coreaudio/soloud_coreaudio.cpp.o
+.PHONY : libs/soloud/src/backend/coreaudio/soloud_coreaudio.cpp.o
+
+libs/soloud/src/backend/coreaudio/soloud_coreaudio.i: libs/soloud/src/backend/coreaudio/soloud_coreaudio.cpp.i
+.PHONY : libs/soloud/src/backend/coreaudio/soloud_coreaudio.i
+
+# target to preprocess a source file
+libs/soloud/src/backend/coreaudio/soloud_coreaudio.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/backend/coreaudio/soloud_coreaudio.cpp.i
+.PHONY : libs/soloud/src/backend/coreaudio/soloud_coreaudio.cpp.i
+
+libs/soloud/src/backend/coreaudio/soloud_coreaudio.s: libs/soloud/src/backend/coreaudio/soloud_coreaudio.cpp.s
+.PHONY : libs/soloud/src/backend/coreaudio/soloud_coreaudio.s
+
+# target to generate assembly for a file
+libs/soloud/src/backend/coreaudio/soloud_coreaudio.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/backend/coreaudio/soloud_coreaudio.cpp.s
+.PHONY : libs/soloud/src/backend/coreaudio/soloud_coreaudio.cpp.s
+
+libs/soloud/src/core/soloud.o: libs/soloud/src/core/soloud.cpp.o
+.PHONY : libs/soloud/src/core/soloud.o
+
+# target to build an object file
+libs/soloud/src/core/soloud.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud.cpp.o
+.PHONY : libs/soloud/src/core/soloud.cpp.o
+
+libs/soloud/src/core/soloud.i: libs/soloud/src/core/soloud.cpp.i
+.PHONY : libs/soloud/src/core/soloud.i
+
+# target to preprocess a source file
+libs/soloud/src/core/soloud.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud.cpp.i
+.PHONY : libs/soloud/src/core/soloud.cpp.i
+
+libs/soloud/src/core/soloud.s: libs/soloud/src/core/soloud.cpp.s
+.PHONY : libs/soloud/src/core/soloud.s
+
+# target to generate assembly for a file
+libs/soloud/src/core/soloud.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud.cpp.s
+.PHONY : libs/soloud/src/core/soloud.cpp.s
+
+libs/soloud/src/core/soloud_audiosource.o: libs/soloud/src/core/soloud_audiosource.cpp.o
+.PHONY : libs/soloud/src/core/soloud_audiosource.o
+
+# target to build an object file
+libs/soloud/src/core/soloud_audiosource.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_audiosource.cpp.o
+.PHONY : libs/soloud/src/core/soloud_audiosource.cpp.o
+
+libs/soloud/src/core/soloud_audiosource.i: libs/soloud/src/core/soloud_audiosource.cpp.i
+.PHONY : libs/soloud/src/core/soloud_audiosource.i
+
+# target to preprocess a source file
+libs/soloud/src/core/soloud_audiosource.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_audiosource.cpp.i
+.PHONY : libs/soloud/src/core/soloud_audiosource.cpp.i
+
+libs/soloud/src/core/soloud_audiosource.s: libs/soloud/src/core/soloud_audiosource.cpp.s
+.PHONY : libs/soloud/src/core/soloud_audiosource.s
+
+# target to generate assembly for a file
+libs/soloud/src/core/soloud_audiosource.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_audiosource.cpp.s
+.PHONY : libs/soloud/src/core/soloud_audiosource.cpp.s
+
+libs/soloud/src/core/soloud_bus.o: libs/soloud/src/core/soloud_bus.cpp.o
+.PHONY : libs/soloud/src/core/soloud_bus.o
+
+# target to build an object file
+libs/soloud/src/core/soloud_bus.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_bus.cpp.o
+.PHONY : libs/soloud/src/core/soloud_bus.cpp.o
+
+libs/soloud/src/core/soloud_bus.i: libs/soloud/src/core/soloud_bus.cpp.i
+.PHONY : libs/soloud/src/core/soloud_bus.i
+
+# target to preprocess a source file
+libs/soloud/src/core/soloud_bus.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_bus.cpp.i
+.PHONY : libs/soloud/src/core/soloud_bus.cpp.i
+
+libs/soloud/src/core/soloud_bus.s: libs/soloud/src/core/soloud_bus.cpp.s
+.PHONY : libs/soloud/src/core/soloud_bus.s
+
+# target to generate assembly for a file
+libs/soloud/src/core/soloud_bus.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_bus.cpp.s
+.PHONY : libs/soloud/src/core/soloud_bus.cpp.s
+
+libs/soloud/src/core/soloud_core_3d.o: libs/soloud/src/core/soloud_core_3d.cpp.o
+.PHONY : libs/soloud/src/core/soloud_core_3d.o
+
+# target to build an object file
+libs/soloud/src/core/soloud_core_3d.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_core_3d.cpp.o
+.PHONY : libs/soloud/src/core/soloud_core_3d.cpp.o
+
+libs/soloud/src/core/soloud_core_3d.i: libs/soloud/src/core/soloud_core_3d.cpp.i
+.PHONY : libs/soloud/src/core/soloud_core_3d.i
+
+# target to preprocess a source file
+libs/soloud/src/core/soloud_core_3d.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_core_3d.cpp.i
+.PHONY : libs/soloud/src/core/soloud_core_3d.cpp.i
+
+libs/soloud/src/core/soloud_core_3d.s: libs/soloud/src/core/soloud_core_3d.cpp.s
+.PHONY : libs/soloud/src/core/soloud_core_3d.s
+
+# target to generate assembly for a file
+libs/soloud/src/core/soloud_core_3d.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_core_3d.cpp.s
+.PHONY : libs/soloud/src/core/soloud_core_3d.cpp.s
+
+libs/soloud/src/core/soloud_core_basicops.o: libs/soloud/src/core/soloud_core_basicops.cpp.o
+.PHONY : libs/soloud/src/core/soloud_core_basicops.o
+
+# target to build an object file
+libs/soloud/src/core/soloud_core_basicops.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_core_basicops.cpp.o
+.PHONY : libs/soloud/src/core/soloud_core_basicops.cpp.o
+
+libs/soloud/src/core/soloud_core_basicops.i: libs/soloud/src/core/soloud_core_basicops.cpp.i
+.PHONY : libs/soloud/src/core/soloud_core_basicops.i
+
+# target to preprocess a source file
+libs/soloud/src/core/soloud_core_basicops.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_core_basicops.cpp.i
+.PHONY : libs/soloud/src/core/soloud_core_basicops.cpp.i
+
+libs/soloud/src/core/soloud_core_basicops.s: libs/soloud/src/core/soloud_core_basicops.cpp.s
+.PHONY : libs/soloud/src/core/soloud_core_basicops.s
+
+# target to generate assembly for a file
+libs/soloud/src/core/soloud_core_basicops.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_core_basicops.cpp.s
+.PHONY : libs/soloud/src/core/soloud_core_basicops.cpp.s
+
+libs/soloud/src/core/soloud_core_faderops.o: libs/soloud/src/core/soloud_core_faderops.cpp.o
+.PHONY : libs/soloud/src/core/soloud_core_faderops.o
+
+# target to build an object file
+libs/soloud/src/core/soloud_core_faderops.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_core_faderops.cpp.o
+.PHONY : libs/soloud/src/core/soloud_core_faderops.cpp.o
+
+libs/soloud/src/core/soloud_core_faderops.i: libs/soloud/src/core/soloud_core_faderops.cpp.i
+.PHONY : libs/soloud/src/core/soloud_core_faderops.i
+
+# target to preprocess a source file
+libs/soloud/src/core/soloud_core_faderops.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_core_faderops.cpp.i
+.PHONY : libs/soloud/src/core/soloud_core_faderops.cpp.i
+
+libs/soloud/src/core/soloud_core_faderops.s: libs/soloud/src/core/soloud_core_faderops.cpp.s
+.PHONY : libs/soloud/src/core/soloud_core_faderops.s
+
+# target to generate assembly for a file
+libs/soloud/src/core/soloud_core_faderops.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_core_faderops.cpp.s
+.PHONY : libs/soloud/src/core/soloud_core_faderops.cpp.s
+
+libs/soloud/src/core/soloud_core_filterops.o: libs/soloud/src/core/soloud_core_filterops.cpp.o
+.PHONY : libs/soloud/src/core/soloud_core_filterops.o
+
+# target to build an object file
+libs/soloud/src/core/soloud_core_filterops.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_core_filterops.cpp.o
+.PHONY : libs/soloud/src/core/soloud_core_filterops.cpp.o
+
+libs/soloud/src/core/soloud_core_filterops.i: libs/soloud/src/core/soloud_core_filterops.cpp.i
+.PHONY : libs/soloud/src/core/soloud_core_filterops.i
+
+# target to preprocess a source file
+libs/soloud/src/core/soloud_core_filterops.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_core_filterops.cpp.i
+.PHONY : libs/soloud/src/core/soloud_core_filterops.cpp.i
+
+libs/soloud/src/core/soloud_core_filterops.s: libs/soloud/src/core/soloud_core_filterops.cpp.s
+.PHONY : libs/soloud/src/core/soloud_core_filterops.s
+
+# target to generate assembly for a file
+libs/soloud/src/core/soloud_core_filterops.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_core_filterops.cpp.s
+.PHONY : libs/soloud/src/core/soloud_core_filterops.cpp.s
+
+libs/soloud/src/core/soloud_core_getters.o: libs/soloud/src/core/soloud_core_getters.cpp.o
+.PHONY : libs/soloud/src/core/soloud_core_getters.o
+
+# target to build an object file
+libs/soloud/src/core/soloud_core_getters.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_core_getters.cpp.o
+.PHONY : libs/soloud/src/core/soloud_core_getters.cpp.o
+
+libs/soloud/src/core/soloud_core_getters.i: libs/soloud/src/core/soloud_core_getters.cpp.i
+.PHONY : libs/soloud/src/core/soloud_core_getters.i
+
+# target to preprocess a source file
+libs/soloud/src/core/soloud_core_getters.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_core_getters.cpp.i
+.PHONY : libs/soloud/src/core/soloud_core_getters.cpp.i
+
+libs/soloud/src/core/soloud_core_getters.s: libs/soloud/src/core/soloud_core_getters.cpp.s
+.PHONY : libs/soloud/src/core/soloud_core_getters.s
+
+# target to generate assembly for a file
+libs/soloud/src/core/soloud_core_getters.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_core_getters.cpp.s
+.PHONY : libs/soloud/src/core/soloud_core_getters.cpp.s
+
+libs/soloud/src/core/soloud_core_setters.o: libs/soloud/src/core/soloud_core_setters.cpp.o
+.PHONY : libs/soloud/src/core/soloud_core_setters.o
+
+# target to build an object file
+libs/soloud/src/core/soloud_core_setters.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_core_setters.cpp.o
+.PHONY : libs/soloud/src/core/soloud_core_setters.cpp.o
+
+libs/soloud/src/core/soloud_core_setters.i: libs/soloud/src/core/soloud_core_setters.cpp.i
+.PHONY : libs/soloud/src/core/soloud_core_setters.i
+
+# target to preprocess a source file
+libs/soloud/src/core/soloud_core_setters.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_core_setters.cpp.i
+.PHONY : libs/soloud/src/core/soloud_core_setters.cpp.i
+
+libs/soloud/src/core/soloud_core_setters.s: libs/soloud/src/core/soloud_core_setters.cpp.s
+.PHONY : libs/soloud/src/core/soloud_core_setters.s
+
+# target to generate assembly for a file
+libs/soloud/src/core/soloud_core_setters.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_core_setters.cpp.s
+.PHONY : libs/soloud/src/core/soloud_core_setters.cpp.s
+
+libs/soloud/src/core/soloud_core_voicegroup.o: libs/soloud/src/core/soloud_core_voicegroup.cpp.o
+.PHONY : libs/soloud/src/core/soloud_core_voicegroup.o
+
+# target to build an object file
+libs/soloud/src/core/soloud_core_voicegroup.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_core_voicegroup.cpp.o
+.PHONY : libs/soloud/src/core/soloud_core_voicegroup.cpp.o
+
+libs/soloud/src/core/soloud_core_voicegroup.i: libs/soloud/src/core/soloud_core_voicegroup.cpp.i
+.PHONY : libs/soloud/src/core/soloud_core_voicegroup.i
+
+# target to preprocess a source file
+libs/soloud/src/core/soloud_core_voicegroup.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_core_voicegroup.cpp.i
+.PHONY : libs/soloud/src/core/soloud_core_voicegroup.cpp.i
+
+libs/soloud/src/core/soloud_core_voicegroup.s: libs/soloud/src/core/soloud_core_voicegroup.cpp.s
+.PHONY : libs/soloud/src/core/soloud_core_voicegroup.s
+
+# target to generate assembly for a file
+libs/soloud/src/core/soloud_core_voicegroup.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_core_voicegroup.cpp.s
+.PHONY : libs/soloud/src/core/soloud_core_voicegroup.cpp.s
+
+libs/soloud/src/core/soloud_core_voiceops.o: libs/soloud/src/core/soloud_core_voiceops.cpp.o
+.PHONY : libs/soloud/src/core/soloud_core_voiceops.o
+
+# target to build an object file
+libs/soloud/src/core/soloud_core_voiceops.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_core_voiceops.cpp.o
+.PHONY : libs/soloud/src/core/soloud_core_voiceops.cpp.o
+
+libs/soloud/src/core/soloud_core_voiceops.i: libs/soloud/src/core/soloud_core_voiceops.cpp.i
+.PHONY : libs/soloud/src/core/soloud_core_voiceops.i
+
+# target to preprocess a source file
+libs/soloud/src/core/soloud_core_voiceops.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_core_voiceops.cpp.i
+.PHONY : libs/soloud/src/core/soloud_core_voiceops.cpp.i
+
+libs/soloud/src/core/soloud_core_voiceops.s: libs/soloud/src/core/soloud_core_voiceops.cpp.s
+.PHONY : libs/soloud/src/core/soloud_core_voiceops.s
+
+# target to generate assembly for a file
+libs/soloud/src/core/soloud_core_voiceops.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_core_voiceops.cpp.s
+.PHONY : libs/soloud/src/core/soloud_core_voiceops.cpp.s
+
+libs/soloud/src/core/soloud_fader.o: libs/soloud/src/core/soloud_fader.cpp.o
+.PHONY : libs/soloud/src/core/soloud_fader.o
+
+# target to build an object file
+libs/soloud/src/core/soloud_fader.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_fader.cpp.o
+.PHONY : libs/soloud/src/core/soloud_fader.cpp.o
+
+libs/soloud/src/core/soloud_fader.i: libs/soloud/src/core/soloud_fader.cpp.i
+.PHONY : libs/soloud/src/core/soloud_fader.i
+
+# target to preprocess a source file
+libs/soloud/src/core/soloud_fader.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_fader.cpp.i
+.PHONY : libs/soloud/src/core/soloud_fader.cpp.i
+
+libs/soloud/src/core/soloud_fader.s: libs/soloud/src/core/soloud_fader.cpp.s
+.PHONY : libs/soloud/src/core/soloud_fader.s
+
+# target to generate assembly for a file
+libs/soloud/src/core/soloud_fader.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_fader.cpp.s
+.PHONY : libs/soloud/src/core/soloud_fader.cpp.s
+
+libs/soloud/src/core/soloud_fft.o: libs/soloud/src/core/soloud_fft.cpp.o
+.PHONY : libs/soloud/src/core/soloud_fft.o
+
+# target to build an object file
+libs/soloud/src/core/soloud_fft.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_fft.cpp.o
+.PHONY : libs/soloud/src/core/soloud_fft.cpp.o
+
+libs/soloud/src/core/soloud_fft.i: libs/soloud/src/core/soloud_fft.cpp.i
+.PHONY : libs/soloud/src/core/soloud_fft.i
+
+# target to preprocess a source file
+libs/soloud/src/core/soloud_fft.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_fft.cpp.i
+.PHONY : libs/soloud/src/core/soloud_fft.cpp.i
+
+libs/soloud/src/core/soloud_fft.s: libs/soloud/src/core/soloud_fft.cpp.s
+.PHONY : libs/soloud/src/core/soloud_fft.s
+
+# target to generate assembly for a file
+libs/soloud/src/core/soloud_fft.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_fft.cpp.s
+.PHONY : libs/soloud/src/core/soloud_fft.cpp.s
+
+libs/soloud/src/core/soloud_fft_lut.o: libs/soloud/src/core/soloud_fft_lut.cpp.o
+.PHONY : libs/soloud/src/core/soloud_fft_lut.o
+
+# target to build an object file
+libs/soloud/src/core/soloud_fft_lut.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_fft_lut.cpp.o
+.PHONY : libs/soloud/src/core/soloud_fft_lut.cpp.o
+
+libs/soloud/src/core/soloud_fft_lut.i: libs/soloud/src/core/soloud_fft_lut.cpp.i
+.PHONY : libs/soloud/src/core/soloud_fft_lut.i
+
+# target to preprocess a source file
+libs/soloud/src/core/soloud_fft_lut.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_fft_lut.cpp.i
+.PHONY : libs/soloud/src/core/soloud_fft_lut.cpp.i
+
+libs/soloud/src/core/soloud_fft_lut.s: libs/soloud/src/core/soloud_fft_lut.cpp.s
+.PHONY : libs/soloud/src/core/soloud_fft_lut.s
+
+# target to generate assembly for a file
+libs/soloud/src/core/soloud_fft_lut.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_fft_lut.cpp.s
+.PHONY : libs/soloud/src/core/soloud_fft_lut.cpp.s
+
+libs/soloud/src/core/soloud_file.o: libs/soloud/src/core/soloud_file.cpp.o
+.PHONY : libs/soloud/src/core/soloud_file.o
+
+# target to build an object file
+libs/soloud/src/core/soloud_file.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_file.cpp.o
+.PHONY : libs/soloud/src/core/soloud_file.cpp.o
+
+libs/soloud/src/core/soloud_file.i: libs/soloud/src/core/soloud_file.cpp.i
+.PHONY : libs/soloud/src/core/soloud_file.i
+
+# target to preprocess a source file
+libs/soloud/src/core/soloud_file.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_file.cpp.i
+.PHONY : libs/soloud/src/core/soloud_file.cpp.i
+
+libs/soloud/src/core/soloud_file.s: libs/soloud/src/core/soloud_file.cpp.s
+.PHONY : libs/soloud/src/core/soloud_file.s
+
+# target to generate assembly for a file
+libs/soloud/src/core/soloud_file.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_file.cpp.s
+.PHONY : libs/soloud/src/core/soloud_file.cpp.s
+
+libs/soloud/src/core/soloud_filter.o: libs/soloud/src/core/soloud_filter.cpp.o
+.PHONY : libs/soloud/src/core/soloud_filter.o
+
+# target to build an object file
+libs/soloud/src/core/soloud_filter.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_filter.cpp.o
+.PHONY : libs/soloud/src/core/soloud_filter.cpp.o
+
+libs/soloud/src/core/soloud_filter.i: libs/soloud/src/core/soloud_filter.cpp.i
+.PHONY : libs/soloud/src/core/soloud_filter.i
+
+# target to preprocess a source file
+libs/soloud/src/core/soloud_filter.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_filter.cpp.i
+.PHONY : libs/soloud/src/core/soloud_filter.cpp.i
+
+libs/soloud/src/core/soloud_filter.s: libs/soloud/src/core/soloud_filter.cpp.s
+.PHONY : libs/soloud/src/core/soloud_filter.s
+
+# target to generate assembly for a file
+libs/soloud/src/core/soloud_filter.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_filter.cpp.s
+.PHONY : libs/soloud/src/core/soloud_filter.cpp.s
+
+libs/soloud/src/core/soloud_misc.o: libs/soloud/src/core/soloud_misc.cpp.o
+.PHONY : libs/soloud/src/core/soloud_misc.o
+
+# target to build an object file
+libs/soloud/src/core/soloud_misc.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_misc.cpp.o
+.PHONY : libs/soloud/src/core/soloud_misc.cpp.o
+
+libs/soloud/src/core/soloud_misc.i: libs/soloud/src/core/soloud_misc.cpp.i
+.PHONY : libs/soloud/src/core/soloud_misc.i
+
+# target to preprocess a source file
+libs/soloud/src/core/soloud_misc.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_misc.cpp.i
+.PHONY : libs/soloud/src/core/soloud_misc.cpp.i
+
+libs/soloud/src/core/soloud_misc.s: libs/soloud/src/core/soloud_misc.cpp.s
+.PHONY : libs/soloud/src/core/soloud_misc.s
+
+# target to generate assembly for a file
+libs/soloud/src/core/soloud_misc.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_misc.cpp.s
+.PHONY : libs/soloud/src/core/soloud_misc.cpp.s
+
+libs/soloud/src/core/soloud_queue.o: libs/soloud/src/core/soloud_queue.cpp.o
+.PHONY : libs/soloud/src/core/soloud_queue.o
+
+# target to build an object file
+libs/soloud/src/core/soloud_queue.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_queue.cpp.o
+.PHONY : libs/soloud/src/core/soloud_queue.cpp.o
+
+libs/soloud/src/core/soloud_queue.i: libs/soloud/src/core/soloud_queue.cpp.i
+.PHONY : libs/soloud/src/core/soloud_queue.i
+
+# target to preprocess a source file
+libs/soloud/src/core/soloud_queue.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_queue.cpp.i
+.PHONY : libs/soloud/src/core/soloud_queue.cpp.i
+
+libs/soloud/src/core/soloud_queue.s: libs/soloud/src/core/soloud_queue.cpp.s
+.PHONY : libs/soloud/src/core/soloud_queue.s
+
+# target to generate assembly for a file
+libs/soloud/src/core/soloud_queue.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_queue.cpp.s
+.PHONY : libs/soloud/src/core/soloud_queue.cpp.s
+
+libs/soloud/src/core/soloud_thread.o: libs/soloud/src/core/soloud_thread.cpp.o
+.PHONY : libs/soloud/src/core/soloud_thread.o
+
+# target to build an object file
+libs/soloud/src/core/soloud_thread.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_thread.cpp.o
+.PHONY : libs/soloud/src/core/soloud_thread.cpp.o
+
+libs/soloud/src/core/soloud_thread.i: libs/soloud/src/core/soloud_thread.cpp.i
+.PHONY : libs/soloud/src/core/soloud_thread.i
+
+# target to preprocess a source file
+libs/soloud/src/core/soloud_thread.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_thread.cpp.i
+.PHONY : libs/soloud/src/core/soloud_thread.cpp.i
+
+libs/soloud/src/core/soloud_thread.s: libs/soloud/src/core/soloud_thread.cpp.s
+.PHONY : libs/soloud/src/core/soloud_thread.s
+
+# target to generate assembly for a file
+libs/soloud/src/core/soloud_thread.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/libs/soloud/src/core/soloud_thread.cpp.s
+.PHONY : libs/soloud/src/core/soloud_thread.cpp.s
+
 src/GPO_aux.o: src/GPO_aux.cpp.o
 .PHONY : src/GPO_aux.o
 
@@ -285,6 +861,54 @@ src/GPO_proyecto_final.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/src/GPO_proyecto_final.cpp.s
 .PHONY : src/GPO_proyecto_final.cpp.s
 
+src/floormesh.o: src/floormesh.cpp.o
+.PHONY : src/floormesh.o
+
+# target to build an object file
+src/floormesh.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/src/floormesh.cpp.o
+.PHONY : src/floormesh.cpp.o
+
+src/floormesh.i: src/floormesh.cpp.i
+.PHONY : src/floormesh.i
+
+# target to preprocess a source file
+src/floormesh.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/src/floormesh.cpp.i
+.PHONY : src/floormesh.cpp.i
+
+src/floormesh.s: src/floormesh.cpp.s
+.PHONY : src/floormesh.s
+
+# target to generate assembly for a file
+src/floormesh.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/src/floormesh.cpp.s
+.PHONY : src/floormesh.cpp.s
+
+src/generator.o: src/generator.cpp.o
+.PHONY : src/generator.o
+
+# target to build an object file
+src/generator.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/src/generator.cpp.o
+.PHONY : src/generator.cpp.o
+
+src/generator.i: src/generator.cpp.i
+.PHONY : src/generator.i
+
+# target to preprocess a source file
+src/generator.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/src/generator.cpp.i
+.PHONY : src/generator.cpp.i
+
+src/generator.s: src/generator.cpp.s
+.PHONY : src/generator.s
+
+# target to generate assembly for a file
+src/generator.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/src/generator.cpp.s
+.PHONY : src/generator.cpp.s
+
 src/level.o: src/level.cpp.o
 .PHONY : src/level.o
 
@@ -332,6 +956,30 @@ src/obstacle.s: src/obstacle.cpp.s
 src/obstacle.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/src/obstacle.cpp.s
 .PHONY : src/obstacle.cpp.s
+
+src/particles.o: src/particles.cpp.o
+.PHONY : src/particles.o
+
+# target to build an object file
+src/particles.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/src/particles.cpp.o
+.PHONY : src/particles.cpp.o
+
+src/particles.i: src/particles.cpp.i
+.PHONY : src/particles.i
+
+# target to preprocess a source file
+src/particles.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/src/particles.cpp.i
+.PHONY : src/particles.cpp.i
+
+src/particles.s: src/particles.cpp.s
+.PHONY : src/particles.s
+
+# target to generate assembly for a file
+src/particles.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/src/particles.cpp.s
+.PHONY : src/particles.cpp.s
 
 src/sphere.o: src/sphere.cpp.o
 .PHONY : src/sphere.o
@@ -400,18 +1048,99 @@ help:
 	@echo "... libs/glad/src/glad.o"
 	@echo "... libs/glad/src/glad.i"
 	@echo "... libs/glad/src/glad.s"
+	@echo "... libs/soloud/src/audiosource/wav/dr_impl.o"
+	@echo "... libs/soloud/src/audiosource/wav/dr_impl.i"
+	@echo "... libs/soloud/src/audiosource/wav/dr_impl.s"
+	@echo "... libs/soloud/src/audiosource/wav/soloud_wav.o"
+	@echo "... libs/soloud/src/audiosource/wav/soloud_wav.i"
+	@echo "... libs/soloud/src/audiosource/wav/soloud_wav.s"
+	@echo "... libs/soloud/src/audiosource/wav/soloud_wavstream.o"
+	@echo "... libs/soloud/src/audiosource/wav/soloud_wavstream.i"
+	@echo "... libs/soloud/src/audiosource/wav/soloud_wavstream.s"
+	@echo "... libs/soloud/src/audiosource/wav/stb_vorbis.o"
+	@echo "... libs/soloud/src/audiosource/wav/stb_vorbis.i"
+	@echo "... libs/soloud/src/audiosource/wav/stb_vorbis.s"
+	@echo "... libs/soloud/src/backend/coreaudio/soloud_coreaudio.o"
+	@echo "... libs/soloud/src/backend/coreaudio/soloud_coreaudio.i"
+	@echo "... libs/soloud/src/backend/coreaudio/soloud_coreaudio.s"
+	@echo "... libs/soloud/src/core/soloud.o"
+	@echo "... libs/soloud/src/core/soloud.i"
+	@echo "... libs/soloud/src/core/soloud.s"
+	@echo "... libs/soloud/src/core/soloud_audiosource.o"
+	@echo "... libs/soloud/src/core/soloud_audiosource.i"
+	@echo "... libs/soloud/src/core/soloud_audiosource.s"
+	@echo "... libs/soloud/src/core/soloud_bus.o"
+	@echo "... libs/soloud/src/core/soloud_bus.i"
+	@echo "... libs/soloud/src/core/soloud_bus.s"
+	@echo "... libs/soloud/src/core/soloud_core_3d.o"
+	@echo "... libs/soloud/src/core/soloud_core_3d.i"
+	@echo "... libs/soloud/src/core/soloud_core_3d.s"
+	@echo "... libs/soloud/src/core/soloud_core_basicops.o"
+	@echo "... libs/soloud/src/core/soloud_core_basicops.i"
+	@echo "... libs/soloud/src/core/soloud_core_basicops.s"
+	@echo "... libs/soloud/src/core/soloud_core_faderops.o"
+	@echo "... libs/soloud/src/core/soloud_core_faderops.i"
+	@echo "... libs/soloud/src/core/soloud_core_faderops.s"
+	@echo "... libs/soloud/src/core/soloud_core_filterops.o"
+	@echo "... libs/soloud/src/core/soloud_core_filterops.i"
+	@echo "... libs/soloud/src/core/soloud_core_filterops.s"
+	@echo "... libs/soloud/src/core/soloud_core_getters.o"
+	@echo "... libs/soloud/src/core/soloud_core_getters.i"
+	@echo "... libs/soloud/src/core/soloud_core_getters.s"
+	@echo "... libs/soloud/src/core/soloud_core_setters.o"
+	@echo "... libs/soloud/src/core/soloud_core_setters.i"
+	@echo "... libs/soloud/src/core/soloud_core_setters.s"
+	@echo "... libs/soloud/src/core/soloud_core_voicegroup.o"
+	@echo "... libs/soloud/src/core/soloud_core_voicegroup.i"
+	@echo "... libs/soloud/src/core/soloud_core_voicegroup.s"
+	@echo "... libs/soloud/src/core/soloud_core_voiceops.o"
+	@echo "... libs/soloud/src/core/soloud_core_voiceops.i"
+	@echo "... libs/soloud/src/core/soloud_core_voiceops.s"
+	@echo "... libs/soloud/src/core/soloud_fader.o"
+	@echo "... libs/soloud/src/core/soloud_fader.i"
+	@echo "... libs/soloud/src/core/soloud_fader.s"
+	@echo "... libs/soloud/src/core/soloud_fft.o"
+	@echo "... libs/soloud/src/core/soloud_fft.i"
+	@echo "... libs/soloud/src/core/soloud_fft.s"
+	@echo "... libs/soloud/src/core/soloud_fft_lut.o"
+	@echo "... libs/soloud/src/core/soloud_fft_lut.i"
+	@echo "... libs/soloud/src/core/soloud_fft_lut.s"
+	@echo "... libs/soloud/src/core/soloud_file.o"
+	@echo "... libs/soloud/src/core/soloud_file.i"
+	@echo "... libs/soloud/src/core/soloud_file.s"
+	@echo "... libs/soloud/src/core/soloud_filter.o"
+	@echo "... libs/soloud/src/core/soloud_filter.i"
+	@echo "... libs/soloud/src/core/soloud_filter.s"
+	@echo "... libs/soloud/src/core/soloud_misc.o"
+	@echo "... libs/soloud/src/core/soloud_misc.i"
+	@echo "... libs/soloud/src/core/soloud_misc.s"
+	@echo "... libs/soloud/src/core/soloud_queue.o"
+	@echo "... libs/soloud/src/core/soloud_queue.i"
+	@echo "... libs/soloud/src/core/soloud_queue.s"
+	@echo "... libs/soloud/src/core/soloud_thread.o"
+	@echo "... libs/soloud/src/core/soloud_thread.i"
+	@echo "... libs/soloud/src/core/soloud_thread.s"
 	@echo "... src/GPO_aux.o"
 	@echo "... src/GPO_aux.i"
 	@echo "... src/GPO_aux.s"
 	@echo "... src/GPO_proyecto_final.o"
 	@echo "... src/GPO_proyecto_final.i"
 	@echo "... src/GPO_proyecto_final.s"
+	@echo "... src/floormesh.o"
+	@echo "... src/floormesh.i"
+	@echo "... src/floormesh.s"
+	@echo "... src/generator.o"
+	@echo "... src/generator.i"
+	@echo "... src/generator.s"
 	@echo "... src/level.o"
 	@echo "... src/level.i"
 	@echo "... src/level.s"
 	@echo "... src/obstacle.o"
 	@echo "... src/obstacle.i"
 	@echo "... src/obstacle.s"
+	@echo "... src/particles.o"
+	@echo "... src/particles.i"
+	@echo "... src/particles.s"
 	@echo "... src/sphere.o"
 	@echo "... src/sphere.i"
 	@echo "... src/sphere.s"

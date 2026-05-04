@@ -24,7 +24,7 @@ se controla con el mouse solamente ahora
 COMANDOS que uso:
 si añades archivos:
 primero tienes que modificar el CMakeLists.txt (el que esta en la raiz) para incluirlos en la compilación, luego haces:
-cd CMake
+cd Graficos
 CMake .
 make
 ./bin/gpo_proyecto_final
