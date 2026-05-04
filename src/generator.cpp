@@ -63,14 +63,20 @@ LevelData generateTrack(glm::vec2 startPos, float startAngle, int numSegments, i
             
             // --- FASE 2: ANCHURA VARIABLE Y DIFICULTAD ---
             int roll = rand() % 100;
-            // Cuanto mayor el nivel, más probabilidad de pasillo estrecho (máximo 60%)
-            int chanceEmbudo = 10 + (difficulty * 5); 
-            if (chanceEmbudo > 60) chanceEmbudo = 60;
+            
+            // Tope máximo del 35% para que no sea agobiante
+            int chanceEmbudo = 10 + (difficulty * 3); 
+            if (chanceEmbudo > 35) chanceEmbudo = 35; 
 
-            if (i == numSegments - 1) newNode.width = 12.0f;      // Green Final INMENSO
-            else if (roll < chanceEmbudo) newNode.width = 1.5f;   // Embudo dinámico
+            // El embudo empieza en 2.5m y se estrecha con el nivel, pero NUNCA baja de 1.8m
+            float anchoEmbudo = 2.5f - (difficulty * 0.1f);
+            if (anchoEmbudo < 1.8f) anchoEmbudo = 1.8f;
+
+            if (i == numSegments - 1) newNode.width = 12.0f;      // Green Final
+            else if (i == 0)          newNode.width = 6.0f;       // ZONA DE ATERRIZAJE (Siempre segura)
+            else if (roll < chanceEmbudo) newNode.width = anchoEmbudo;   // Embudo justo
             else if (roll > 70)           newNode.width = 10.0f;  // 30% Plaza gigante
-            else                          newNode.width = 4.0f;   // Resto: Pasillo normal
+            else                          newNode.width = 4.0f;   // Resto: Pasillo normal                newNode.width = 4.0f;   // Resto: Pasillo normal
             
             spine.push_back(newNode);
             currentAngle = newAngle;

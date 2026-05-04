@@ -567,6 +567,30 @@ static void KeyCallback(GLFWwindow* window, int key, int code, int action, int m
         level.destroy();
         level.load();
     }
+    
+    // F11: Alternar Pantalla Completa
+    if (key == GLFW_KEY_F11 && action == GLFW_PRESS) {
+        static bool isFullScreen = false;
+        static int windowed_x, windowed_y, windowed_width, windowed_height;
+
+        if (!isFullScreen) {
+            // Guardar posición y tamaño actuales para cuando volvamos a modo ventana
+            glfwGetWindowPos(window, &windowed_x, &windowed_y);
+            glfwGetWindowSize(window, &windowed_width, &windowed_height);
+
+            // Obtener el monitor principal y su resolución nativa
+            GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+            const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+            
+            // Pasar a pantalla completa
+            glfwSetWindowMonitor(window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+            isFullScreen = true;
+        } else {
+            // Volver a modo ventana recuperando las dimensiones guardadas
+            glfwSetWindowMonitor(window, NULL, windowed_x, windowed_y, windowed_width, windowed_height, 0);
+            isFullScreen = false;
+        }
+    }
 }
 
 void MouseCallback(GLFWwindow* window, double xpos, double ypos)
