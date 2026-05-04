@@ -2,6 +2,7 @@
 #include <GpO.h>
 #include <cstdio>
 #include <cmath>
+#include <ctime>
 
 // ─── Constantes de física ───────────────────────────────────────────────────
 static const float GRAVITY     = -9.8f;
@@ -40,86 +41,169 @@ void Level::load()
     shotPower = 0.0f;
     charging  = false;
 
-    int heightChange = 1;
+//     int heightChange = 1;
 
-    std::vector<std::vector<glm::vec2>> trackPerimeters = {
-    {{63.0f, 81.0f}, {67.0f, 83.0f}, {69.0f, 81.0f}, {69.0f, 76.0f}, {67.0f, 72.0f}, {63.0f, 72.0f}, {56.0f, 67.0f}, {56.0f, 69.0f}, {60.0f, 74.0f}},
+//     std::vector<std::vector<glm::vec2>> trackPerimeters = {
+//     {{63.0f, 81.0f}, {67.0f, 83.0f}, {69.0f, 81.0f}, {69.0f, 76.0f}, {67.0f, 72.0f}, {63.0f, 72.0f}, {56.0f, 67.0f}, {56.0f, 69.0f}, {60.0f, 74.0f}},
 
-    {{51.0f, 67.0f}, {54.0f, 65.0f}, {47.0f, 56.0f}, {42.0f, 58.0f}, {42.0f, 63.0f}},
-    {{40.0f, 56.0f}, {47.0f, 54.0f}, {47.0f, 51.0f}, {42.0f, 49.0f}, {40.0f, 49.0f}, {38.0f, 54.0f}},
-    {{45.0f, 47.0f}, {49.0f, 49.0f}, {56.0f, 49.0f}, {58.0f, 42.0f}, {54.0f, 40.0f}, {54.0f, 45.0f}},
-    {{56.0f, 38.0f}, {60.0f, 42.0f}, {65.0f, 40.0f}, {63.0f, 36.0f}, {58.0f, 33.0f}}
+//     {{51.0f, 67.0f}, {54.0f, 65.0f}, {47.0f, 56.0f}, {42.0f, 58.0f}, {42.0f, 63.0f}},
+//     {{40.0f, 56.0f}, {47.0f, 54.0f}, {47.0f, 51.0f}, {42.0f, 49.0f}, {40.0f, 49.0f}, {38.0f, 54.0f}},
+//     {{45.0f, 47.0f}, {49.0f, 49.0f}, {56.0f, 49.0f}, {58.0f, 42.0f}, {54.0f, 40.0f}, {54.0f, 45.0f}},
+//     {{56.0f, 38.0f}, {60.0f, 42.0f}, {65.0f, 40.0f}, {63.0f, 36.0f}, {58.0f, 33.0f}}
 
-    };
-    ball.pos = { 67.5f, 81.0f, 0*heightChange };
-    holePos = { 60.8f, 38.3f, (FLOOR_Z+0.1f)+4*heightChange };
+//     };
+//     ball.pos = { 67.5f, 81.0f, 0*heightChange };
+//     holePos = { 60.8f, 38.3f, (FLOOR_Z+0.1f)+4*heightChange };
     
 
-    size_t numTracks = trackPerimeters.size();
+//     size_t numTracks = trackPerimeters.size();
     
-    for(size_t t = 0; t < numTracks; ++t) {
-        // 2. GENERAR LA PISTA (6 segmentos de longitud)
-        // Usamos el algoritmo SAW + Anchura Variable que diseñamos
-        LevelData track;
-        track.perimeter = trackPerimeters[t];
-        tracks.push_back(track);
+//     for(size_t t = 0; t < numTracks; ++t) {
+//         // 2. GENERAR LA PISTA (6 segmentos de longitud)
+//         // Usamos el algoritmo SAW + Anchura Variable que diseñamos
+//         LevelData track;
+//         track.perimeter = trackPerimeters[t];
+//         tracks.push_back(track);
 
-        // 3. CÉSPED SOLO EN EL AREA DEL PERIMETRO
-        floorMeshes.push_back(crear_floor_mesh(tracks.back().perimeter, FLOOR_Z + t*heightChange, 2.0f));
-        floorMeshes.back().texID          = texCesped;
-        floorMeshes.back().perimeter      = trackPerimeters[t];
-        floorMeshes.back().zBase          = FLOOR_Z + t * heightChange;
-        floorMeshes.back().useCheckerboard = true;
+//         // 3. CÉSPED SOLO EN EL AREA DEL PERIMETRO
+//         floorMeshes.push_back(crear_floor_mesh(tracks.back().perimeter, FLOOR_Z + t*heightChange, 2.0f));
+//         floorMeshes.back().texID          = texCesped;
+//         floorMeshes.back().perimeter      = trackPerimeters[t];
+//         floorMeshes.back().zBase          = FLOOR_Z + t * heightChange;
+//         floorMeshes.back().useCheckerboard = true;
 
-        // 4. EL MURO VISUAL
-        // Pasamos: (puntos, cerrado, grosor=0.4f, altura=1.0f, zBase=FLOOR_Z, uvTile=1.0f)
-        wallMeshes.push_back(crear_wall_mesh(tracks.back().perimeter, true, 0.4f, 0.5f, FLOOR_Z + t*heightChange, 1.0f));
-        wallMeshes.back().texID = texMadera;
+//         // 4. EL MURO VISUAL
+//         // Pasamos: (puntos, cerrado, grosor=0.4f, altura=1.0f, zBase=FLOOR_Z, uvTile=1.0f)
+//         wallMeshes.push_back(crear_wall_mesh(tracks.back().perimeter, true, 0.4f, 0.5f, FLOOR_Z + t*heightChange, 1.0f));
+//         wallMeshes.back().texID = texMadera;
 
-        // 6. EL HOYO
-        if(t == numTracks - 1){
-            //holePos = { 0, 0, FLOOR_Z + 0.02f };
-            obstacles.push_back(crear_box(holePos + glm::vec3(0,0,-0.01f),
-                                        { HOLE_RADIUS*2.5f, HOLE_RADIUS*2.5f, 0.05f },
-                                        {0,0,0}, {1,1,1}, true, 1));
-            obstacles.back().texID = texHoyo;
-            obstacles.back().isHole = true;
-        }
+//         // 6. EL HOYO
+//         if(t == numTracks - 1){
+//             //holePos = { 0, 0, FLOOR_Z + 0.02f };
+//             obstacles.push_back(crear_box(holePos + glm::vec3(0,0,-0.01f),
+//                                         { HOLE_RADIUS*2.5f, HOLE_RADIUS*2.5f, 0.05f },
+//                                         {0,0,0}, {1,1,1}, true, 1));
+//             obstacles.back().texID = texHoyo;
+//             obstacles.back().isHole = true;
+//         }
+//     }
+
+//     // 7. LA BOLA
+//     //ball.pos      = { 15, 70, FLOOR_Z + ball.radius };
+//     ball.vel      = { 0, 0, 0 };
+//     ball.moving   = true;
+//     ball.rollQuat = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+//     ball.mesh     = crear_sphere({0,0,0}, ball.radius, {1.0f, 1.0f, 1.0f});
+
+//     ball.pos.z += ball.radius + 0.25f; // para que empiece ligeramente por encima del suelo
+
+//     // 5. LAS FÍSICAS (Cajas invisibles rotadas)
+//     for(size_t t = 0; t < tracks.size(); t++) {
+//         const LevelData& track = this->tracks[t];
+//         for (size_t i = 0; i < track.perimeter.size(); i++) {
+//             glm::vec2 pA = track.perimeter[i];
+//             glm::vec2 pB = track.perimeter[(i + 1) % track.perimeter.size()];
+            
+//             glm::vec2 dir = pB - pA;
+//             float longitud = glm::length(dir);
+//             float angulo = std::atan2(dir.y, dir.x);
+//             glm::vec2 centro = (pA + pB) * 0.5f;
+
+//             // Creamos la caja física: Invisible pero colisionable
+//             obstacles.push_back(crear_box({ centro.x, centro.y, FLOOR_Z + t*heightChange }, 
+//                                         { longitud, 0.4f, 1.0f }, // Grosor del muro de 0.4f
+//                                         { 0.0f, 0.0f, glm::degrees(angulo) }, 
+//                                         {1,1,1}, false));
+//             obstacles.back().ignoreRender = true; 
+//         }
+//     }
+
+    
+
+//     printf("Nivel Procedural Cargado. ¡A jugar!\n");
+// }
+int heightChange = 1;
+    srand(time(NULL)); 
+    tracks.clear(); 
+
+    // --- EL DIRECTOR DE ARCHIPIÉLAGOS ---
+    // En Nivel 1 y 2 habrá 2 islas. En Nivel 3 y 4 habrá 3 islas, etc.
+    int numIslands = 2 + (currentLevel - 1) / 2; 
+    
+    // El hueco crece con la dificultad (empieza en 3m, sube 0.5m por nivel)
+    float jumpDistance = 3.0f + (currentLevel * 0.5f); 
+
+    glm::vec2 currentStartPos = {0.0f, 0.0f};
+    float currentStartAngle = 0.0f;
+
+    for (int i = 0; i < numIslands; i++) {
+        // Generamos tramos cortos para que las islas no sean kilométricas
+        int numTramos = 3 + (rand() % 3); // 3 a 5 tramos por isla
+        
+        LevelData nuevaIsla = generateTrack(currentStartPos, currentStartAngle, numTramos, currentLevel);
+        tracks.push_back(nuevaIsla);
+
+        // Preparamos el salto para la siguiente isla:
+        // Calculamos la dirección general de esta isla para saber hacia dónde volará el jugador
+        glm::vec2 direccionIsla = glm::normalize(nuevaIsla.holePos - nuevaIsla.startPos);
+        
+        // La siguiente isla nacerá X metros más adelante siguiendo esa dirección
+        currentStartPos = nuevaIsla.holePos + (direccionIsla * jumpDistance);
+        currentStartAngle = std::atan2(direccionIsla.y, direccionIsla.x);
     }
 
-    // 7. LA BOLA
-    //ball.pos      = { 15, 70, FLOOR_Z + ball.radius };
+    // 1. LA BOLA (Aparece en la primera isla)
+    ball.pos = { tracks[0].startPos.x, tracks[0].startPos.y, FLOOR_Z + ball.radius + 0.25f };
     ball.vel      = { 0, 0, 0 };
     ball.moving   = true;
     ball.rollQuat = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
     ball.mesh     = crear_sphere({0,0,0}, ball.radius, {1.0f, 1.0f, 1.0f});
 
-    ball.pos.z += ball.radius + 0.25f; // para que empiece ligeramente por encima del suelo
+    // 2. EL HOYO (Aparece SOLO en la última isla, ajustado a su altura)
+    holePos  = { tracks.back().holePos.x, tracks.back().holePos.y, FLOOR_Z + ((numIslands - 1) * heightChange) + 0.1f };
 
-    // 5. LAS FÍSICAS (Cajas invisibles rotadas)
-    for(size_t t = 0; t < tracks.size(); t++) {
-        const LevelData& track = this->tracks[t];
-        for (size_t i = 0; i < track.perimeter.size(); i++) {
-            glm::vec2 pA = track.perimeter[i];
-            glm::vec2 pB = track.perimeter[(i + 1) % track.perimeter.size()];
-            
+    // 3. CONSTRUCCIÓN GEOMÉTRICA (Césped, Muros y Físicas)
+    for(size_t t = 0; t < tracks.size(); ++t) {
+        float alturaIsla = FLOOR_Z + t * heightChange;
+
+        // Césped
+        floorMeshes.push_back(crear_floor_mesh(tracks[t].perimeter, alturaIsla, 2.0f));
+        floorMeshes.back().texID = texCesped;
+        floorMeshes.back().perimeter = tracks[t].perimeter;
+        floorMeshes.back().zBase = alturaIsla;
+        floorMeshes.back().useCheckerboard = true;
+
+        // Muros visuales
+        wallMeshes.push_back(crear_wall_mesh(tracks[t].perimeter, true, 0.4f, 0.5f, alturaIsla, 1.0f));
+        wallMeshes.back().texID = texMadera;
+
+        // Muros físicos (invisibles)
+        for (size_t i = 0; i < tracks[t].perimeter.size(); i++) {
+            glm::vec2 pA = tracks[t].perimeter[i];
+            glm::vec2 pB = tracks[t].perimeter[(i + 1) % tracks[t].perimeter.size()];
             glm::vec2 dir = pB - pA;
             float longitud = glm::length(dir);
             float angulo = std::atan2(dir.y, dir.x);
             glm::vec2 centro = (pA + pB) * 0.5f;
 
-            // Creamos la caja física: Invisible pero colisionable
-            obstacles.push_back(crear_box({ centro.x, centro.y, FLOOR_Z + t*heightChange }, 
-                                        { longitud, 0.4f, 1.0f }, // Grosor del muro de 0.4f
-                                        { 0.0f, 0.0f, glm::degrees(angulo) }, 
-                                        {1,1,1}, false));
+            obstacles.push_back(crear_box({ centro.x, centro.y, alturaIsla }, 
+                                          { longitud, 0.4f, 1.0f }, 
+                                          { 0.0f, 0.0f, glm::degrees(angulo) }, 
+                                          {1,1,1}, false));
             obstacles.back().ignoreRender = true; 
+        }
+
+        // Si es la última isla, dibujamos la "pegatina" del hoyo
+        if (t == tracks.size() - 1) {
+            obstacles.push_back(crear_box(holePos + glm::vec3(0,0,-0.01f),
+                                          { HOLE_RADIUS*2.5f, HOLE_RADIUS*2.5f, 0.05f },
+                                          {0,0,0}, {1,1,1}, true, 1));
+            obstacles.back().texID = texHoyo;
+            obstacles.back().isHole = true;
         }
     }
 
-    
-
-    printf("Nivel Procedural Cargado. ¡A jugar!\n");
+    printf("Archipiélago Nivel %d Generado. ¡A saltar!\n", currentLevel);
 }
 
 

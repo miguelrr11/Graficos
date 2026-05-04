@@ -16,4 +16,4 @@ struct LevelData {
 };
 
 // Función principal
-LevelData generateTrack(int numSegments);
+LevelData generateTrack(glm::vec2 startPos, float startAngle, int numSegments, int difficulty);

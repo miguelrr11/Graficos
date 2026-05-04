@@ -12,17 +12,18 @@ bool intersect(glm::vec2 p1, glm::vec2 p2, glm::vec2 p3, glm::vec2 p4) {
     return ccw(p1, p3, p4) != ccw(p2, p3, p4) && ccw(p1, p2, p3) != ccw(p1, p2, p4);
 }
 
-LevelData generateTrack(int numSegments) {
+LevelData generateTrack(glm::vec2 startPos, float startAngle, int numSegments, int difficulty) {
     LevelData level;
-    srand(time(NULL));
+    // Quitamos el srand de aquí, lo llamaremos desde el bucle principal.
 
     // --- FASE 1: LA ESPINA DORSAL (Self-Avoiding Walk) ---
     std::vector<TrackNode> spine;
     
-    // Nodo 0: El Tee de salida en el origen
-    spine.push_back({ glm::vec2(0.0f, 0.0f), 6.0f }); 
-    float currentAngle = 0.0f; 
+    // Nodo 0: Nace en la coordenada y con el ángulo que le dicte el Director
+    spine.push_back({ startPos, 6.0f }); 
+    float currentAngle = startAngle;
 
+    
     for (int i = 0; i < numSegments; i++) {
         bool validPoint = false;
         glm::vec2 candidatePos;
@@ -60,12 +61,16 @@ LevelData generateTrack(int numSegments) {
             TrackNode newNode;
             newNode.pos = candidatePos;
             
-            // --- FASE 2: ANCHURA VARIABLE ---
-            int roll = rand() % 10;
+            // --- FASE 2: ANCHURA VARIABLE Y DIFICULTAD ---
+            int roll = rand() % 100;
+            // Cuanto mayor el nivel, más probabilidad de pasillo estrecho (máximo 60%)
+            int chanceEmbudo = 10 + (difficulty * 5); 
+            if (chanceEmbudo > 60) chanceEmbudo = 60;
+
             if (i == numSegments - 1) newNode.width = 12.0f;      // Green Final INMENSO
-            else if (roll <= 2)       newNode.width = 1.5f;       // 30% Embudo cabrón
-            else if (roll >= 6)       newNode.width = 10.0f;      // 40% Plaza gigante
-            else                      newNode.width = 4.0f;       // 30% Pasillo normal
+            else if (roll < chanceEmbudo) newNode.width = 1.5f;   // Embudo dinámico
+            else if (roll > 70)           newNode.width = 10.0f;  // 30% Plaza gigante
+            else                          newNode.width = 4.0f;   // Resto: Pasillo normal
             
             spine.push_back(newNode);
             currentAngle = newAngle;
