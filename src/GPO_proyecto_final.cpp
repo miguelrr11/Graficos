@@ -760,7 +760,12 @@ void render_scene()
     }
     gameTimer -= dt;
     if (gameTimer <= 0) {
+        printf("¡TIEMPO AGOTADO! Game Over. Vuelta al Nivel 1.\n");
         gameTimer = 60.0f;
+        
+        level.currentLevel = 1; // Reseteamos la dificultad del motor
+        currentLevel = 1;       // Reseteamos la memoria de la interfaz
+        
         level.destroy();
         level.load();
     }
