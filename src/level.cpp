@@ -123,8 +123,9 @@ void Level::load()
 //     printf("Nivel Procedural Cargado. ¡A jugar!\n");
 // }
     int heightChange = 1;
-    srand(time(NULL)); 
-    tracks.clear(); 
+    srand(time(NULL));
+    skyColorSeed = (float)(rand() % 1000) / 1000.0f;
+    tracks.clear();
 
     // --- EL DIRECTOR DE ARCHIPIÉLAGOS ---
     // En Nivel 1 y 2 habrá 2 islas. En Nivel 3 y 4 habrá 3 islas, etc.
@@ -138,7 +139,7 @@ void Level::load()
 
     for (int i = 0; i < numIslands; i++) {
         // Generamos tramos cortos para que las islas no sean kilométricas
-        int numTramos = 3 + (rand() % 3); // 3 a 5 tramos por isla
+        int numTramos = 2 + (rand() % 4); // de 2 a 5 tramos por isla
         
         LevelData nuevaIsla = generateTrack(currentStartPos, currentStartAngle, numTramos, currentLevel);
         tracks.push_back(nuevaIsla);
@@ -565,11 +566,12 @@ void Level::handleInput(GLFWwindow* window, float dt)
     }
 
     if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) {
-        printf("Posición bola: (%.2f, %.2f, %.2f)   Velocidad: (%.2f, %.2f, %.2f)   En aire: %s  hasClickedInAir: %s\n",
+        printf("Posición bola: (%.2f, %.2f, %.2f)   Velocidad: (%.2f, %.2f, %.2f)   En aire: %s  hasClickedInAir: %s skyColorSeed: %.2f\n",
             ball.pos.x, ball.pos.y, ball.pos.z,
             ball.vel.x, ball.vel.y, ball.vel.z,
             inAir ? "Si" : "No",
-            hasClickedInAir ? "Si" : "No");
+            hasClickedInAir ? "Si" : "No",
+            skyColorSeed);
     }
 
     prevClick = curClick;

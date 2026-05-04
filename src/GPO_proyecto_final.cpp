@@ -8,7 +8,7 @@ ATG, 2019
 #include <vector>
 
 // TAMAÑO y TITULO INICIAL de la VENTANA
-int ANCHO = 800, ALTO = 600;
+int ANCHO = 800*1.25, ALTO = 600*1.25;
 const char* prac = "MiniGolf 3D (GpO)";
 
 #define GLSL(src) "#version 330 core\n" #src
@@ -24,6 +24,7 @@ GLuint shadow_prog;
 GLuint quad_prog;
 GLuint quadVAO, quadVBO;
 GLuint fbo, fboColorTex, fboDepthTex;
+GLuint skyFBO, skyColorTex;
 float  pixelSize = 3.0f;   // píxeles de pantalla por "píxel de juego"
 
 const char* skybox_vs = GLSL(
@@ -40,12 +41,69 @@ const char* skybox_vs = GLSL(
 const char* skybox_fs = GLSL(
     in vec3 dir;
     out vec4 FragColor;
+    uniform float uTime;
+    uniform float uColorSeed;
+
+    float hash(vec3 p) {
+        p = fract(p * vec3(443.897, 441.423, 437.195));
+        p += dot(p, p.yzx + 19.19);
+        return fract((p.x + p.y) * p.z);
+    }
+
+    float vnoise(vec3 p) {
+        vec3 i = floor(p);
+        vec3 f = fract(p);
+        vec3 u = f * f * (3.0 - 2.0 * f);
+        return mix(
+            mix(mix(hash(i),             hash(i+vec3(1,0,0)), u.x),
+                mix(hash(i+vec3(0,1,0)), hash(i+vec3(1,1,0)), u.x), u.y),
+            mix(mix(hash(i+vec3(0,0,1)), hash(i+vec3(1,0,1)), u.x),
+                mix(hash(i+vec3(0,1,1)), hash(i+vec3(1,1,1)), u.x), u.y), u.z);
+    }
+
+    float fbm(vec3 p) {
+        float v = 0.0;
+        float a = 0.5;
+        for (int i = 0; i < 5; i++) {
+            v += a * vnoise(p);
+            p  = p * 2.1 + vec3(1.7, 9.2, 3.4);
+            a *= 0.5;
+        }
+        return v;
+    }
+
+    vec3 hsv2rgb(float h, float s, float v) {
+        vec3 rgb = clamp(abs(mod(h * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0);
+        return v * mix(vec3(1.0), rgb, s);
+    }
+
+    vec3 lineColor(float t, float seed) {
+        vec3 a = vec3(0.55, 0.55, 0.55);
+        vec3 b = vec3(0.45, 0.45, 0.45);
+        vec3 c = vec3(1.00, 1.00, 1.00);
+        vec3 d = vec3(seed, seed + 0.3333, seed + 0.6667);
+        return clamp(a + b * cos(6.28318 * (c * t + d)), 0.0, 1.0);
+    }
+
+    vec3 bgColor(float t, float seed) {
+        vec3 a = vec3(0.15, 0.15, 0.16);
+        vec3 b = vec3(0.07, 0.09, 0.1);
+        vec3 c = vec3(1.20, 0.90, 1.10);
+        vec3 d = vec3(seed + 0.50, seed + 0.85, seed + 0.15);
+        return clamp(a + b * cos(6.28318 * (c * t + d)), 0.0, 1.0);
+    }
+
     void main() {
-        vec3 d = normalize(dir);
-        float t = 0.5 * (d.z + 1.0);
-        vec3 skyTop    = vec3(0.2, 0.5, 0.9);
-        vec3 skyBottom = vec3(0.9, 0.9, 1.0);
-        FragColor = vec4(mix(skyBottom, skyTop, t), 1.0);
+        vec3  d    = normalize(dir);
+        vec3  p    = d * 2.5 + vec3(uTime * 0.035, uTime * 0.022, uTime * 0.014);
+        float h    = clamp(fbm(p), 0.0, 0.9999);
+        float LEVELS = 10.0;
+        float scaled = h * LEVELS;
+        float band   = floor(scaled);
+        float t      = fract(scaled);
+        float norm   = band / LEVELS;
+        vec3  col    = (t < 0.15) ? lineColor(norm+t, uColorSeed) : bgColor(norm+t*2.5, uColorSeed);
+        FragColor    = vec4(col, 1.0);
     }
 );
 
@@ -65,13 +123,13 @@ const char* quad_fs = GLSL(
 
     uniform sampler2D screenTex;
     uniform sampler2D depthTex;
+    uniform sampler2D skyTex;
     uniform vec2  resolution;
     uniform float pixelSize;
     uniform float uNear;
     uniform float uFar;
     uniform float uFogStart;
     uniform float uFogEnd;
-    uniform vec3  uFogColor;
 
     float linearDepth(float d) {
         return uNear * uFar / (uFar - d * (uFar - uNear));
@@ -121,22 +179,31 @@ const char* quad_fs = GLSL(
         color *= (row < 1.0) ? 0.9 : 1.0;
 
         // ── 4. Niebla con dithering ordenado (Bayer 4x4) ───────────────────
-        float linD = d;  // ya linearizado arriba
-        float fogF = clamp((uFogEnd - linD) / (uFogEnd - uFogStart), 0.0, 1.0);
+        if (rawD < 0.9999) {
+            float linD = d;
+            float fogF = clamp((uFogEnd - linD) / (uFogEnd - uFogStart), 0.0, 1.0);
 
-        float bayer[16];
-        bayer[0]  =  0.0/16.0; bayer[1]  =  8.0/16.0;
-        bayer[2]  =  2.0/16.0; bayer[3]  = 10.0/16.0;
-        bayer[4]  = 12.0/16.0; bayer[5]  =  4.0/16.0;
-        bayer[6]  = 14.0/16.0; bayer[7]  =  6.0/16.0;
-        bayer[8]  =  3.0/16.0; bayer[9]  = 11.0/16.0;
-        bayer[10] =  1.0/16.0; bayer[11] =  9.0/16.0;
-        bayer[12] = 15.0/16.0; bayer[13] =  7.0/16.0;
-        bayer[14] = 13.0/16.0; bayer[15] =  5.0/16.0;
+            float bayer[16];
+            bayer[0]  =  0.0/16.0; bayer[1]  =  8.0/16.0;
+            bayer[2]  =  2.0/16.0; bayer[3]  = 10.0/16.0;
+            bayer[4]  = 12.0/16.0; bayer[5]  =  4.0/16.0;
+            bayer[6]  = 14.0/16.0; bayer[7]  =  6.0/16.0;
+            bayer[8]  =  3.0/16.0; bayer[9]  = 11.0/16.0;
+            bayer[10] =  1.0/16.0; bayer[11] =  9.0/16.0;
+            bayer[12] = 15.0/16.0; bayer[13] =  7.0/16.0;
+            bayer[14] = 13.0/16.0; bayer[15] =  5.0/16.0;
 
-        int bx = int(mod(block.x, 4.0));
-        int by = int(mod(block.y, 4.0));
-        if (fogF < bayer[by * 4 + bx]) color = uFogColor;
+            int bx = int(mod(block.x, 4.0));
+            int by = int(mod(block.y, 4.0));
+            float threshold = bayer[by * 4 + bx];
+
+            // Soft band around each pixel's threshold → merging dither
+            float band = 0.0;  // 0.0 = original crisp dither, ~0.2 = very soft
+            float t    = smoothstep(threshold - band, threshold + band, fogF);
+
+            vec3 skyColor = texture(skyTex, uv).rgb;
+            color = mix(skyColor, color, t);
+        }
 
         // ── 5. Vignette ────────────────────────────────────────────────────
         vec2  vc = fragUV - 0.5;
@@ -342,6 +409,19 @@ void destroy_fbo()
     glDeleteFramebuffers(1, &fbo);
 }
 
+void setup_sky_fbo(int w, int h)
+{
+    glGenFramebuffers(1, &skyFBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, skyFBO);
+    glGenTextures(1, &skyColorTex);
+    glBindTexture(GL_TEXTURE_2D, skyColorTex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, skyColorTex, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
 void setup_quad()
 {
     float v[] = {
@@ -404,6 +484,7 @@ void init_scene()
 
     // FBO + quad de post-proceso
     setup_fbo(w, h);
+    setup_sky_fbo(w, h);
     setup_quad();
     {
         GLuint QVS = compilar_shader(quad_vs, GL_VERTEX_SHADER);
@@ -464,6 +545,20 @@ void render_scene()
     mat4 V  = lookAt(camPos, target, up);
     mat4 VP = P * V;
 
+    // ── 0. Skybox solo al sky FBO (usado después para el color de niebla) ────
+    glBindFramebuffer(GL_FRAMEBUFFER, skyFBO);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glDisable(GL_DEPTH_TEST);
+    glUseProgram(skybox_prog);
+    transfer_mat4("VP", P * mat4(mat3(V)));
+    transfer_float("uTime", now);
+    transfer_float("uColorSeed", level.skyColorSeed);
+    glBindVertexArray(skyboxVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glBindVertexArray(0);
+    glEnable(GL_DEPTH_TEST);
+
     // ── 1. Renderizar escena al FBO ───────────────────────────────────────────
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -496,6 +591,8 @@ void render_scene()
     glDepthFunc(GL_LEQUAL);
     glUseProgram(skybox_prog);
     transfer_mat4("VP", P * mat4(mat3(V)));
+    transfer_float("uTime", now);
+    transfer_float("uColorSeed", level.skyColorSeed);
     glBindVertexArray(skyboxVAO);
     glDrawArrays(GL_TRIANGLES, 0, 36);
     glBindVertexArray(0);
@@ -513,13 +610,15 @@ void render_scene()
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, fboDepthTex);
     glUniform1i(glGetUniformLocation(quad_prog, "depthTex"), 1);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, skyColorTex);
+    glUniform1i(glGetUniformLocation(quad_prog, "skyTex"), 2);
     glUniform2f(glGetUniformLocation(quad_prog, "resolution"), (float)ANCHO, (float)ALTO);
     glUniform1f(glGetUniformLocation(quad_prog, "pixelSize"),  pixelSize);
     glUniform1f(glGetUniformLocation(quad_prog, "uNear"),      0.5f);
     glUniform1f(glGetUniformLocation(quad_prog, "uFar"),       40.0f);
-    glUniform1f(glGetUniformLocation(quad_prog, "uFogStart"),  12.0f);
-    glUniform1f(glGetUniformLocation(quad_prog, "uFogEnd"),    25.0f);
-    glUniform3f(glGetUniformLocation(quad_prog, "uFogColor"),  0.82f, 0.87f, 0.96f);
+    glUniform1f(glGetUniformLocation(quad_prog, "uFogStart"),  100.0f);
+    glUniform1f(glGetUniformLocation(quad_prog, "uFogEnd"),    200.0f);
 
     glBindVertexArray(quadVAO);
     glDrawArrays(GL_TRIANGLES, 0, 6);
