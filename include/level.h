@@ -23,9 +23,11 @@
 // ─────────────────────────────────────────
 struct Ball {
     glm::vec3 pos    = { 0.5f, 0.0f, 0.15f };
+    glm::vec3 prevPos = pos;
     glm::vec3 vel    = { 0.0f, 0.0f, 0.0f  };
     float     radius = 0.15f;
-    bool      moving = false;
+    bool      moving   = false;
+    bool      onGround = false;
     SphereObstacle mesh;
 
     // Rotación acumulada de rodadura: se actualiza cada frame según la velocidad
@@ -66,6 +68,7 @@ public:
     void renderShadows(GLuint shadow_prog, const glm::mat4& VP, const glm::mat4& shadowMat);
     void handleInput(GLFWwindow* window, float dt);         // input del jugador
     void destroy();                                         // libera GPU resources
+    void restartLevel();                                    // reinicia el estado de la bola para volver a empezar el mismo nivel
 
 private:
     void resolveFloor();        // colisión con el suelo plano (z = 0)

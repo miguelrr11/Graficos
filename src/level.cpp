@@ -5,9 +5,9 @@
 #include <ctime>
 
 // ─── Constantes de física ───────────────────────────────────────────────────
-static const float GRAVITY     = -9.8f;
+static const float GRAVITY     = -12.0f;
 static const float RESTITUTION = 0.35f;   // rebote en paredes/suelo
-static const float FRICTION    = 0.983f;  // multiplicador por frame (rolling)
+static const float FRICTION    = 0.985f;  // multiplicador por frame (rolling)
 static const float FRICTION_AIR = 0.995f; // fricción mientras está en el aire 
 static const float FLOOR_Z     = 0.0f;    // altura del suelo
 
@@ -26,15 +26,15 @@ void Level::load()
     // texHoyo   = cargar_textura("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/hoyo.png");
     // texBola   = cargar_textura("/Users/miguelrodriguezmbp/Desktop/Upm/MASTER-1/Segundo_Sem/Graficos/assets/bola2.png");
 
-    texCesped = cargar_textura("../../assets/cesped.jpg");
-    texMadera = cargar_textura("../../assets/madera2.jpg");
-    texHoyo   = cargar_textura("../../assets/hoyo.png");
-    texBola   = cargar_textura("../../assets/bola.jpg");
+    // texCesped = cargar_textura("../../assets/cesped.jpg");
+    // texMadera = cargar_textura("../../assets/madera2.jpg");
+    // texHoyo   = cargar_textura("../../assets/hoyo.png");
+    // texBola   = cargar_textura("../../assets/bola.jpg");
 
-    // texCesped = cargar_textura("C:\\Users\\mrodriguez\\Desktop\\Graficos\\assets\\cesped.jpg");
-    // texMadera = cargar_textura("C:\\Users\\mrodriguez\\Desktop\\Graficos\\assets\\madera2.jpg");
-    // texHoyo   = cargar_textura("C:\\Users\\mrodriguez\\Desktop\\Graficos\\assets\\hoyo.png");
-    // texBola   = cargar_textura("C:\\Users\\mrodriguez\\Desktop\\Graficos\\assets\\bola2.png");
+    texCesped = cargar_textura("C:\\Users\\mrodriguez\\Desktop\\Graficos\\assets\\cesped.jpg");
+    texMadera = cargar_textura("C:\\Users\\mrodriguez\\Desktop\\Graficos\\assets\\madera2.jpg");
+    texHoyo   = cargar_textura("C:\\Users\\mrodriguez\\Desktop\\Graficos\\assets\\hoyo.png");
+    texBola   = cargar_textura("C:\\Users\\mrodriguez\\Desktop\\Graficos\\assets\\bola2.png");
 
     completed = false;
     shotAngle = 0.0f;
@@ -122,7 +122,7 @@ void Level::load()
 
 //     printf("Nivel Procedural Cargado. ¡A jugar!\n");
 // }
-int heightChange = 1;
+    int heightChange = 1;
     srand(time(NULL)); 
     tracks.clear(); 
 
@@ -204,7 +204,13 @@ int heightChange = 1;
         }
     }
 
-    printf("Archipiélago Nivel %d Generado. ¡A saltar!\n", currentLevel);
+    printf("Archipielago Nivel %d Generado. ¡A saltar!\n", currentLevel);
+}
+void Level::restartLevel() {
+    // reiniciar estado de bola para volver a empezar el mismo nivel
+    ball.pos = { tracks[0].startPos.x, tracks[0].startPos.y, FLOOR_Z + ball.radius + 0.25f };
+    ball.vel      = { 0, 0, 0 };
+    ball.moving   = true;
 }
 
 
@@ -213,9 +219,11 @@ int heightChange = 1;
 // ════════════════════════════════════════════════════════════════════════════
 void Level::update(float dt)
 {
+    ball.prevPos  = ball.pos;
+    ball.onGround = false;
     if (!ball.moving) return;
 
-    // Física básica
+    // gravedad
     ball.vel.z += GRAVITY * dt;
     ball.pos += ball.vel * dt;
 
@@ -271,7 +279,7 @@ void Level::update(float dt)
         }
 
         // Si ya se ha hundido suficiente, ¡PASAMOS DE NIVEL!
-        if (ball.pos.z < -0.5f) {
+        if (ball.pos.z < -0.5f + currentFloorZ) {
             printf("¡NIVEL %d COMPLETADO! Avanzando...\n", currentLevel);
             currentLevel++;  // Subimos la dificultad
             destroy();       // Limpiamos la memoria del nivel anterior
@@ -282,10 +290,12 @@ void Level::update(float dt)
     }
     // --- NUEVA CONDICIÓN DE DERROTA ---
     if (ball.pos.z < -3.0f) {
-        printf("¡TE HAS CAÍDO AL VACÍO! Game Over. Vuelta al Nivel 1.\n");
-        currentLevel = 1; // Castigo brutal
-        destroy();
-        load();
+        // printf("¡TE HAS CAÍDO AL VACÍO! Game Over. Vuelta al Nivel 1.\n");
+        // currentLevel = 1; // Castigo brutal
+        // destroy();
+        printf("¡TE HAS CAIDO AL VACIO! Intentalo de nuevo en el mismo nivel.\n");
+        restartLevel(); // Simplemente reiniciamos el mismo nivel para que lo intente de nuevo
+        //load();
         return;
     }
 }
@@ -333,6 +343,7 @@ void Level::resolveFloor()
             ball.pos.z = bestZ + ball.radius;
             if (ball.vel.z < 0.0f)
                 ball.vel.z *= -RESTITUTION;
+            ball.onGround = true;
         }
     }
 }
@@ -378,6 +389,9 @@ void Level::resolveWalls()
 
         int   axis = best / 2;
         float sign = (best % 2 == 0) ? 1.0f : -1.0f;
+
+        // ball resting on top face of a wall
+        if (axis == 2 && sign == 1.0f) ball.onGround = true;
 
         // ── 4. Corregir posición en espacio local y volver al mundo ─────────
         local[axis] += sign * pen[best];
@@ -497,23 +511,33 @@ void Level::renderShadows(GLuint shadow_prog, const glm::mat4& VP, const glm::ma
 // ════════════════════════════════════════════════════════════════════════════
 void Level::handleInput(GLFWwindow* window, float dt)
 {
-    // debug: si se presiona espacio, se aplica una velocidad instantanea hacia arriba (salto basicamente)
+    static bool hasClickedInAir = false;
     static bool prevSpace = false;
-    bool inAir = (ball.pos.z > ball.radius + 0.02f);
-    if(glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && !prevSpace) {  // && !prevSpace && !inAir
-        ball.vel.z += 7.0f; // impulso hacia arriba
+    static int  numTimesSpacePressed = 0;
+
+    bool inAir = !ball.onGround;
+
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && !prevSpace) {
+        numTimesSpacePressed++;
+        float impulse = 5.5f / (numTimesSpacePressed * numTimesSpacePressed);
+        ball.vel.z += impulse;
         ball.moving = true;
+        inAir = true;
+        printf("¡Salto! Veces presionado: %d, Velocidad Z aplicada: %.2f\n",
+               numTimesSpacePressed, impulse);
     }
     prevSpace = (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS);
 
-    //if (ball.moving || completed) return;   // no se puede disparar mientras la bola rueda o cuando se ha completado el nivel
+    if (!inAir) {
+        numTimesSpacePressed = 0;
+        hasClickedInAir      = false;
+    }
 
     // ── Disparar con click izquierdo ──────────────────────────────────────
     static bool prevClick = false;
     bool curClick = (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS);
 
     if (curClick && !prevClick) {
-        // Empieza a cargar
         charging  = true;
         shotPower = 0.0f;
     }
@@ -523,27 +547,33 @@ void Level::handleInput(GLFWwindow* window, float dt)
         if (shotPower > 1.0f) shotPower = 1.0f;
     }
 
-    
-
-    if (charging && !curClick && prevClick) {
-        // Suelta el espacio → disparar
+    if (charging && !curClick && prevClick && (!inAir || !hasClickedInAir)) {
         float rad   = glm::radians(shotAngle);
         float power = shotPower * MAX_POWER;
 
-        ball.vel.x  += std::cos(rad) * power;
-        ball.vel.y  += std::sin(rad) * power;
-        ball.vel.z  = 0.3f;         // pequeño bote inicial
+        ball.vel.x += std::cos(rad) * power;
+        ball.vel.y += std::sin(rad) * power;
 
         ball.moving = true;
         charging    = false;
         shotPower   = 0.0f;
 
-        printf("Disparo → ángulo: %.1f°  potencia: %.1f m/s\n", shotAngle, power);
+        if (inAir) hasClickedInAir = true;
+
+        printf("Disparo → angulo: %.1f°  potencia: %.1f m/s    inAir: %s\n",
+               shotAngle, power, inAir ? "Si" : "No");
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) {
+        printf("Posición bola: (%.2f, %.2f, %.2f)   Velocidad: (%.2f, %.2f, %.2f)   En aire: %s  hasClickedInAir: %s\n",
+            ball.pos.x, ball.pos.y, ball.pos.z,
+            ball.vel.x, ball.vel.y, ball.vel.z,
+            inAir ? "Si" : "No",
+            hasClickedInAir ? "Si" : "No");
     }
 
     prevClick = curClick;
 }
-
 
 // ════════════════════════════════════════════════════════════════════════════
 //  DESTROY

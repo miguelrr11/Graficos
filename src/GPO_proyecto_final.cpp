@@ -81,7 +81,29 @@ const char* quad_fs = GLSL(
         // ── 1. Pixelación ──────────────────────────────────────────────────
         vec2 block = floor(fragUV * resolution / pixelSize);
         vec2 uv    = (block * pixelSize + pixelSize * 0.5) / resolution;
+
+        // Pixelated base
         vec3 color = texture(screenTex, uv).rgb;
+
+        // ── 0. Color aberration (radial, edges only, sub-pixel smooth) ────
+        vec2  toCenter = fragUV - 0.5;
+        float distC    = length(toCenter);
+
+        // 0 in the center ~30% radius, ramps to 1 at the corners
+        float abMask   = smoothstep(0.4, 0.8, distC);
+
+        // Radial offset in continuous UV space — grows toward the corners
+        // and isn't snapped to the pixel grid.
+        vec2 abOffset  = toCenter * abMask * 0.05;   // tweak 0.04 to taste
+
+        // R and B sampled from fragUV (smooth), NOT from uv (pixelated).
+        // This is what makes the fringe break out of the pixel grid.
+        float aR = texture(screenTex, fragUV + abOffset).r;
+        float aB = texture(screenTex, fragUV - abOffset).b;
+
+        // Blend in only at the edges; center remains the clean pixelated color.
+        color.r = mix(color.r, aR, abMask);
+        color.b = mix(color.b, aB, abMask);
 
         // ── 2. Outlines (bordes por diferencia de profundidad lineal) ─────────
         vec2 off = pixelSize / resolution;
@@ -142,7 +164,7 @@ const char* shadow_fs = GLSL(
     }
 );
 
-// ─── Shaders principales ─────────────────────────────────────────────────────
+// ─── Shaders principales para objetos ─────────────────────────────────────────────────────
 const char* vertex_prog = GLSL(
     layout(location = 0) in vec3 pos;
     layout(location = 1) in vec3 normal;
