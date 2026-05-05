@@ -143,5 +143,13 @@ LevelData generateTrack(glm::vec2 startPos, float startAngle, int numSegments, i
     glm::vec2 endDir = glm::normalize(spine[spine.size() - 2].pos - spine.back().pos);
     level.holePos = spine.back().pos + endDir * 2.0f;
 
+    //si el nivel tiene mas de 2 segments, cogemos el del medio para colocar un bonus
+    if (spine.size() > 2) {
+        size_t midIndex = spine.size() / 2;
+        level.bonusPos = spine[midIndex].pos;
+    } else {
+        level.bonusPos = (spine.front().pos + spine.back().pos) * 0.5f; // Si no, lo ponemos en medio del camino
+    }
+
     return level;
 }

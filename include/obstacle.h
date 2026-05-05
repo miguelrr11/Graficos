@@ -18,6 +18,11 @@ struct BoxObstacle {
     int tile = 1;                  // para repetir la textura (1 = sin repetir, 2 = el doble, etc.)
     bool ignoreCollision = false;   // para obstáculos decorativos que no bloquean la bola
     bool ignoreRender = false;      // para obstáculos que sí bloquean la bola pero no se dibujan (ej. el suelo)
+    bool isBonus = false;          // para distinguir los obstáculos de bonus (que se pintan de blanco y dan puntos al tocar)
+
+    glm::vec3 eulerAnglesVel = glm::vec3(0.0f); // velocidad de rotación en grados por segundo, para obstáculos giratorios
+    bool isDying = false; // para hacer animaciones de desaparición al recoger un bonus
+    bool dead = false; // para marcar obstáculos de bonus que ya fueron recogidos y deben desaparecer
 
     GLuint VAO, VBO, EBO;
     int indexCount;
@@ -46,3 +51,4 @@ BoxObstacle crear_box(glm::vec3 position, glm::vec3 size,
 
 void render_box(const BoxObstacle& box, GLuint prog, const glm::mat4& VP, GLuint texID);
 void destroy_box(BoxObstacle& box);
+void update_box(BoxObstacle& box, float deltaTime);

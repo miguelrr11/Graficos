@@ -29,6 +29,7 @@ static const float CHARGE_RATE = 0.7f;    // potencia acumulada por segundo
 static const float AIM_SPEED   = 90.0f;   // grados/segundo al girar la mira
 static const float STOP_SPEED2 = 0.05f;  // velocidad mínima para detener la bola
 static const float HOLE_RADIUS = 0.3f;    // radio del hoyo
+static const float IMPULSE     = 5.75f;    // impulso del salto
 
 void Level::load()
 {
@@ -152,6 +153,15 @@ void Level::load()
         // La siguiente isla nacerá X metros más adelante siguiendo esa dirección
         currentStartPos = nuevaIsla.holePos + (direccionIsla * jumpDistance);
         currentStartAngle = std::atan2(direccionIsla.y, direccionIsla.x);
+
+        if(nuevaIsla.bonusPos != glm::vec2(0.0f) && rf() < 0.7f) { // 70% de probabilidad de que aparezca un bonus en esta isla
+            BoxObstacle box = crear_box({nuevaIsla.bonusPos.x, nuevaIsla.bonusPos.y, FLOOR_Z + i*heightChange + 0.35f},
+                                          {0.5f, 0.5f, 0.5f},
+                                          {30, 0, 45}, hsv4(200/360.0f, 1.0f, 1.0f), true);
+            box.isBonus = true;
+            box.eulerAnglesVel = {15.0f, 45.0f, 60.0f}; // El bonus gira sobre sí mismo
+            obstacles.push_back(box);
+        }
     }
 
     // 1. LA BOLA (Aparece en la primera isla)
@@ -177,7 +187,7 @@ void Level::load()
             floorMeshes.back().useCheckerboard = true;
         }
         // Muros visuales
-        wallMeshes.push_back(crear_wall_mesh(tracks[t].perimeter, true, 0.4f, 0.5f, alturaIsla, 1.0f));
+        wallMeshes.push_back(crear_wall_mesh(tracks[t].perimeter, true, 0.4f, 0.65f, alturaIsla, 1.0f));
         wallMeshes.back().texID = texMadera;
 
         // Muros físicos (invisibles)
@@ -211,11 +221,22 @@ void Level::load()
 
     printf("Archipielago Nivel %d Generado. ¡A saltar!\n", currentLevel);
 }
+
 void Level::restartLevel() {
     // reiniciar estado de bola para volver a empezar el mismo nivel
     ball.pos = { tracks[0].startPos.x, tracks[0].startPos.y, FLOOR_Z + ball.radius + 0.25f };
     ball.vel      = { 0, 0, 0 };
     ball.moving   = true;
+
+    // Reiniciar obstáculos de bonus
+    for (auto& obs : obstacles) {
+        if (obs.isBonus) {
+            printf("Reiniciando bonus en posición (%.2f, %.2f)\n", obs.position.x, obs.position.y);
+            obs.isDying = false;
+            obs.dead = false;
+            obs.size = {0.5f, 0.5f, 0.5f};
+        }
+    }
 }
 
 
@@ -224,6 +245,24 @@ void Level::restartLevel() {
 // ════════════════════════════════════════════════════════════════════════════
 void Level::update(float dt)
 {
+    //update de rotación de obstáculos giratorios
+    for (auto& obs : obstacles) {
+        update_box(obs, dt);
+
+        if(obs.isDying) {
+            // Animación de desaparición: se hunde y se hace transparente
+            obs.size *= 0.965f; // se hace más pequeño
+
+            if(obs.size.x < 0.05f) {
+                obs.dead = true;
+            }
+        }
+
+        // if(obs.isBonus && obs.dead) {
+        //     destroy_box(obs);
+        // }
+    }
+
     particles.update(dt);   // always ticks, even when ball is stopped
 
     ball.prevPos  = ball.pos;
@@ -348,14 +387,12 @@ void Level::update(float dt)
     }
     // --- NUEVA CONDICIÓN DE DERROTA ---
     if (ball.pos.z < -3.0f) {
-        // printf("¡TE HAS CAÍDO AL VACÍO! Game Over. Vuelta al Nivel 1.\n");
-        // currentLevel = 1; // Castigo brutal
-        // destroy();
         printf("¡TE HAS CAIDO AL VACIO! Intentalo de nuevo en el mismo nivel.\n");
-        restartLevel(); // Simplemente reiniciamos el mismo nivel para que lo intente de nuevo
-        //load();
+        restartLevel();
         return;
     }
+
+    
 }
 
 
@@ -408,8 +445,8 @@ void Level::resolveFloor()
 
 void Level::resolveWalls()
 {
-    for (const auto& obs : obstacles) {
-        if (obs.ignoreCollision) continue;
+    for (auto& obs : obstacles) {
+        if (obs.ignoreCollision && !obs.isBonus && !obs.isDying && !obs.dead) continue;
 
         // ── 1. Rotar la posición de la bola al espacio LOCAL del obstáculo ──
         float angle = glm::radians(obs.eulerAngles.z);
@@ -458,7 +495,7 @@ void Level::resolveWalls()
         corrected.x = cosA * local.x - sinA * local.y;
         corrected.y = sinA * local.x + cosA * local.y;
         corrected.z = local.z;
-        ball.pos = obs.position + corrected;
+        if (!obs.isBonus) ball.pos = obs.position + corrected;
 
         // ── 5. Reflejar velocidad en espacio local y volver al mundo ────────
         glm::vec3 velLocal;
@@ -469,9 +506,33 @@ void Level::resolveWalls()
         if (sign * velLocal[axis] < 0.0f)
             velLocal[axis] *= -RESTITUTION;
 
-        ball.vel.x = cosA * velLocal.x - sinA * velLocal.y;
-        ball.vel.y = sinA * velLocal.x + cosA * velLocal.y;
-        ball.vel.z = velLocal.z;
+        if (!obs.isBonus) ball.vel.x = cosA * velLocal.x - sinA * velLocal.y;
+        if (!obs.isBonus) ball.vel.y = sinA * velLocal.x + cosA * velLocal.y;
+        if (!obs.isBonus) ball.vel.z = velLocal.z;
+
+        if(obs.isBonus && !obs.isDying && !obs.dead) {
+            obs.isDying = true;
+            nBonus++;
+
+            for (int i = 0; i < 20; i++) {
+                float angle = (float)i / 20.0f * 6.2831853f;
+                EmitParams ep;
+                ep.pos        = obs.position + glm::vec3(0, 0, 0.15f);
+                ep.vel        = {std::cos(angle) * 1.5f, std::sin(angle) * 1.5f, 3.5f};
+                ep.velSpread  = {0.6f, 0.6f, 2.0f};
+                ep.acc        = {0, 0, ranBetween(-3.0f, -5.0f)};
+                ep.life       = 1.4f;
+                ep.lifeSpread = 0.4f;
+                ep.size       = ranBetween(0.08f, 0.15f);
+                ep.endSize    = 0.02f;
+                int range     = rf()*60.0f;
+                ep.color      = hsv4((range + 180)/360.0f, ranBetween(0.2f, 0.9f), ranBetween(0.75f, 0.95f));
+                ep.endColor   = hsv4((range + 180)/360.0f, ranBetween(0.2f, 0.9f), ranBetween(0.75f, 0.95f));
+                ep.rotVelSpread = 6.0f;
+                ep.count      = 12;
+                particles.emit(ep);
+            }
+        }
     }
 }
 
@@ -481,8 +542,49 @@ void Level::resolveWalls()
 void Level::render(GLuint prog, const glm::mat4& VP)
 {
     // Obstáculos
-    for (const auto& obs : obstacles)
+    for (const auto& obs : obstacles){
         render_box(obs, prog, VP, obs.texID); // Le pasamos un 0 temporalmente
+
+        if(obs.isBonus && !obs.dead) {
+            EmitParams ep;
+            float ranAngle = rf() * 6.2831853f;
+            ep.pos        = {obs.position.x + std::cos(ranAngle)*0.8f, obs.position.y + std::sin(ranAngle)*0.8f, obs.position.z};
+            //ep.vel should be so that the particle orbits around the bonus box
+            ep.vel        = {-std::sin(ranAngle)*1.5f, std::cos(ranAngle)*1.5f, ranBetween(0.5f, 1.0f)};
+            ep.velSpread  = {0,0,0};
+            ep.acc        = {0,0,0};
+            ep.life       = 3.0f;
+            ep.lifeSpread = 0.12f;
+            ep.size       = 0.1f + rc() * 0.025f;
+            ep.endSize    = 0.0f;
+            int range     = rf()*60.0f;
+            ep.color      = hsv4((range + 180)/360.0f, ranBetween(0.2f, 0.9f), ranBetween(0.75f, 0.95f));
+            ep.endColor   = hsv4((range + 180)/360.0f, ranBetween(0.2f, 0.9f), ranBetween(0.75f, 0.95f));
+            ep.rotVelSpread = 8.0f;
+            ep.count      = 2;
+            particles.emit(ep);
+        }
+    }
+
+    if(nBonus > 0){
+        EmitParams ep;
+        float ranAngle = rf() * 6.2831853f;
+        ep.pos        = {ball.pos.x + std::cos(ranAngle)*0.4f, ball.pos.y + std::sin(ranAngle)*0.4f, ball.pos.z};
+        //ep.vel should be so that the particle orbits around the bonus box
+        ep.vel        = {-std::sin(ranAngle)*1.5f, std::cos(ranAngle)*1.5f, ranBetween(0.4f, 0.7f)};
+        ep.velSpread  = {0,0,0};
+        ep.acc        = {0,0,0};
+        ep.life       = 3.0f;
+        ep.lifeSpread = 0.12f;
+        ep.size       = 0.05f + rc() * 0.025f;
+        ep.endSize    = 0.0f;
+        int range     = rf()*60.0f;
+        ep.color      = hsv4((range + 180)/360.0f, ranBetween(0.2f, 0.9f), ranBetween(0.75f, 0.95f));
+        ep.endColor   = hsv4((range + 180)/360.0f, ranBetween(0.2f, 0.9f), ranBetween(0.75f, 0.95f));
+        ep.rotVelSpread = 8.0f;
+        ep.count      = 1;
+        particles.emit(ep);
+    }
 
     // Suelos
     for (const auto& floorMesh : floorMeshes) {
@@ -579,7 +681,11 @@ void Level::handleInput(GLFWwindow* window, float dt)
 
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && !prevSpace) {
         numTimesSpacePressed++;
-        float impulse = 5.5f / (numTimesSpacePressed * numTimesSpacePressed);
+        float impulse = IMPULSE / (numTimesSpacePressed * numTimesSpacePressed);
+        if(nBonus > 0) {
+            impulse *= 2.0f;
+            nBonus--;
+        }
         ball.vel.z += impulse;
         ball.moving = true;
         inAir = true;
@@ -603,8 +709,8 @@ void Level::handleInput(GLFWwindow* window, float dt)
             ep.count      = 1;
             particles.emit(ep);
         }
-        printf("¡Salto! Veces presionado: %d, Velocidad Z aplicada: %.2f\n",
-               numTimesSpacePressed, impulse);
+        printf("¡Salto! Veces presionado: %d, Velocidad Z aplicada: %.2f, nBonus: %d\n",
+               numTimesSpacePressed, impulse, nBonus);
     }
     prevSpace = (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS);
 
@@ -624,12 +730,11 @@ void Level::handleInput(GLFWwindow* window, float dt)
 
     if (charging && curClick) {
         shotPower += CHARGE_RATE * dt;
-        // dont make it linear
-        shotPower *= 1.01f;
+        shotPower *= 1.0125f;
         if (shotPower > 1.0f) shotPower = 1.0f;
     }
 
-    if (charging && !curClick && prevClick && (!inAir || !hasClickedInAir)) {
+    if (charging && !curClick && prevClick) {  //  && (!inAir || !hasClickedInAir) no se porque puse esta restriccion, la quito
         float rad   = glm::radians(shotAngle);
         float power = shotPower * MAX_POWER;
 
@@ -647,12 +752,12 @@ void Level::handleInput(GLFWwindow* window, float dt)
     }
 
     if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) {
-        printf("Posicion bola: (%.2f, %.2f, %.2f)   Velocidad: (%.2f, %.2f, %.2f)   En aire: %s  hasClickedInAir: %s skyColorSeed: %.2f\n",
+        printf("Posicion bola: (%.2f, %.2f, %.2f)   Velocidad: (%.2f, %.2f, %.2f)   En aire: %s  hasClickedInAir: %s skyColorSeed: %.2f, nObs: %d\n",
             ball.pos.x, ball.pos.y, ball.pos.z,
             ball.vel.x, ball.vel.y, ball.vel.z,
             inAir ? "Si" : "No",
             hasClickedInAir ? "Si" : "No",
-            skyColorSeed);
+            skyColorSeed, (int)obstacles.size());
     }
 
     prevClick = curClick;

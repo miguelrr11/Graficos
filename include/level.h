@@ -52,6 +52,7 @@ public:
     float shotAngle = 0.0f;   // ángulo de disparo en grados (plano XY)
     float shotPower = 0.0f;   // potencia acumulada [0..1]
     bool  charging  = false;
+    int   nBonus = 0;
 
     // Texturas
     GLuint texCesped;

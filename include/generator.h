@@ -13,7 +13,8 @@ struct LevelData {
     std::vector<glm::vec2> perimeter; 
     std::vector<std::vector<glm::vec2>> floorTiles; // NUEVO: La lista de baldosas del suelo
     glm::vec2 startPos;               
-    glm::vec2 holePos;                
+    glm::vec2 holePos;  
+    glm::vec2 bonusPos;
 };
 
 // Función principal

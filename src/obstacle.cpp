@@ -62,6 +62,8 @@ BoxObstacle crear_box(glm::vec3 position, glm::vec3 size,
     box.indexCount  = 36;
     box.tile        = tile;
 
+    box.eulerAnglesVel = glm::vec3(0.0f); // Por defecto, sin rotación
+
     glGenVertexArrays(1, &box.VAO);
     glBindVertexArray(box.VAO);
 
@@ -135,4 +137,15 @@ void destroy_box(BoxObstacle& box)
     glDeleteBuffers(1, &box.VBO);
     glDeleteBuffers(1, &box.EBO);
     glDeleteVertexArrays(1, &box.VAO);
+}
+
+void update_box(BoxObstacle& box, float deltaTime)
+{
+    // Si el obstáculo tiene velocidad de rotación, actualizamos sus ángulos
+    if (box.eulerAnglesVel != glm::vec3(0.0f)) {
+        box.eulerAngles += box.eulerAnglesVel * deltaTime;
+
+        // Mantener los ángulos entre 0 y 360 grados para evitar overflow
+        box.eulerAngles = glm::mod(box.eulerAngles, glm::vec3(360.0f));
+    }
 }
