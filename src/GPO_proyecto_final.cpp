@@ -868,9 +868,8 @@ int main(int argc, char* argv[])
     init_GLFW();
     window = Init_Window(prac);
     load_Opengl();
-    init_scene();
 
-    SoLoud::Soloud *gSoloud = new SoLoud::Soloud; // object created
+    SoLoud::Soloud *gSoloud = new SoLoud::Soloud;
     SoLoud::WavStream gMusic;
 
     int initErr = gSoloud->init(SoLoud::Soloud::CLIP_ROUNDOFF, SoLoud::Soloud::MINIAUDIO);
@@ -879,8 +878,10 @@ int main(int argc, char* argv[])
     printf("Audio load error: %d\n", error);
     gMusic.setLooping(true);
     int handle = gSoloud->play(gMusic);
+    gSoloud->setVolume(handle, 1.0f); //0 for debug, deberia ser 1.0
 
-    gSoloud->setVolume(handle, 0.0f); //0 for debug, deberia ser 1.0
+    level.soloud = gSoloud;
+    init_scene();
 
     glfwSwapInterval(1);
     while (!glfwWindowShouldClose(window)) {

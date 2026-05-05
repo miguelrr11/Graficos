@@ -6,6 +6,8 @@
 #include "floormesh.h"
 #include "generator.h"
 #include "particles.h"
+#include "soloud.h"
+#include "soloud_wav.h"
 
 #include <glad/glad.h> 
 
@@ -68,6 +70,9 @@ public:
     glm::vec3 camRight = {1,0,0};  // set each frame by render_scene for billboard facing
     glm::vec3 camUp    = {0,0,1};
 
+    SoLoud::Soloud* soloud  = nullptr;
+    SoLoud::Wav     sfxBeep;
+
     enum class PendingTransition { NONE, NEXT_LEVEL, RESTART_LEVEL };
     PendingTransition pendingTransition = PendingTransition::NONE;
 
@@ -84,4 +89,5 @@ private:
     void resolveFloor();
     void resolveWalls();
     bool fireworksEmitted_ = false;
+    int  prevSegments_     = 0;
 };

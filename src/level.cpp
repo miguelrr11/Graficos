@@ -42,6 +42,8 @@ void Level::load()
     shotAngle = 0.0f;
     shotPower = 0.0f;
     charging  = false;
+    prevSegments_ = 0;
+    if (soloud) sfxBeep.load(getAssetPath("beep3.wav").c_str());
 
 //     int heightChange = 1;
 
@@ -766,6 +768,15 @@ void Level::handleInput(GLFWwindow* window, float dt)
         shotPower += CHARGE_RATE * dt;
         shotPower *= 1.0125f;
         if (shotPower > 1.0f) shotPower = 1.0f;
+
+        int newSeg = (int)fmax(1.0f, floor(shotPower * 10.0f));
+        if (newSeg > prevSegments_ && soloud) {
+            float pitch = 0.8f + (newSeg - 1) * 0.07f;  // 0.80 → 1.43 across 10 steps
+            SoLoud::handle h = soloud->play(sfxBeep);
+            soloud->setVolume(h, 0.1f);
+            soloud->setRelativePlaySpeed(h, pitch);
+        }
+        prevSegments_ = newSeg;
     }
 
     if (charging && !curClick && prevClick) {  //  && (!inAir || !hasClickedInAir) no se porque puse esta restriccion, la quito
@@ -778,6 +789,7 @@ void Level::handleInput(GLFWwindow* window, float dt)
         ball.moving = true;
         charging    = false;
         shotPower   = 0.0f;
+        prevSegments_ = 0;
 
         if (inAir) hasClickedInAir = true;
 
