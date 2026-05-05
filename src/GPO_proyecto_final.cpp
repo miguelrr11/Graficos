@@ -138,6 +138,7 @@ const char* quad_fs = GLSL(
     uniform float uGameTimer;
     uniform float uScaleFont;
     uniform sampler2D timerTex;  // 13x9 CPU-baked digit texture, updated once per second
+    uniform float uDim = 1.0;
 
     float linearDepth(float d) {
         return uNear * uFar / (uFar - d * (uFar - uNear));
@@ -239,6 +240,7 @@ const char* quad_fs = GLSL(
             }
         }
 
+        color *= uDim;
         FragColor = vec4(color, 1.0);
     }
 );
@@ -374,6 +376,12 @@ const char* fragment_prog = GLSL(
 GLFWwindow* window;
 GLuint      prog;
 Level       level;          // ← el nivel de juego
+
+// ─── Dim / transition state ───────────────────────────────────────────────────
+enum class DimState { IDLE, FADE_OUT, FADE_IN };
+static DimState dimState = DimState::FADE_IN;  // start black, fade in on first frame
+static float    dimValue = 0.0f;               // 1 = full bright, 0 = black
+static const float DIM_SPEED = 1.75f;           // full fade in ~0.67 s
 
 // Cámara
 vec3  up       = vec3(0, 0, 1);
@@ -722,6 +730,9 @@ void render_scene()
     glBindVertexArray(0);
     glDepthFunc(GL_LESS);
 
+    // Partículas: después del skybox para que no sean sobreescritas por él
+    level.particles.render(VP, level.camRight, level.camUp);
+
     // ── 2. Post-proceso: pixelación sobre el framebuffer por defecto ──────────
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -762,28 +773,58 @@ void render_scene()
     }
     glUniform1f(glGetUniformLocation(quad_prog, "uScaleFont"), scaleFont);
 
+    glUniform1f(glGetUniformLocation(quad_prog, "uDim"), dimValue);
+
     glBindVertexArray(quadVAO);
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
 
     glEnable(GL_DEPTH_TEST);
 
-    // the gameplay loop: a timer starts at the start of execution (30 seconds), and goes down. Every time a level is 
-    // completed, the timer adds 10 seconds. If the timer reaches 0, the game is lost and resets to level 1.
-    if(level.currentLevel != currentLevel) {
-        currentLevel = level.currentLevel;
-        gameTimer += 30.0f; // add 10 seconds for each completed level (esto se puede ir ajustando)
+    // ── Dim state machine ─────────────────────────────────────────────────────
+    // Kick off a fade-out when level.update() signals a pending transition.
+    if (level.pendingTransition != Level::PendingTransition::NONE && dimState == DimState::IDLE)
+        dimState = DimState::FADE_OUT;
+
+    if (dimState == DimState::FADE_OUT) {
+        dimValue -= dt * DIM_SPEED;
+        if (dimValue <= 0.0f) {
+            dimValue = 0.0f;
+            // Execute the deferred transition now that the screen is black.
+            if (level.pendingTransition == Level::PendingTransition::NEXT_LEVEL) {
+                level.currentLevel++;
+                currentLevel = level.currentLevel;
+                gameTimer += 30.0f;
+                level.destroy();
+                level.load();
+            } else if (level.pendingTransition == Level::PendingTransition::RESTART_LEVEL) {
+                level.restartLevel();
+            }
+            level.pendingTransition = Level::PendingTransition::NONE;
+            dimState = DimState::FADE_IN;
+        }
+    } else if (dimState == DimState::FADE_IN) {
+        dimValue += dt * DIM_SPEED;
+        if (dimValue >= 1.0f) {
+            dimValue = 1.0f;
+            dimState = DimState::IDLE;
+        }
     }
+
+    // ── Timer (gameplay loop) ─────────────────────────────────────────────────
     gameTimer -= dt;
-    if (gameTimer <= 0) {
+    if (gameTimer <= 0 && dimState == DimState::IDLE) {
         printf("¡TIEMPO AGOTADO! Game Over. Vuelta al Nivel 1.\n");
         gameTimer = 60.0f;
-        
-        level.currentLevel = 1; // Reseteamos la dificultad del motor
-        currentLevel = 1;       // Reseteamos la memoria de la interfaz
-        
+
+        level.currentLevel = 1;
+        currentLevel = 1;
+
         level.destroy();
         level.load();
+
+        dimValue  = 0.0f;
+        dimState  = DimState::FADE_IN;
     }
 }
 

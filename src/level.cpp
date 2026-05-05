@@ -187,7 +187,9 @@ void Level::load()
             floorMeshes.back().useCheckerboard = true;
         }
         // Muros visuales
-        wallMeshes.push_back(crear_wall_mesh(tracks[t].perimeter, true, 0.4f, 0.65f, alturaIsla, 1.0f));
+
+        float heightWall = 0.65f;
+        wallMeshes.push_back(crear_wall_mesh(tracks[t].perimeter, true, 0.4f, heightWall, alturaIsla, 1.0f));
         wallMeshes.back().texID = texMadera;
 
         // Muros físicos (invisibles)
@@ -200,7 +202,7 @@ void Level::load()
             glm::vec2 centro = (pA + pB) * 0.5f;
 
             obstacles.push_back(crear_box({ centro.x, centro.y, alturaIsla }, 
-                                          { longitud, 0.4f, 1.0f }, 
+                                          { longitud, 0.4f, heightWall*2.0f }, 
                                           { 0.0f, 0.0f, glm::degrees(angulo) }, 
                                           {1,1,1}, false));
             obstacles.back().ignoreRender = true; 
@@ -245,6 +247,8 @@ void Level::restartLevel() {
 // ════════════════════════════════════════════════════════════════════════════
 void Level::update(float dt)
 {
+    if (pendingTransition != PendingTransition::NONE) return;
+
     //update de rotación de obstáculos giratorios
     for (auto& obs : obstacles) {
         update_box(obs, dt);
@@ -299,7 +303,8 @@ void Level::update(float dt)
             ep.color      = hsv4((range + 80)/360.0f, ranBetween(0.2f, 0.9f), ranBetween(0.75f, 0.95f));
             ep.endColor   = {0.4f, 0.85f, 0.1f, 0.0f};
             ep.rotVelSpread = 8.0f;
-            ep.count      = 3;
+            float speed = glm::length(ball.vel);
+            ep.count      = clamp(int(speed * 0.5f), 1, 3); // más velocidad = más hojas
             particles.emit(ep);
         }
     }
@@ -375,20 +380,18 @@ void Level::update(float dt)
             ball.vel.y = 0;
         }
 
-        // Si ya se ha hundido suficiente, ¡PASAMOS DE NIVEL!
+        // Si ya se ha hundido suficiente, señalamos la transición (render_scene la ejecuta)
         if (ball.pos.z < -0.5f + currentFloorZ) {
             printf("¡NIVEL %d COMPLETADO! Avanzando...\n", currentLevel);
-            currentLevel++;  // Subimos la dificultad
-            destroy();       // Limpiamos la memoria del nivel anterior
-            load();          // Generamos el nuevo nivel
-            return;          // Salimos del update inmediatamente
+            pendingTransition = PendingTransition::NEXT_LEVEL;
+            return;
         }
     
     }
     // --- NUEVA CONDICIÓN DE DERROTA ---
     if (ball.pos.z < -3.0f) {
         printf("¡TE HAS CAIDO AL VACIO! Intentalo de nuevo en el mismo nivel.\n");
-        restartLevel();
+        pendingTransition = PendingTransition::RESTART_LEVEL;
         return;
     }
 
@@ -623,7 +626,6 @@ void Level::render(GLuint prog, const glm::mat4& VP)
         }
     //}
 
-    particles.render(VP, camRight, camUp);
 }
 
 

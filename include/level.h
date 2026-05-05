@@ -68,6 +68,9 @@ public:
     glm::vec3 camRight = {1,0,0};  // set each frame by render_scene for billboard facing
     glm::vec3 camUp    = {0,0,1};
 
+    enum class PendingTransition { NONE, NEXT_LEVEL, RESTART_LEVEL };
+    PendingTransition pendingTransition = PendingTransition::NONE;
+
     // Ciclo de vida
     void load();                                            // carga el nivel hardcodeado
     void update(float dt);                                  // física + comprobaciones
