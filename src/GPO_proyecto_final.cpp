@@ -10,6 +10,7 @@ ATG, 2019
 #include <algorithm>
 #include "soloud.h"
 #include "soloud_wavstream.h"
+#include "game.h"
 
 
 // TAMAÑO y TITULO INICIAL de la VENTANA
@@ -375,13 +376,7 @@ const char* fragment_prog = GLSL(
 // ─── Globals ──────────────────────────────────────────────────────────────────
 GLFWwindow* window;
 GLuint      prog;
-Level       level;          // ← el nivel de juego
-
-// ─── Dim / transition state ───────────────────────────────────────────────────
-enum class DimState { IDLE, FADE_OUT, FADE_IN };
-static DimState dimState = DimState::FADE_IN;  // start black, fade in on first frame
-static float    dimValue = 0.0f;               // 1 = full bright, 0 = black
-static const float DIM_SPEED = 1.75f;           // full fade in ~0.67 s
+Game        game;           // ← top-level game state (owns level + resources)
 
 // Cámara
 vec3  up       = vec3(0, 0, 1);
@@ -397,8 +392,6 @@ float cam_distance = 3.0f;   // distancia a la bola
 
 // Tiempo para deltaTime real
 float lastFrameTime = 0.0f;
-float gameTimer     = 60.0f;
-int   currentLevel = 1;
 float dt = 0.0f;
 
 // ─── Timer texture (CPU-baked, 13×9 RGBA, updated once per integer second) ──
@@ -608,9 +601,6 @@ void init_scene()
     glDetachShader(prog, FS);  glDeleteShader(FS);
     glUseProgram(prog);
 
-    // Cargar nivel
-    level.load();
-
     // FBO + quad de post-proceso
     setup_fbo(w, h);
     setup_sky_fbo(w, h);
@@ -660,11 +650,11 @@ void render_scene()
     if (dt > 0.05f) dt = 0.05f;
 
     // La mira sigue la dirección de la cámara (el mouse apunta)
-    level.shotAngle = cam_yaw + 180.0f;
-    level.handleInput(window, dt);
-    level.update(dt);
+    game.level.shotAngle = cam_yaw + 180.0f;
+    game.level.handleInput(window, dt, game.nBonus);
+    game.level.update(dt, game.nBonus);
 
-    vec3 target = level.ball.pos;
+    vec3 target = game.level.ball.pos;
     vec3 camPos;
     camPos.x = target.x + cam_distance * cos(glm::radians(cam_pitch)) * cos(glm::radians(cam_yaw));
     camPos.y = target.y + cam_distance * cos(glm::radians(cam_pitch)) * sin(glm::radians(cam_yaw));
@@ -675,8 +665,8 @@ void render_scene()
     mat4 VP = P * V;
 
     // Billboard vectors for particle rendering (extracted from view matrix rows)
-    level.camRight = glm::normalize(glm::vec3(V[0][0], V[1][0], V[2][0]));
-    level.camUp    = glm::normalize(glm::vec3(V[0][1], V[1][1], V[2][1]));
+    game.level.camRight = glm::normalize(glm::vec3(V[0][0], V[1][0], V[2][0]));
+    game.level.camUp    = glm::normalize(glm::vec3(V[0][1], V[1][1], V[2][1]));
 
     // ── 0. Skybox solo al sky FBO (usado después para el color de niebla) ────
     glBindFramebuffer(GL_FRAMEBUFFER, skyFBO);
@@ -686,7 +676,7 @@ void render_scene()
     glUseProgram(skybox_prog);
     transfer_mat4("VP", P * mat4(mat3(V)));
     transfer_float("uTime", now);
-    transfer_float("uColorSeed", level.skyColorSeed);
+    transfer_float("uColorSeed", game.level.skyColorSeed);
     glBindVertexArray(skyboxVAO);
     glDrawArrays(GL_TRIANGLES, 0, 36);
     glBindVertexArray(0);
@@ -701,7 +691,7 @@ void render_scene()
     // Objetos (sin pixelación por textura: la hace el post-proceso)
     glUseProgram(prog);
     transfer_float("uPixelSize", 1.0f);
-    level.render(prog, VP);
+    game.level.render(prog, VP, game.nBonus);
 
     // Sombras con máscara de stencil: sombras solo donde hay suelo
     {
@@ -717,7 +707,7 @@ void render_scene()
         glDepthMask(GL_FALSE);
         glDepthFunc(GL_LEQUAL);
         glUseProgram(shadow_prog);
-        for (const auto& fm : level.floorMeshes) {
+        for (const auto& fm : game.level.floorMeshes) {
             transfer_mat4("MVP", VP);
             glBindVertexArray(fm.VAO);
             glDrawElements(GL_TRIANGLES, fm.indexCount, GL_UNSIGNED_INT, 0);
@@ -735,7 +725,7 @@ void render_scene()
         glDepthFunc(GL_LEQUAL);
         glEnable(GL_POLYGON_OFFSET_FILL);
         glPolygonOffset(-1.0f, -1.0f);
-        level.renderShadows(shadow_prog, VP, LIGHT_POS);
+        game.level.renderShadows(shadow_prog, VP, LIGHT_POS);
         glDisable(GL_POLYGON_OFFSET_FILL);
         glDepthFunc(GL_LESS);
         glDisable(GL_BLEND);
@@ -749,14 +739,14 @@ void render_scene()
     glUseProgram(skybox_prog);
     transfer_mat4("VP", P * mat4(mat3(V)));
     transfer_float("uTime", now);
-    transfer_float("uColorSeed", level.skyColorSeed);
+    transfer_float("uColorSeed", game.level.skyColorSeed);
     glBindVertexArray(skyboxVAO);
     glDrawArrays(GL_TRIANGLES, 0, 36);
     glBindVertexArray(0);
     glDepthFunc(GL_LESS);
 
     // Partículas: después del skybox para que no sean sobreescritas por él
-    level.particles.render(VP, level.camRight, level.camUp);
+    game.level.particles.render(VP, game.level.camRight, game.level.camUp);
 
     // ── 2. Post-proceso: pixelación sobre el framebuffer por defecto ──────────
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -779,10 +769,10 @@ void render_scene()
     glUniform1f(glGetUniformLocation(quad_prog, "uFar"),       40.0f);
     glUniform1f(glGetUniformLocation(quad_prog, "uFogStart"),  100.0f);
     glUniform1f(glGetUniformLocation(quad_prog, "uFogEnd"),    200.0f);
-    glUniform1f(glGetUniformLocation(quad_prog, "uGameTimer"), gameTimer);
+    glUniform1f(glGetUniformLocation(quad_prog, "uGameTimer"), game.gameTimer);
 
     // Bake timer texture only when the displayed integer changes
-    int timerSecNow = std::max((int)std::ceil(gameTimer), 0);
+    int timerSecNow = std::max((int)std::ceil(game.gameTimer), 0);
     if (timerSecNow != lastTimerSec) {
         lastTimerSec = timerSecNow;
         bakeTimerTex(timerSecNow);
@@ -792,13 +782,13 @@ void render_scene()
     glUniform1i(glGetUniformLocation(quad_prog, "timerTex"), 3);
 
     static float scaleFont = 6.0f;
-    if(gameTimer < 10.0f) scaleFont = lerp(scaleFont, 10.0f, 0.1);
-    if(gameTimer < 5.0f){
+    if(game.gameTimer < 10.0f) scaleFont = lerp(scaleFont, 10.0f, 0.1);
+    if(game.gameTimer < 5.0f){
         scaleFont += cos(now * 20.0f) * 0.5f;
     }
     glUniform1f(glGetUniformLocation(quad_prog, "uScaleFont"), scaleFont);
 
-    glUniform1f(glGetUniformLocation(quad_prog, "uDim"), dimValue);
+    glUniform1f(glGetUniformLocation(quad_prog, "uDim"), game.dimValue);
 
     glBindVertexArray(quadVAO);
     glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -806,51 +796,8 @@ void render_scene()
 
     glEnable(GL_DEPTH_TEST);
 
-    // ── Dim state machine ─────────────────────────────────────────────────────
-    // Kick off a fade-out when level.update() signals a pending transition.
-    if (level.pendingTransition != Level::PendingTransition::NONE && dimState == DimState::IDLE)
-        dimState = DimState::FADE_OUT;
-
-    if (dimState == DimState::FADE_OUT) {
-        dimValue -= dt * DIM_SPEED;
-        if (dimValue <= 0.0f) {
-            dimValue = 0.0f;
-            // Execute the deferred transition now that the screen is black.
-            if (level.pendingTransition == Level::PendingTransition::NEXT_LEVEL) {
-                level.currentLevel++;
-                currentLevel = level.currentLevel;
-                gameTimer += 30.0f;
-                level.destroy();
-                level.load();
-            } else if (level.pendingTransition == Level::PendingTransition::RESTART_LEVEL) {
-                level.restartLevel();
-            }
-            level.pendingTransition = Level::PendingTransition::NONE;
-            dimState = DimState::FADE_IN;
-        }
-    } else if (dimState == DimState::FADE_IN) {
-        dimValue += dt * DIM_SPEED;
-        if (dimValue >= 1.0f) {
-            dimValue = 1.0f;
-            dimState = DimState::IDLE;
-        }
-    }
-
-    // ── Timer (gameplay loop) ─────────────────────────────────────────────────
-    gameTimer -= dt;
-    if (gameTimer <= 0 && dimState == DimState::IDLE) {
-        printf("¡TIEMPO AGOTADO! Game Over. Vuelta al Nivel 1.\n");
-        gameTimer = 60.0f;
-
-        level.currentLevel = 1;
-        currentLevel = 1;
-
-        level.destroy();
-        level.load();
-
-        dimValue  = 0.0f;
-        dimState  = DimState::FADE_IN;
-    }
+    // ── Transitions + timer ───────────────────────────────────────────────────
+    game.update(dt);
 }
 
 float map(float value, float inMin, float inMax, float outMin, float outMax) {
@@ -880,7 +827,7 @@ int main(int argc, char* argv[])
     int handle = gSoloud->play(gMusic);
     gSoloud->setVolume(handle, 1.0f); //0 for debug, deberia ser 1.0
 
-    level.soloud = gSoloud;
+    game.init(gSoloud);
     init_scene();
 
     glfwSwapInterval(1);
@@ -893,7 +840,7 @@ int main(int argc, char* argv[])
 
     gSoloud->deinit();
     delete gSoloud;
-    level.destroy();
+    game.destroy();
     glfwTerminate();
     return 0;
 }
@@ -909,11 +856,11 @@ void show_info()
     double tt = glfwGetTime();
     double elapsed = tt - last_tt;
     if (elapsed >= 0.5) {
-        const char* estado = level.completed  ? "COMPLETADO!" :
-                             level.ball.moving ? "Rodando..." :
-                             level.charging    ? "Cargando..." : "Listo";
+        const char* estado = game.level.completed  ? "COMPLETADO!" :
+                             game.level.ball.moving ? "Rodando..." :
+                             game.level.charging    ? "Cargando..." : "Listo";
         sprintf_s(buf, 128, "%s | %.0f FPS | %s | Potencia: %.0f%%",
-                  prac, fps/elapsed, estado, level.shotPower * 100.0f);
+                  prac, fps/elapsed, estado, game.level.shotPower * 100.0f);
         glfwSetWindowTitle(window, buf);
         last_tt = tt; fps = 0;
     }
@@ -934,8 +881,8 @@ static void KeyCallback(GLFWwindow* window, int key, int code, int action, int m
     if (key == GLFW_KEY_ESCAPE) glfwSetWindowShouldClose(window, true);
     // R: reiniciar nivel
     if (key == GLFW_KEY_R && action == GLFW_PRESS) {
-        level.destroy();
-        level.load();
+        game.level.destroy();
+        game.level.load(game.currentLevel, game.res);
     }
     
     // F11: Alternar Pantalla Completa

@@ -45,6 +45,7 @@ set(GPO_SOURCE_FILES include/stb/stb_image.h
 					 include/GpO.h
 					 include/obstacle.h
 					 include/level.h
+					 include/game.h
 					 include/sphere.h
 					 include/wallmesh.h
 					 include/floormesh.h
@@ -53,6 +54,7 @@ set(GPO_SOURCE_FILES include/stb/stb_image.h
 					 src/wallmesh.cpp
 					 src/sphere.cpp
 					 src/level.cpp
+					 src/game.cpp
 					 src/GPO_proyecto_final.cpp
 					 src/obstacle.cpp
 					 src/GPO_aux.cpp

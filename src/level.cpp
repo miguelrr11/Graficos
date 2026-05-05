@@ -31,19 +31,17 @@ static const float STOP_SPEED2 = 0.05f;  // velocidad mínima para detener la bo
 static const float HOLE_RADIUS = 0.3f;    // radio del hoyo
 static const float IMPULSE     = 5.75f;    // impulso del salto
 
-void Level::load()
+void Level::load(int levelNum, const Resources& res)
 {
-    // Cargar texturas 
-    texCesped = cargar_textura(getAssetPath("cesped.jpg").c_str());
-    texMadera = cargar_textura(getAssetPath("madera2.jpg").c_str());
-    texHoyo   = cargar_textura(getAssetPath("hoyo.png").c_str());
-    texBola   = cargar_textura(getAssetPath("bola2.png").c_str());
+    // Textures come pre-loaded from Game::res – just copy the IDs we need.
+    texBola = res.texBola;
+
     completed = false;
     shotAngle = 0.0f;
     shotPower = 0.0f;
     charging  = false;
     prevSegments_ = 0;
-    if (soloud) sfxBeep.load(getAssetPath("beep3.wav").c_str());
+    
 
 //     int heightChange = 1;
 
@@ -79,7 +77,7 @@ void Level::load()
 //         // 4. EL MURO VISUAL
 //         // Pasamos: (puntos, cerrado, grosor=0.4f, altura=1.0f, zBase=FLOOR_Z, uvTile=1.0f)
 //         wallMeshes.push_back(crear_wall_mesh(tracks.back().perimeter, true, 0.4f, 0.5f, FLOOR_Z + t*heightChange, 1.0f));
-//         wallMeshes.back().texID = texMadera;
+//         wallMeshes.back().texID = res.texMadera;
 
 //         // 6. EL HOYO
 //         if(t == numTracks - 1){
@@ -87,7 +85,7 @@ void Level::load()
 //             obstacles.push_back(crear_box(holePos + glm::vec3(0,0,-0.01f),
 //                                         { HOLE_RADIUS*2.5f, HOLE_RADIUS*2.5f, 0.05f },
 //                                         {0,0,0}, {1,1,1}, true, 1));
-//             obstacles.back().texID = texHoyo;
+//             obstacles.back().texID = res.texHoyo;
 //             obstacles.back().isHole = true;
 //         }
 //     }
@@ -133,10 +131,10 @@ void Level::load()
 
     // --- EL DIRECTOR DE ARCHIPIÉLAGOS ---
     // En Nivel 1 y 2 habrá 2 islas. En Nivel 3 y 4 habrá 3 islas, etc.
-    int numIslands = int((2 + (currentLevel - 1) / 2) * 1.5); 
-    
+    int numIslands = int((2 + (levelNum - 1) / 2) * 1.5);
+
     // El hueco crece con la dificultad (empieza en 3m, sube 0.5m por nivel)
-    float jumpDistance = 3.0f + (currentLevel * 0.5f); 
+    float jumpDistance = 3.0f + (levelNum * 0.5f); 
 
     glm::vec2 currentStartPos = {0.0f, 0.0f};
     float currentStartAngle = 0.0f;
@@ -145,7 +143,7 @@ void Level::load()
         // Generamos tramos cortos para que las islas no sean kilométricas
         int numTramos = 2 + (rand() % 4); // de 2 a 5 tramos por isla
         
-        LevelData nuevaIsla = generateTrack(currentStartPos, currentStartAngle, numTramos, currentLevel);
+        LevelData nuevaIsla = generateTrack(currentStartPos, currentStartAngle, numTramos, levelNum);
         tracks.push_back(nuevaIsla);
 
         // Preparamos el salto para la siguiente isla:
@@ -183,7 +181,7 @@ void Level::load()
         // Césped (Ahora lo montamos baldosa a baldosa)
         for (const auto& tile : tracks[t].floorTiles) {
             floorMeshes.push_back(crear_floor_mesh(tile, alturaIsla, 2.0f));
-            floorMeshes.back().texID = texCesped;
+            floorMeshes.back().texID = res.texCesped;
             floorMeshes.back().perimeter = tile; // El "perímetro" físico de esta baldosa
             floorMeshes.back().zBase = alturaIsla;
             floorMeshes.back().useCheckerboard = true;
@@ -192,7 +190,7 @@ void Level::load()
 
         float heightWall = 0.65f;
         wallMeshes.push_back(crear_wall_mesh(tracks[t].perimeter, true, 0.4f, heightWall, alturaIsla, 1.0f));
-        wallMeshes.back().texID = texMadera;
+        wallMeshes.back().texID = res.texMadera;
 
         // Muros físicos (invisibles)
         for (size_t i = 0; i < tracks[t].perimeter.size(); i++) {
@@ -215,7 +213,7 @@ void Level::load()
             obstacles.push_back(crear_box(holePos + glm::vec3(0,0,-0.01f),
                                           { HOLE_RADIUS*2.5f, HOLE_RADIUS*2.5f, 0.05f },
                                           {0,0,0}, {1,1,1}, true, 1));
-            obstacles.back().texID = texHoyo;
+            obstacles.back().texID = res.texHoyo;
             obstacles.back().isHole = true;
         }
     }
@@ -223,7 +221,7 @@ void Level::load()
     particles.init();
     fireworksEmitted_ = false;
 
-    printf("Archipielago Nivel %d Generado. ¡A saltar!\n", currentLevel);
+    printf("Archipielago Nivel %d Generado. ¡A saltar!\n", levelNum);
 }
 
 void Level::restartLevel() {
@@ -247,7 +245,7 @@ void Level::restartLevel() {
 // ════════════════════════════════════════════════════════════════════════════
 //  UPDATE – física cada frame
 // ════════════════════════════════════════════════════════════════════════════
-void Level::update(float dt)
+void Level::update(float dt, int& nBonus)
 {
     if (pendingTransition != PendingTransition::NONE) return;
 
@@ -280,7 +278,7 @@ void Level::update(float dt)
     ball.pos += ball.vel * dt;
 
     resolveFloor();
-    resolveWalls();
+    resolveWalls(nBonus);
 
     // ── Partículas: hojas al rodar ────────────────────────────────────────────
     if ((ball.onGround || ball.pos.z < currentFloorZ + ball.radius + 0.2f) && ball.moving) {
@@ -384,7 +382,7 @@ void Level::update(float dt)
 
         // Si ya se ha hundido suficiente, señalamos la transición (render_scene la ejecuta)
         if (ball.pos.z < -0.5f + currentFloorZ) {
-            printf("¡NIVEL %d COMPLETADO! Avanzando...\n", currentLevel);
+            printf("¡NIVEL COMPLETADO! Avanzando...\n");
             pendingTransition = PendingTransition::NEXT_LEVEL;
             return;
         }
@@ -448,7 +446,7 @@ void Level::resolveFloor()
     }
 }
 
-void Level::resolveWalls()
+void Level::resolveWalls(int& nBonus)
 {
     for (auto& obs : obstacles) {
         if (obs.ignoreCollision && !obs.isBonus && !obs.isDying && !obs.dead) continue;
@@ -544,7 +542,7 @@ void Level::resolveWalls()
 // ════════════════════════════════════════════════════════════════════════════
 //  RENDER
 // ════════════════════════════════════════════════════════════════════════════
-void Level::render(GLuint prog, const glm::mat4& VP)
+void Level::render(GLuint prog, const glm::mat4& VP, int nBonus)
 {
     // Obstáculos
     for (const auto& obs : obstacles){
@@ -707,7 +705,7 @@ void Level::renderShadows(GLuint shadow_prog, const glm::mat4& VP, glm::vec3 lig
 // ════════════════════════════════════════════════════════════════════════════
 //  INPUT del jugador
 // ════════════════════════════════════════════════════════════════════════════
-void Level::handleInput(GLFWwindow* window, float dt)
+void Level::handleInput(GLFWwindow* window, float dt, int& nBonus)
 {
     static bool hasClickedInAir = false;
     static bool prevSpace = false;
@@ -719,7 +717,7 @@ void Level::handleInput(GLFWwindow* window, float dt)
         numTimesSpacePressed++;
         float impulse = IMPULSE / (numTimesSpacePressed * numTimesSpacePressed);
         if(nBonus > 0) {
-            impulse *= 2.0f;
+            impulse += IMPULSE;
             nBonus--;
         }
         ball.vel.z += impulse;
@@ -745,7 +743,7 @@ void Level::handleInput(GLFWwindow* window, float dt)
             ep.count      = 1;
             particles.emit(ep);
         }
-        printf("¡Salto! Veces presionado: %d, Velocidad Z aplicada: %.2f, nBonus: %d\n",
+        printf("¡Salto! x%d  impulso=%.2f  bonus=%d\n",
                numTimesSpacePressed, impulse, nBonus);
     }
     prevSpace = (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS);
@@ -770,9 +768,9 @@ void Level::handleInput(GLFWwindow* window, float dt)
         if (shotPower > 1.0f) shotPower = 1.0f;
 
         int newSeg = (int)fmax(1.0f, floor(shotPower * 10.0f));
-        if (newSeg > prevSegments_ && soloud) {
+        if (newSeg > prevSegments_ && soloud && sfxBeep) {
             float pitch = 0.8f + (newSeg - 1) * 0.07f;  // 0.80 → 1.43 across 10 steps
-            SoLoud::handle h = soloud->play(sfxBeep);
+            SoLoud::handle h = soloud->play(*sfxBeep);
             soloud->setVolume(h, 0.1f);
             soloud->setRelativePlaySpeed(h, pitch);
         }

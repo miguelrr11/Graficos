@@ -885,6 +885,30 @@ src/floormesh.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/src/floormesh.cpp.s
 .PHONY : src/floormesh.cpp.s
 
+src/game.o: src/game.cpp.o
+.PHONY : src/game.o
+
+# target to build an object file
+src/game.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/src/game.cpp.o
+.PHONY : src/game.cpp.o
+
+src/game.i: src/game.cpp.i
+.PHONY : src/game.i
+
+# target to preprocess a source file
+src/game.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/src/game.cpp.i
+.PHONY : src/game.cpp.i
+
+src/game.s: src/game.cpp.s
+.PHONY : src/game.s
+
+# target to generate assembly for a file
+src/game.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/src/game.cpp.s
+.PHONY : src/game.cpp.s
+
 src/generator.o: src/generator.cpp.o
 .PHONY : src/generator.o
 
@@ -1129,6 +1153,9 @@ help:
 	@echo "... src/floormesh.o"
 	@echo "... src/floormesh.i"
 	@echo "... src/floormesh.s"
+	@echo "... src/game.o"
+	@echo "... src/game.i"
+	@echo "... src/game.s"
 	@echo "... src/generator.o"
 	@echo "... src/generator.i"
 	@echo "... src/generator.s"
