@@ -7,8 +7,9 @@
 // ─── Constantes de física ───────────────────────────────────────────────────
 static float rf() { return (float)rand() / (float)RAND_MAX; }
 static float rc() { return rf() * 2.0f - 1.0f; }
+static float ranBetween(float min, float max) { return min + rf() * (max - min); }
 
-// HSV → RGBA helper for firework colors
+// HSV -> RGBA helper for firework colors
 static glm::vec4 hsv4(float h, float s, float v) {
     float r = glm::clamp(std::fabs(std::fmod(h*6.0f+0.0f, 6.0f)-3.0f)-1.0f, 0.0f, 1.0f);
     float g = glm::clamp(std::fabs(std::fmod(h*6.0f+4.0f, 6.0f)-3.0f)-1.0f, 0.0f, 1.0f);
@@ -35,7 +36,7 @@ void Level::load()
     texCesped = cargar_textura(getAssetPath("cesped.jpg").c_str());
     texMadera = cargar_textura(getAssetPath("madera2.jpg").c_str());
     texHoyo   = cargar_textura(getAssetPath("hoyo.png").c_str());
-    texBola   = cargar_textura(getAssetPath("bola.jpg").c_str());
+    texBola   = cargar_textura(getAssetPath("bola2.png").c_str());
     completed = false;
     shotAngle = 0.0f;
     shotPower = 0.0f;
@@ -237,15 +238,15 @@ void Level::update(float dt)
     resolveWalls();
 
     // ── Partículas: hojas al rodar ────────────────────────────────────────────
-    if (ball.onGround && ball.moving) {
+    if ((ball.onGround || ball.pos.z < currentFloorZ + ball.radius + 0.2f) && ball.moving) {
         static float leafTimer = 0.0f;
         leafTimer -= dt;
         float horizSpd = glm::length(glm::vec2(ball.vel.x, ball.vel.y));
         if (horizSpd > 0.5f) {  // leafTimer <= 0.0f && 
-            leafTimer = 0.03f;
+            leafTimer = 0.015f;
             EmitParams ep;
             ep.pos        = {ball.pos.x + rc() * 0.1f, ball.pos.y + rc() * 0.1f, ball.pos.z - ball.radius * 0.5f};
-            ep.vel        = {-ball.vel.x * 0.05f + rc() * 0.5, -ball.vel.y * 0.05f + rc() * 0.5, 0.4f + rc() * 0.4f};
+            ep.vel        = {ball.vel.x * 0.05f - rf() * 0.5, ball.vel.y * 0.05f - rf() * 0.5, 0.4f + rc() * 0.4f};
             //normalize ep.vel
             ep.vel = glm::normalize(ep.vel) * (0.5f + rc() * 0.5f);
             ep.vel.z = 1.0f + rc() * 0.2f; // velocidad vertical más alta para que se vean mejor
@@ -255,19 +256,20 @@ void Level::update(float dt)
             ep.lifeSpread = 0.12f;
             ep.size       = 0.05f + rc() * 0.025f;
             ep.endSize    = 0.0f;
-            ep.color      = {0.2f, 0.6f + rc() * 0.3f, 0.1f, 1.0f};
+            int range     = rf()*60.0f;
+            ep.color      = hsv4((range + 80)/360.0f, ranBetween(0.2f, 0.9f), ranBetween(0.75f, 0.95f));
             ep.endColor   = {0.4f, 0.85f, 0.1f, 0.0f};
             ep.rotVelSpread = 8.0f;
-            ep.count      = 5;
+            ep.count      = 3;
             particles.emit(ep);
         }
     }
 
     // Rotación de rodadura: eje perpendicular a la velocidad horizontal (Z arriba)
-    // ω = (-vy, vx, 0) / radius  →  eje = normalize(-vy, vx, 0), ángulo = speed/radius * dt
+    // ω = (-vy, vx, 0) / radius  ->  eje = normalize(-vy, vx, 0), ángulo = speed/radius * dt
     {
         glm::vec3 horizVel = { ball.vel.x, ball.vel.y, 0.0f };
-        float speed = glm::length(horizVel);
+        float speed = glm::length(horizVel) * 0.01f;
         if (speed > 0.001f) {
             glm::vec3 rollAxis = glm::vec3(-ball.vel.y, ball.vel.x, 0.0f) / speed;
             float rollAngle    = speed * dt / ball.radius;
@@ -282,22 +284,22 @@ void Level::update(float dt)
     // ── Partículas: fuegos artificiales al caer en el hoyo ────────────────────
     if (enHoyo && !fireworksEmitted_) {
         fireworksEmitted_ = true;
-        for (int i = 0; i < 8; i++) {
-            float angle = (float)i / 8.0f * 6.2831853f;
-            glm::vec4 col = hsv4((float)i / 8.0f, 1.0f, 1.0f);
+        for (int i = 0; i < 20; i++) {
+            float angle = (float)i / 20.0f * 6.2831853f;
+            glm::vec4 col = hsv4((float)i / 20.0f, 1.0f, 1.0f);
             EmitParams ep;
             ep.pos        = holePos + glm::vec3(0, 0, 0.15f);
             ep.vel        = {std::cos(angle) * 1.5f, std::sin(angle) * 1.5f, 3.5f};
-            ep.velSpread  = {0.6f, 0.6f, 0.8f};
-            ep.acc        = {0, 0, -6.0f};
+            ep.velSpread  = {0.6f, 0.6f, 2.0f};
+            ep.acc        = {0, 0, ranBetween(-3.0f, -5.0f)};
             ep.life       = 1.4f;
             ep.lifeSpread = 0.4f;
-            ep.size       = 0.13f;
+            ep.size       = ranBetween(0.08f, 0.15f);
             ep.endSize    = 0.02f;
             ep.color      = col;
             ep.endColor   = {col.r, col.g, col.b, 0.0f};
             ep.rotVelSpread = 6.0f;
-            ep.count      = 8;
+            ep.count      = 12;
             particles.emit(ep);
         }
     }
@@ -507,7 +509,7 @@ void Level::render(GLuint prog, const glm::mat4& VP)
         SphereObstacle arrow = ball.mesh;
         arrow.position = arrowPos;
         arrow.radius     = ball.radius * 0.25f;
-        // arrow.color    = { 1.0f, 1.0f - shotPower, 0.0f };   // amarillo → rojo al cargar
+        // arrow.color    = { 1.0f, 1.0f - shotPower, 0.0f };   // amarillo -> rojo al cargar
         //render_sphere(arrow, prog, VP, 0); // <-- AÑADIDO: Pasamos 0 (sin textura)
 
         int numSegments = fmax(1, floor(shotPower * 10.0f)); // De 0 a 10 segmentos según la potencia
@@ -581,6 +583,26 @@ void Level::handleInput(GLFWwindow* window, float dt)
         ball.vel.z += impulse;
         ball.moving = true;
         inAir = true;
+        float delta = (numTimesSpacePressed)*0.1f;
+        for (float i = 0; i < 6.2831853f; i+=delta) {
+            float angle = i;
+            glm::vec4 col = hsv4((rf()*30.0f)/360.0f, 1.0f, 1.0f);
+            EmitParams ep;
+            ep.pos        = ball.pos;
+            float r = ranBetween(-0.15f, 0.15f);
+            ep.vel        = {std::cos(angle) * 1.5f + r, std::sin(angle) * 1.5f + r, 1.5f};
+            ep.velSpread  = {0, 0, 0.5f};
+            ep.acc        = {0.2f, 0.2f, 0};
+            ep.life       = 1.0f;
+            ep.lifeSpread = 0.3f;
+            ep.size       = 0.1f;
+            ep.endSize    = 0.02f;
+            ep.color      = col;
+            ep.endColor   = {col.r, col.g, col.b, 0.0f};
+            ep.rotVelSpread = 6.0f;
+            ep.count      = 1;
+            particles.emit(ep);
+        }
         printf("¡Salto! Veces presionado: %d, Velocidad Z aplicada: %.2f\n",
                numTimesSpacePressed, impulse);
     }
@@ -620,12 +642,12 @@ void Level::handleInput(GLFWwindow* window, float dt)
 
         if (inAir) hasClickedInAir = true;
 
-        printf("Disparo → angulo: %.1f°  potencia: %.1f m/s    inAir: %s\n",
+        printf("Disparo -> angulo: %.1f  potencia: %.1f m/s    inAir: %s\n",
                shotAngle, power, inAir ? "Si" : "No");
     }
 
     if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) {
-        printf("Posición bola: (%.2f, %.2f, %.2f)   Velocidad: (%.2f, %.2f, %.2f)   En aire: %s  hasClickedInAir: %s skyColorSeed: %.2f\n",
+        printf("Posicion bola: (%.2f, %.2f, %.2f)   Velocidad: (%.2f, %.2f, %.2f)   En aire: %s  hasClickedInAir: %s skyColorSeed: %.2f\n",
             ball.pos.x, ball.pos.y, ball.pos.z,
             ball.vel.x, ball.vel.y, ball.vel.z,
             inAir ? "Si" : "No",

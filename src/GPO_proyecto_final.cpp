@@ -205,7 +205,7 @@ const char* quad_fs = GLSL(
             int by = int(mod(block.y, 4.0));
             float threshold = bayer[by * 4 + bx];
 
-            // Soft band around each pixel's threshold → merging dither
+            // Soft band around each pixel's threshold -> merging dither
             float band = 0.0;  // 0.0 = original crisp dither, ~0.2 = very soft
             float t    = smoothstep(threshold - band, threshold + band, fogF);
 
@@ -408,25 +408,41 @@ static const uint8_t FONT_ROWS[10][7] = {
 // Texture layout: 13 wide x 9 tall (font pixels).
 // Digit area: columns 1-5 (tens) and 7-11 (units), rows 1-7. Border row/col = stroke.
 static void bakeTimerTex(int sec) {
-    static uint8_t buf[13 * 9 * 4];
-    memset(buf, 0, sizeof(buf));
+    // Determine number of digits needed (support up to 999)
+    int numDigits = (sec >= 100) ? 3 : 2;
+
+    // Width: 1px left border + (5px digit + 1px gap) * numDigits - 1px last gap + 1px right border
+    // Simplified: numDigits * 6 + 1
+    int texW = numDigits * 6 + 1;
+    int texH = 9;
+
+    static uint8_t buf[19 * 9 * 4]; // max for 3 digits (19px wide)
+    memset(buf, 0, texW * texH * 4);
 
     bool urgent = (sec < 5);
     uint8_t fr = 255, fg = urgent ? 51 : 255, fb = urgent ? 51 : 255;
 
-    int tens  = sec / 10;
-    int units = sec % 10;
+    // Extract digits, most-significant first
+    int digits[3];
+    if (numDigits == 3) {
+        digits[0] = sec / 100;
+        digits[1] = (sec % 100) / 10;
+        digits[2] = sec % 10;
+    } else {
+        digits[0] = sec / 10;
+        digits[1] = sec % 10;
+    }
 
     // Draw fill pixels for each digit (offset by (1,1) for stroke border)
-    for (int d = 0; d < 2; d++) {
-        int digit  = (d == 0) ? tens : units;
-        int startX = 1 + d * 6;  // tens at x=1, units at x=7
+    for (int d = 0; d < numDigits; d++) {
+        int digit  = digits[d];
+        int startX = 1 + d * 6;
         for (int row = 0; row < 7; row++) {
             int bits = FONT_ROWS[digit][row];
             for (int col = 0; col < 5; col++) {
                 if ((bits >> (4 - col)) & 1) {
                     int px = startX + col, py = 1 + row;
-                    int i  = (py * 13 + px) * 4;
+                    int i  = (py * texW + px) * 4;
                     buf[i]=fr; buf[i+1]=fg; buf[i+2]=fb; buf[i+3]=255;
                 }
             }
@@ -434,22 +450,22 @@ static void bakeTimerTex(int sec) {
     }
 
     // Stroke pass: snap the alpha channel to use as reference
-    uint8_t filled[13 * 9];
-    for (int i = 0; i < 13 * 9; i++) filled[i] = buf[i * 4 + 3];
+    uint8_t filled[19 * 9]; // max size
+    for (int i = 0; i < texW * texH; i++) filled[i] = buf[i * 4 + 3];
 
-    for (int y = 0; y < 9; y++) {
-        for (int x = 0; x < 13; x++) {
-            if (filled[y * 13 + x]) continue;
+    for (int y = 0; y < texH; y++) {
+        for (int x = 0; x < texW; x++) {
+            if (filled[y * texW + x]) continue;
             bool stroke = false;
             for (int dy = -1; dy <= 1 && !stroke; dy++)
                 for (int dx = -1; dx <= 1 && !stroke; dx++) {
                     if (dx == 0 && dy == 0) continue;
                     int nx = x+dx, ny = y+dy;
-                    if (nx>=0 && nx<13 && ny>=0 && ny<9)
-                        if (filled[ny*13+nx]) stroke = true;
+                    if (nx>=0 && nx<texW && ny>=0 && ny<texH)
+                        if (filled[ny*texW+nx]) stroke = true;
                 }
             if (stroke) {
-                int i = (y * 13 + x) * 4;
+                int i = (y * texW + x) * 4;
                 buf[i]=0; buf[i+1]=0; buf[i+2]=0; buf[i+3]=255;
             }
         }
@@ -465,7 +481,7 @@ static void bakeTimerTex(int sec) {
     } else {
         glBindTexture(GL_TEXTURE_2D, timerTex);
     }
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 13, 9, 0, GL_RGBA, GL_UNSIGNED_BYTE, buf);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texW, texH, 0, GL_RGBA, GL_UNSIGNED_BYTE, buf);
 }
 
 
@@ -798,7 +814,7 @@ int main(int argc, char* argv[])
     gMusic.setLooping(true);
     int handle = gSoloud->play(gMusic);
 
-    gSoloud->setVolume(handle, 1.0f);
+    gSoloud->setVolume(handle, 0.0f); //0 for debug, deberia ser 1.0
 
     glfwSwapInterval(1);
     while (!glfwWindowShouldClose(window)) {
