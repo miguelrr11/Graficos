@@ -21,7 +21,7 @@ static const float GRAVITY     = -12.0f;
 static const float RESTITUTION = 0.35f;   // rebote en paredes/suelo
 static const float FRICTION    = 0.988f;  // multiplicador por frame (rolling)
 static const float FRICTION_AIR = 0.995f; // fricción mientras está en el aire 
-static const float FLOOR_Z     = 0.0f;    // altura del suelo
+static const float FLOOR_Z     = 0.2f;    // altura del suelo
 
 // ─── Constantes de disparo ──────────────────────────────────────────────────
 static const float MAX_POWER   = 12.0f;
@@ -632,36 +632,68 @@ void Level::render(GLuint prog, const glm::mat4& VP)
 // ════════════════════════════════════════════════════════════════════════════
 //  SHADOWS
 // ════════════════════════════════════════════════════════════════════════════
-void Level::renderShadows(GLuint shadow_prog, const glm::mat4& VP, const glm::mat4& shadowMat)
+void Level::renderShadows(GLuint shadow_prog, const glm::mat4& VP, glm::vec3 lightPos)
 {
+    // Collect one floor height per island (floors are pushed in island order,
+    // so the first tile of each new zBase marks a new island).
+    std::vector<float> islandZ;
+    for (const auto& fm : floorMeshes) {
+        if (islandZ.empty() || fm.zBase != islandZ.back())
+            islandZ.push_back(fm.zBase);
+    }
+    if (islandZ.empty()) return;
+
+    // Build a shadow matrix that projects onto the plane z = gz.
+    float lx = lightPos.x, ly = lightPos.y, lz = lightPos.z;
+    auto shadowMat = [&](float gz) -> glm::mat4 {
+        float d = lz - gz;
+        return glm::mat4(
+             d,       0.f,   0.f,  0.f,
+             0.f,     d,     0.f,  0.f,
+            -lx,     -ly,   -gz,  -1.f,
+             gz*lx,   gz*ly, gz*lz, lz
+        );
+    };
+
+    // Find the highest floor height at or below a given world-z (for obstacles / ball).
+    auto floorBelow = [&](float z) -> float {
+        float best = islandZ[0];
+        for (float h : islandZ)
+            if (h <= z + 0.01f && h > best) best = h;
+        return best;
+    };
+
     glUseProgram(shadow_prog);
 
-    // Obstáculos: excluir invisibles y el suelo (área XY > 50 u²)
+    // Wall meshes: wallMeshes[t] belongs to island t.
+    for (size_t t = 0; t < wallMeshes.size(); ++t) {
+        float gz  = (t < islandZ.size()) ? islandZ[t] : islandZ.back();
+        glm::mat4 MVP = VP * shadowMat(gz);
+        transfer_mat4("MVP", MVP);
+        glBindVertexArray(wallMeshes[t].VAO);
+        glDrawElements(GL_TRIANGLES, wallMeshes[t].indexCount, GL_UNSIGNED_INT, 0);
+        glBindVertexArray(0);
+    }
+
+    // Obstacles (bonus boxes, hole decal – skip invisible physics boxes).
     for (const auto& obs : obstacles) {
-        if (obs.ignoreRender) continue;
+        if (obs.ignoreRender || obs.isHole) continue;
         if (obs.size.x * obs.size.y > 50.0f) continue;
-        glm::mat4 MVP = VP * shadowMat * obs.modelMatrix();
+        float gz  = floorBelow(obs.position.z);
+        glm::mat4 MVP = VP * shadowMat(gz) * obs.modelMatrix();
         transfer_mat4("MVP", MVP);
         glBindVertexArray(obs.VAO);
         glDrawElements(GL_TRIANGLES, obs.indexCount, GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
     }
 
-    // Wall mesh
-    for(const auto& wallMesh : wallMeshes) {
-        glm::mat4 MVP = VP * shadowMat;   // model = identidad
-        transfer_mat4("MVP", MVP);
-        glBindVertexArray(wallMesh.VAO);
-        glDrawElements(GL_TRIANGLES, wallMesh.indexCount, GL_UNSIGNED_INT, 0);
-        glBindVertexArray(0);
-    }
-
-    // Bola
+    // Ball: project onto whatever floor it is currently on.
     {
+        float gz = currentFloorZ;
         SphereObstacle bm = ball.mesh;
         bm.position = ball.pos;
         bm.rotation = ball.rollQuat;
-        glm::mat4 MVP = VP * shadowMat * bm.modelMatrix();
+        glm::mat4 MVP = VP * shadowMat(gz) * bm.modelMatrix();
         transfer_mat4("MVP", MVP);
         glBindVertexArray(bm.VAO);
         glDrawElements(GL_TRIANGLES, bm.indexCount, GL_UNSIGNED_INT, 0);

@@ -75,7 +75,7 @@ public:
     void load();                                            // carga el nivel hardcodeado
     void update(float dt);                                  // física + comprobaciones
     void render(GLuint prog, const glm::mat4& VP);          // dibuja obstáculos + bola
-    void renderShadows(GLuint shadow_prog, const glm::mat4& VP, const glm::mat4& shadowMat);
+    void renderShadows(GLuint shadow_prog, const glm::mat4& VP, glm::vec3 lightPos);
     void handleInput(GLFWwindow* window, float dt);         // input del jugador
     void destroy();                                         // libera GPU resources
     void restartLevel();                                    // reinicia el estado de la bola para volver a empezar el mismo nivel

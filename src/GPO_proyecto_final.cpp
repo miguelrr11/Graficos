@@ -493,15 +493,16 @@ static void bakeTimerTex(int sec) {
 }
 
 
-// Proyecta geometría sobre el plano z=0 desde la posición de luz L
-static glm::mat4 makeShadowMatrix(glm::vec3 L)
+// Proyecta geometría sobre el plano z=groundZ desde la posición de luz L
+static glm::mat4 makeShadowMatrix(glm::vec3 L, float groundZ = 0.0f)
 {
     float lx = L.x, ly = L.y, lz = L.z;
+    float d  = lz - groundZ;   // distancia vertical luz→plano
     return glm::mat4(
-         lz,  0.f, 0.f, 0.f,   // col 0
-         0.f, lz,  0.f, 0.f,   // col 1
-        -lx, -ly,  0.f,-1.f,   // col 2
-         0.f, 0.f, 0.f, lz     // col 3
+         d,           0.f,  0.f,     0.f,   // col 0
+         0.f,         d,    0.f,     0.f,   // col 1
+        -lx,         -ly,  -groundZ,-1.f,   // col 2
+         groundZ*lx,  groundZ*ly, groundZ*lz, lz  // col 3
     );
 }
 
@@ -520,12 +521,12 @@ void setup_fbo(int w, int h)
 
     glGenTextures(1, &fboDepthTex);
     glBindTexture(GL_TEXTURE_2D, fboDepthTex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, w, h, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, w, h, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, nullptr);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, fboDepthTex, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, fboDepthTex, 0);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
@@ -694,7 +695,7 @@ void render_scene()
     // ── 1. Renderizar escena al FBO ───────────────────────────────────────────
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
 
     // Objetos (sin pixelación por textura: la hace el post-proceso)
@@ -702,21 +703,45 @@ void render_scene()
     transfer_float("uPixelSize", 1.0f);
     level.render(prog, VP);
 
-    // Sombras
+    // Sombras con máscara de stencil: sombras solo donde hay suelo
     {
-        static const glm::vec3 LIGHT_POS = {12.0f, 5.0f, 100.0f};
-        glm::mat4 shadowMat = makeShadowMatrix(LIGHT_POS);
+        static const glm::vec3 LIGHT_POS = {25.0f, 25.0f, 80.0f};
+
+        // Paso 1 – marcar en stencil las áreas de suelo (stencil = 1)
+        // Usar GL_LEQUAL porque los floors ya están en el depth buffer con GL_LESS
+        glEnable(GL_STENCIL_TEST);
+        glStencilMask(0xFF);
+        glStencilFunc(GL_ALWAYS, 1, 0xFF);
+        glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+        glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+        glDepthMask(GL_FALSE);
+        glDepthFunc(GL_LEQUAL);
+        glUseProgram(shadow_prog);
+        for (const auto& fm : level.floorMeshes) {
+            transfer_mat4("MVP", VP);
+            glBindVertexArray(fm.VAO);
+            glDrawElements(GL_TRIANGLES, fm.indexCount, GL_UNSIGNED_INT, 0);
+            glBindVertexArray(0);
+        }
+        glDepthFunc(GL_LESS);
+
+        // Paso 2 – dibujar sombras solo donde stencil == 1
+        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+        glStencilFunc(GL_EQUAL, 1, 0xFF);
+        glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+        glStencilMask(0x00);
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glDepthFunc(GL_LEQUAL);
-        glDepthMask(GL_FALSE);
         glEnable(GL_POLYGON_OFFSET_FILL);
         glPolygonOffset(-1.0f, -1.0f);
-        level.renderShadows(shadow_prog, VP, shadowMat);
+        level.renderShadows(shadow_prog, VP, LIGHT_POS);
         glDisable(GL_POLYGON_OFFSET_FILL);
-        glDepthMask(GL_TRUE);
         glDepthFunc(GL_LESS);
         glDisable(GL_BLEND);
+        glDepthMask(GL_TRUE);
+        glStencilMask(0xFF);
+        glDisable(GL_STENCIL_TEST);
     }
 
     // Skybox
