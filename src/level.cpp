@@ -31,7 +31,7 @@ static const float FLOOR_Z     = 0.2f;    // altura del suelo
 
 // ─── Constantes de disparo ──────────────────────────────────────────────────
 static float MAX_POWER   = 12.0f;
-static float SUPERMAN_MULT = 2.75f; // el superman multiplica tu impulso por este factor
+static float SUPERMAN_MULT = 2.5f; // el superman multiplica tu impulso por este factor
 static const float CHARGE_RATE = 0.7f;    // potencia acumulada por segundo
 static const float AIM_SPEED   = 90.0f;   // grados/segundo al girar la mira
 static const float STOP_SPEED2 = 0.05f;  // velocidad mínima para detener la bola

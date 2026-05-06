@@ -130,15 +130,13 @@ const char* quad_fs = GLSL(
     uniform sampler2D screenTex;
     uniform sampler2D depthTex;
     uniform sampler2D skyTex;
+    uniform sampler2D hudTex;
     uniform vec2  resolution;
     uniform float pixelSize;
     uniform float uNear;
     uniform float uFar;
     uniform float uFogStart;
     uniform float uFogEnd;
-    uniform float uGameTimer;
-    uniform float uScaleFont;
-    uniform sampler2D timerTex;  // 13x9 CPU-baked digit texture, updated once per second
     uniform float uDim = 1.0;
 
     float linearDepth(float d) {
@@ -222,23 +220,10 @@ const char* quad_fs = GLSL(
 
         color *= v;
 
-        // Timer overlay – CPU-baked 13x9 texture, one lookup per pixel
+        // HUD overlay – aqui se dibuja el texto sacandolo directamente de la textura del HUD
         {
-            float sc = uScaleFont;
-            // Texture is 13 wide (1px stroke border + 11px digits + 1px stroke border)
-            // Digits are horizontally centered; texture top row is 1 font-pixel above startY=10
-            float sx = resolution.x * 0.5 - 6.5 * sc;
-            float sy = 10.0 - sc;
-            float tw = 13.0 * sc;
-            float th = 9.0 * sc;
-            int px = int(fragUV.x * resolution.x);
-            int py = int((1.0 - fragUV.y) * resolution.y);
-            float lx = float(px) - sx;
-            float ly = float(py) - sy;
-            if (lx >= 0.0 && lx < tw && ly >= 0.0 && ly < th) {
-                vec4 tc = texture(timerTex, vec2(lx / tw, ly / th));
-                if (tc.a > 0.5) color = tc.rgb;
-            }
+            vec4 hud = texture(hudTex, vec2(fragUV.x, 1.0 - fragUV.y));
+            if (hud.a > 0.5) color = hud.rgb;
         }
 
         color *= uDim;
@@ -386,7 +371,7 @@ float lastX = 400.0f, lastY = 300.0f;
 bool  firstMouse = true;
 float mouseSensitivity = 0.1f;
 float fov    = 80.0f;
-float aspect = 4.0f / 3.0f;
+float aspect = ANCHO / ALTO;
 float cam_speed = 5.0f;
 float cam_distance = 3.0f;   // distancia a la bola
 
@@ -394,10 +379,8 @@ float cam_distance = 3.0f;   // distancia a la bola
 float lastFrameTime = 0.0f;
 float dt = 0.0f;
 
-// ─── Timer texture (CPU-baked, 13×9 RGBA, updated once per integer second) ──
-GLuint timerTex     = 0;
-int    lastTimerSec = -1;
-
+// ─── HUD text system ──────────────────────────────────────────────────────────
+// 5×7 pixel font for digits 0-9
 static const uint8_t FONT_ROWS[10][7] = {
     {14,17,17,17,17,17,14}, {4,12,4,4,4,4,14},
     {14,17,1,6,8,16,31},    {14,17,1,6,1,17,14},
@@ -406,83 +389,103 @@ static const uint8_t FONT_ROWS[10][7] = {
     {14,17,17,14,17,17,14}, {14,17,17,15,1,1,14}
 };
 
-// Texture layout: 13 wide x 9 tall (font pixels).
-// Digit area: columns 1-5 (tens) and 7-11 (units), rows 1-7. Border row/col = stroke.
-static void bakeTimerTex(int sec) {
-    // Determine number of digits needed (support up to 999)
-    int numDigits = (sec >= 100) ? 3 : 2;
+static std::vector<uint8_t> hudBuf;
+static GLuint hudTex = 0;
+static int    hudW   = 0, hudH = 0;
+static int    hudDX1, hudDY1, hudDX2, hudDY2;
 
-    // Width: 1px left border + (5px digit + 1px gap) * numDigits - 1px last gap + 1px right border
-    // Simplified: numDigits * 6 + 1
-    int texW = numDigits * 6 + 1;
-    int texH = 9;
-
-    static uint8_t buf[19 * 9 * 4]; // max for 3 digits (19px wide)
-    memset(buf, 0, texW * texH * 4);
-
-    bool urgent = (sec < 5);
-    uint8_t fr = 255, fg = urgent ? 51 : 255, fb = urgent ? 51 : 255;
-
-    // Extract digits, most-significant first
-    int digits[3];
-    if (numDigits == 3) {
-        digits[0] = sec / 100;
-        digits[1] = (sec % 100) / 10;
-        digits[2] = sec % 10;
-    } else {
-        digits[0] = sec / 10;
-        digits[1] = sec % 10;
-    }
-
-    // Draw fill pixels for each digit (offset by (1,1) for stroke border)
-    for (int d = 0; d < numDigits; d++) {
-        int digit  = digits[d];
-        int startX = 1 + d * 6;
-        for (int row = 0; row < 7; row++) {
-            int bits = FONT_ROWS[digit][row];
-            for (int col = 0; col < 5; col++) {
-                if ((bits >> (4 - col)) & 1) {
-                    int px = startX + col, py = 1 + row;
-                    int i  = (py * texW + px) * 4;
-                    buf[i]=fr; buf[i+1]=fg; buf[i+2]=fb; buf[i+3]=255;
-                }
-            }
-        }
-    }
-
-    // Stroke pass: snap the alpha channel to use as reference
-    uint8_t filled[19 * 9]; // max size
-    for (int i = 0; i < texW * texH; i++) filled[i] = buf[i * 4 + 3];
-
-    for (int y = 0; y < texH; y++) {
-        for (int x = 0; x < texW; x++) {
-            if (filled[y * texW + x]) continue;
-            bool stroke = false;
-            for (int dy = -1; dy <= 1 && !stroke; dy++)
-                for (int dx = -1; dx <= 1 && !stroke; dx++) {
-                    if (dx == 0 && dy == 0) continue;
-                    int nx = x+dx, ny = y+dy;
-                    if (nx>=0 && nx<texW && ny>=0 && ny<texH)
-                        if (filled[ny*texW+nx]) stroke = true;
-                }
-            if (stroke) {
-                int i = (y * texW + x) * 4;
-                buf[i]=0; buf[i+1]=0; buf[i+2]=0; buf[i+3]=255;
-            }
-        }
-    }
-
-    if (!timerTex) {
-        glGenTextures(1, &timerTex);
-        glBindTexture(GL_TEXTURE_2D, timerTex);
+static void hud_resize(int w, int h) {
+    hudW = w; hudH = h;
+    hudBuf.assign((size_t)w * h * 4, 0);
+    if (!hudTex) {
+        glGenTextures(1, &hudTex);
+        glBindTexture(GL_TEXTURE_2D, hudTex);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     } else {
-        glBindTexture(GL_TEXTURE_2D, timerTex);
+        glBindTexture(GL_TEXTURE_2D, hudTex);
     }
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texW, texH, 0, GL_RGBA, GL_UNSIGNED_BYTE, buf);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+}
+
+static void hud_clear() {
+    memset(hudBuf.data(), 0, hudBuf.size());
+    hudDX1 = hudW; hudDY1 = hudH; hudDX2 = -1; hudDY2 = -1;
+}
+
+static inline void hud_put(int x, int y, uint8_t r, uint8_t g, uint8_t b) {
+    if ((unsigned)x >= (unsigned)hudW || (unsigned)y >= (unsigned)hudH) return;
+    uint8_t* p = hudBuf.data() + (y * hudW + x) * 4;
+    p[0]=r; p[1]=g; p[2]=b; p[3]=255;
+}
+
+// Returns pixel width of a digit string at the given size (1px gap between chars)
+static int hud_text_width(const char* str, int size) {
+    int n = 0;
+    for (const char* c = str; *c; c++) if (*c >= '0' && *c <= '9') n++;
+    return n > 0 ? n * (5 * size) + (n - 1) : 0;
+}
+
+// Draw a string of digits at screen-pixel position (x,y). size = screen pixels per font pixel.
+// Color defaults to white; only digits 0-9 are rendered (other chars skipped with a gap).
+static void hud_text(const char* str, int x, int y, int size,
+                     uint8_t r = 255, uint8_t g = 255, uint8_t b = 255) {
+    int cx = x;
+    for (const char* c = str; *c; c++) {
+        if (*c < '0' || *c > '9') { cx += size * 3; continue; }
+        int d = *c - '0';
+        hudDX1 = std::min(hudDX1, cx - 1);
+        hudDY1 = std::min(hudDY1, y - 1);
+        hudDX2 = std::max(hudDX2, cx + 5 * size);
+        hudDY2 = std::max(hudDY2, y + 7 * size);
+        for (int row = 0; row < 7; row++) {
+            int bits = FONT_ROWS[d][row];
+            for (int col = 0; col < 5; col++) {
+                if ((bits >> (4 - col)) & 1) {
+                    for (int sy = 0; sy < size; sy++)
+                        for (int sx = 0; sx < size; sx++)
+                            hud_put(cx + col*size + sx, y + row*size + sy, r, g, b);
+                }
+            }
+        }
+        cx += 5 * size + 1;
+    }
+}
+
+static void hud_flush() {
+    if (!hudTex || hudW == 0 || hudDX2 < hudDX1) return;
+
+    int x1 = std::max(hudDX1, 0),     y1 = std::max(hudDY1, 0);
+    int x2 = std::min(hudDX2, hudW-1), y2 = std::min(hudDY2, hudH-1);
+    int rw = x2-x1+1, rh = y2-y1+1;
+
+    // Snapshot alpha of the dirty region (fill-only) before writing stroke pixels
+    std::vector<uint8_t> snap((size_t)rw * rh);
+    for (int py = y1; py <= y2; py++)
+        for (int px = x1; px <= x2; px++)
+            snap[(py-y1)*rw+(px-x1)] = hudBuf[(py*hudW+px)*4+3];
+
+    auto snapGet = [&](int px, int py) -> bool {
+        int lx = px-x1, ly = py-y1;
+        if ((unsigned)lx >= (unsigned)rw || (unsigned)ly >= (unsigned)rh) return false;
+        return snap[ly*rw+lx] > 0;
+    };
+
+    for (int py = y1; py <= y2; py++) {
+        for (int px = x1; px <= x2; px++) {
+            if (snap[(py-y1)*rw+(px-x1)]) continue;
+            bool stroke = false;
+            for (int dy = -1; dy <= 1 && !stroke; dy++)
+                for (int dx = -1; dx <= 1 && !stroke; dx++)
+                    if ((dx || dy) && snapGet(px+dx, py+dy)) stroke = true;
+            if (stroke) hud_put(px, py, 0, 0, 0);
+        }
+    }
+
+    glBindTexture(GL_TEXTURE_2D, hudTex);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, hudW, hudH, GL_RGBA, GL_UNSIGNED_BYTE, hudBuf.data());
 }
 
 
@@ -522,6 +525,7 @@ void setup_fbo(int w, int h)
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, fboDepthTex, 0);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    hud_resize(w, h);
 }
 
 void destroy_fbo()
@@ -769,24 +773,44 @@ void render_scene()
     glUniform1f(glGetUniformLocation(quad_prog, "uFar"),       40.0f);
     glUniform1f(glGetUniformLocation(quad_prog, "uFogStart"),  100.0f);
     glUniform1f(glGetUniformLocation(quad_prog, "uFogEnd"),    200.0f);
-    glUniform1f(glGetUniformLocation(quad_prog, "uGameTimer"), game.gameTimer);
 
-    // Bake timer texture only when the displayed integer changes
-    int timerSecNow = std::max((int)std::ceil(game.gameTimer), 0);
-    if (timerSecNow != lastTimerSec) {
-        lastTimerSec = timerSecNow;
-        bakeTimerTex(timerSecNow);
-    }
-    glActiveTexture(GL_TEXTURE3);
-    glBindTexture(GL_TEXTURE_2D, timerTex);
-    glUniform1i(glGetUniformLocation(quad_prog, "timerTex"), 3);
-
+    // ── HUD: draw all text into CPU buffer, upload once ───────────────────────
     static float scaleFont = 6.0f;
-    if(game.gameTimer < 10.0f) scaleFont = lerp(scaleFont, 10.0f, 0.1);
-    if(game.gameTimer < 5.0f){
-        scaleFont += cos(now * 20.0f) * 0.5f;
+    if (game.gameTimer < 10.0f) scaleFont = lerp(scaleFont, 10.0f, 0.1f);
+    else if (game.gameTimer < 5.0f)  scaleFont += cosf(now * 10.0f) * 0.5f;
+    else scaleFont = 6.0f;
+    int sf = std::max(1, (int)scaleFont);
+
+    // custom HUD para dibujar texto (solo numeros)
+    hud_clear();
+    {
+        int timerSec = std::max(0, (int)std::ceil(game.gameTimer));
+        char timerStr[8];
+        sprintf_s(timerStr, sizeof(timerStr), "%d", timerSec);
+        int tw = hud_text_width(timerStr, sf);
+        bool urgent = game.gameTimer < 5.0f;
+        hud_text(timerStr, (ANCHO - tw) / 2, 10, sf,
+                 255, urgent ? 51 : 255, urgent ? 51 : 255);
+
+        // now lets draw the miliseconds as well, under the seconds and smaller
+        char msStr[8];
+        int ms = (int)((game.gameTimer - std::floor(game.gameTimer)) * 100);
+        sprintf_s(msStr, sizeof(msStr), "%02d", ms);
+        int msw = hud_text_width(msStr, sf / 2);
+        hud_text(msStr, (ANCHO - msw) / 2, 10 + sf * 7 + 5, sf / 2,
+                    255, urgent ? 51 : 255, urgent ? 51 : 255);
+
+        // numero de nivel en la esquina superior izquierda
+        char levelStr[16];
+        sprintf_s(levelStr, sizeof(levelStr), "Nivel %d", game.currentLevel);
+        hud_text(levelStr, -35, 10, 3);
+        
     }
-    glUniform1f(glGetUniformLocation(quad_prog, "uScaleFont"), scaleFont);
+    hud_flush();
+
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, hudTex);
+    glUniform1i(glGetUniformLocation(quad_prog, "hudTex"), 3);
 
     glUniform1f(glGetUniformLocation(quad_prog, "uDim"), game.dimValue);
 
@@ -825,7 +849,7 @@ int main(int argc, char* argv[])
     printf("Audio load error: %d\n", error);
     gMusic.setLooping(true);
     int handle = gSoloud->play(gMusic);
-    gSoloud->setVolume(handle, 1.0f); //0 for debug, deberia ser 1.0
+    gSoloud->setVolume(handle, 0.0f); //0 for debug, deberia ser 1.0
 
     game.init(gSoloud);
     init_scene();
@@ -873,7 +897,7 @@ void ResizeCallback(GLFWwindow* window, int width, int height)
     ALTO = height; ANCHO = width;
     aspect = (float)width / (float)height;
     destroy_fbo();
-    setup_fbo(width, height);
+    setup_fbo(width, height);  // also calls hud_resize
 }
 
 static void KeyCallback(GLFWwindow* window, int key, int code, int action, int mode)

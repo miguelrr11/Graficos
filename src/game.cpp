@@ -65,7 +65,7 @@ void Game::update(float dt)
 // ─────────────────────────────────────────────────────────────────────────────
 void Game::nextLevel()
 {
-    currentLevel+=2;
+    currentLevel+=1;
     gameTimer += 30.0f;
     level.destroy();
     level.load(currentLevel, res);
