@@ -5,6 +5,7 @@ ATG, 2019
 #include <GpO.h>
 #include "obstacle.h"
 #include "level.h"       // <-- nivel de minigolf
+#include "model.h"
 #include <vector>
 #include <cstring>
 #include <algorithm>
@@ -362,6 +363,9 @@ const char* fragment_prog = GLSL(
 GLFWwindow* window;
 GLuint      prog;
 Game        game;           // ← top-level game state (owns level + resources)
+Model       alphabetModel;
+bool        g_debugAlphabetGrid = true;  // Tab toggles this
+int         g_debugMeshIdx      = 0;    // Left/Right arrows cycle through meshes
 
 // Cámara
 vec3  up       = vec3(0, 0, 1);
@@ -641,6 +645,36 @@ void init_scene()
     glDetachShader(skybox_prog, SFS);  glDeleteShader(SFS);
 
     lastFrameTime = (float)glfwGetTime();
+
+    // Load alphabet model (one mesh per letter)
+    alphabetModel.load(getAssetPath("alphabet obj.obj"));
+
+    // Character map: verified one-by-one with Tab + Left/Right arrow viewer.
+    // Duplicates resolved as upper/lowercase pairs where distinguishable.
+    alphabetModel.setCharMap({
+        // ── Digits ────────────────────────────────────────────────────────────
+        {'6', 0}, {'8', 1}, {'9', 2}, {'4', 3},
+        // index 4 = unknown
+        {'3', 4}, {'w', 5},
+        {'0',56}, {'7',57}, {'1',58}, {'2',59}, {'5',55},
+        // ── Letters ───────────────────────────────────────────────────────────
+        {'P', 6}, {'g', 7},
+        {'Q', 8}, {'W', 9},
+        {'p',10}, {'m',11}, {'f',12}, {'h',13}, {'a',14}, {'x',15},
+        {'S',16}, {'t',17}, {'e',18}, {'s',19},
+        {'G',20}, {'k',21}, {'E',22}, {'U',23},
+        {'d',24}, {'q',25}, {'v',26}, {'J',27},
+        {'u',28}, {'K',29}, {'c',30}, {'D',31},
+        {'r',32}, {'b',33}, {'V',34}, {'R',35},
+        {'X',36}, {'F',37}, {'o',38}, {'n',39},
+        {'B',40}, {'y',41}, {'L',42}, {'I',43},
+        {'O',44}, {'z',45}, {'Z',46}, {'M',47},
+        {'H',48}, {'C',49}, {'N',50}, {'A',51},
+        {'i',52}, {'T',53}, {'Y',54},
+        // ── Special ───────────────────────────────────────────────────────────
+        {'.',60}, {'j',61}, {'l',62},
+        // index 55 = duplicate 5, index 63 = duplicate '.' → skipped
+    });
 }
 
 
@@ -696,6 +730,24 @@ void render_scene()
     glUseProgram(prog);
     transfer_float("uPixelSize", 1.0f);
     game.level.render(prog, VP, game.bonusQueue);
+
+    // Alphabet debug: Tab = single-mesh viewer, ←/→ = cycle. Tab again = string test.
+    if (g_debugAlphabetGrid && alphabetModel.meshCount() > 0) {
+        // Show one mesh at a time, large, in front of the ball
+        const auto& m = alphabetModel.meshes[g_debugMeshIdx];
+        float scale = 1.2f / m.size;
+        glm::vec3 pos = game.level.ball.pos + glm::vec3(0.f, 0.f, 1.5f);
+        glm::mat4 M = glm::translate(glm::mat4(1.f), pos - m.center * scale)
+                    * glm::scale(glm::mat4(1.f), glm::vec3(scale));
+        glUseProgram(prog);
+        glUniform1i(glGetUniformLocation(prog, "uUseTex"), 0);
+        glUniform3f(glGetUniformLocation(prog, "uColor"), 1.f, 0.8f, 0.2f);
+        m.draw(prog, VP * M, M);
+        glUniform3f(glGetUniformLocation(prog, "uColor"), 1.f, 1.f, 1.f);
+    } else if (!g_debugAlphabetGrid) {
+        alphabetModel.drawString("abcdefghijklmnopqrstuvwxyz", prog, VP,
+            glm::vec3(1.f, 0.f, 1.f), 0.6f, 0.05f, glm::vec3(1.f, 0.8f, 0.2f));
+    }
 
     // Sombras con máscara de stencil: sombras solo donde hay suelo
     {
@@ -865,6 +917,7 @@ int main(int argc, char* argv[])
     gSoloud->deinit();
     delete gSoloud;
     game.destroy();
+    alphabetModel.destroy();
     glfwTerminate();
     return 0;
 }
@@ -903,6 +956,20 @@ void ResizeCallback(GLFWwindow* window, int width, int height)
 static void KeyCallback(GLFWwindow* window, int key, int code, int action, int mode)
 {
     if (key == GLFW_KEY_ESCAPE) glfwSetWindowShouldClose(window, true);
+    // Tab: toggle alphabet debug (grid vs single mesh viewer)
+    if (key == GLFW_KEY_TAB && action == GLFW_PRESS) {
+        extern bool g_debugAlphabetGrid;
+        g_debugAlphabetGrid = !g_debugAlphabetGrid;
+    }
+    // Left/Right: cycle through meshes in single-mesh debug view
+    if (action == GLFW_PRESS || action == GLFW_REPEAT) {
+        extern int g_debugMeshIdx;
+        int n = alphabetModel.meshCount();
+        if (n > 0) {
+            if (key == GLFW_KEY_RIGHT) { g_debugMeshIdx = (g_debugMeshIdx + 1) % n; printf("[debug] mesh %d\n", g_debugMeshIdx); }
+            if (key == GLFW_KEY_LEFT)  { g_debugMeshIdx = (g_debugMeshIdx - 1 + n) % n; printf("[debug] mesh %d\n", g_debugMeshIdx); }
+        }
+    }
     // R: reiniciar nivel
     if (key == GLFW_KEY_R && action == GLFW_PRESS) {
         game.level.destroy();

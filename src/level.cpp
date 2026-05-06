@@ -9,6 +9,8 @@ static float rf() { return (float)rand() / (float)RAND_MAX; }
 static float rc() { return rf() * 2.0f - 1.0f; }
 static float ranBetween(float min, float max) { return min + rf() * (max - min); }
 
+static bool debugGameplay = true;
+
 // HSV -> RGBA helper for firework colors
 static glm::vec4 hsv4(float h, float s, float v) {
     float r = glm::clamp(std::fabs(std::fmod(h*6.0f+0.0f, 6.0f)-3.0f)-1.0f, 0.0f, 1.0f);
@@ -648,6 +650,7 @@ void Level::handleInput(GLFWwindow* window, float dt, std::vector<int>& bonusQue
             bonusQueue.pop_back();
         }
         ball.vel.z += impulse;
+        if(debugGameplay) ball.vel.z += IMPULSE; // modo dios
         ball.moving = true;
         inAir = true;
         float delta = (numTimesSpacePressed)*0.1f;

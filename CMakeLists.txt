@@ -23,6 +23,22 @@ add_subdirectory(libs/glfw EXCLUDE_FROM_ALL)
 add_subdirectory(libs/glm )
 add_subdirectory(libs/glad )
 
+# ── Assimp (OBJ importer only, no tools, no exporter, no tests) ──────────────
+include(FetchContent)
+set(ASSIMP_BUILD_TESTS                OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_ASSIMP_TOOLS         OFF CACHE BOOL "" FORCE)
+set(ASSIMP_INSTALL                    OFF CACHE BOOL "" FORCE)
+set(ASSIMP_NO_EXPORT                  ON  CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_ALL_IMPORTERS_BY_DEFAULT OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_OBJ_IMPORTER         ON  CACHE BOOL "" FORCE)
+set(BUILD_SHARED_LIBS                 OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(assimp
+    GIT_REPOSITORY https://github.com/assimp/assimp.git
+    GIT_TAG        v5.4.3
+    GIT_SHALLOW    TRUE
+)
+FetchContent_MakeAvailable(assimp)
+
 include_directories(libs/glad/include)
 include_directories(libs/glm)
 
@@ -51,6 +67,7 @@ set(GPO_SOURCE_FILES include/stb/stb_image.h
 					 include/floormesh.h
 					 include/generator.h
 					 include/particles.h
+					 include/model.h
 					 src/wallmesh.cpp
 					 src/sphere.cpp
 					 src/level.cpp
@@ -61,20 +78,23 @@ set(GPO_SOURCE_FILES include/stb/stb_image.h
 					 src/generator.cpp
 					 src/floormesh.cpp
 					 src/particles.cpp
+					 src/model.cpp
 					 ${SOLOUD_SRC}
 					 )
 add_executable(gpo_proyecto_final ${GPO_SOURCE_FILES})
 target_compile_definitions(gpo_proyecto_final PRIVATE WITH_MINIAUDIO)
 target_include_directories(gpo_proyecto_final PRIVATE
-    ${PROJECT_SOURCE_DIR}/libs/soloud/src/backend/miniaudio)
+    ${PROJECT_SOURCE_DIR}/libs/soloud/src/backend/miniaudio
+    ${assimp_SOURCE_DIR}/include
+    ${assimp_BINARY_DIR}/include)
 
 if(WIN32)
-    target_link_libraries(gpo_proyecto_final PRIVATE ${OPENGL_LIBRARIES} glfw glm glad_interface)
+    target_link_libraries(gpo_proyecto_final PRIVATE ${OPENGL_LIBRARIES} glfw glm glad_interface assimp)
 elseif(APPLE)
-    target_link_libraries(gpo_proyecto_final PRIVATE ${OPENGL_LIBRARIES} glfw glm glad_interface
+    target_link_libraries(gpo_proyecto_final PRIVATE ${OPENGL_LIBRARIES} glfw glm glad_interface assimp
         "-framework AudioUnit" "-framework CoreAudio" "-framework AudioToolbox" "-framework CoreFoundation")
 else()
-    target_link_libraries(gpo_proyecto_final PRIVATE ${OPENGL_LIBRARIES} glfw glm glad_interface
+    target_link_libraries(gpo_proyecto_final PRIVATE ${OPENGL_LIBRARIES} glfw glm glad_interface assimp
         pthread dl m)
 endif()
 
