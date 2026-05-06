@@ -157,13 +157,29 @@ bool Model::drawChar(char c, GLuint prog, const glm::mat4& MVP, const glm::mat4&
     return true;
 }
 
+float Model::stringWidth(const char* str, float charSize, float spacing) const
+{
+    float advance = 0.f;
+    bool first = true;
+    for (const char* c = str; *c; c++) {
+        if (!first) advance += spacing;
+        first = false;
+        if (*c == ' ') { advance += charSize * 0.6f; continue; }
+        advance += charSize;
+    }
+    return advance;
+}
+
 void Model::drawString(const char* str, GLuint prog, const glm::mat4& VP,
                        glm::vec3 startPos, float charSize, float spacing,
-                       glm::vec3 color) const
+                       glm::vec3 color, glm::mat4 rotation) const
 {
     glUseProgram(prog);
     glUniform1i(glGetUniformLocation(prog, "uUseTex"), 0);
     glUniform3f(glGetUniformLocation(prog, "uColor"), color.r, color.g, color.b);
+
+    // advance direction is the rotation's local X axis
+    glm::vec3 rightDir = glm::vec3(rotation[0]);
 
     float advance = 0.f;
     for (const char* c = str; *c; c++) {
@@ -179,9 +195,11 @@ void Model::drawString(const char* str, GLuint prog, const glm::mat4& VP,
         if (it != charMap.end() && it->second < (int)meshes.size()) {
             const ModelMesh& m = meshes[it->second];
             float scale = charSize / m.size;
-            glm::vec3 pos = startPos + glm::vec3(advance, 0.f, 0.f);
-            glm::mat4 M = glm::translate(glm::mat4(1.f), pos - m.center * scale)
-                        * glm::scale(glm::mat4(1.f), glm::vec3(scale));
+            glm::vec3 pos = startPos + rightDir * advance;
+            glm::mat4 M = glm::translate(glm::mat4(1.f), pos)
+                        * rotation
+                        * glm::scale(glm::mat4(1.f), glm::vec3(scale))
+                        * glm::translate(glm::mat4(1.f), -m.center);
             m.draw(prog, VP * M, M);
         }
 

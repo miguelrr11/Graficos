@@ -58,9 +58,14 @@ struct Model {
     // charSize: uniform size for every character (world units).
     // spacing:  extra gap between characters (world units). 0 = tight.
     // color:    RGB colour applied as uColor uniform.
+    // rotation: optional rotation matrix applied to each character.
     void drawString(const char* str, GLuint prog, const glm::mat4& VP,
                     glm::vec3 startPos, float charSize, float spacing = 0.05f,
-                    glm::vec3 color = glm::vec3(1.f)) const;
+                    glm::vec3 color = glm::vec3(1.f),
+                    glm::mat4 rotation = glm::mat4(1.f)) const;
+
+    // Total advance width of a string (same logic as drawString, no GL calls).
+    float stringWidth(const char* str, float charSize, float spacing = 0.05f) const;
 
     // Print all mesh names to stdout (useful for inspecting a new .obj)
     void printMeshNames() const;

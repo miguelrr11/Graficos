@@ -9,7 +9,7 @@ static float rf() { return (float)rand() / (float)RAND_MAX; }
 static float rc() { return rf() * 2.0f - 1.0f; }
 static float ranBetween(float min, float max) { return min + rf() * (max - min); }
 
-static bool debugGameplay = true;
+static bool debugGameplay = false;
 
 // HSV -> RGBA helper for firework colors
 static glm::vec4 hsv4(float h, float s, float v) {
@@ -105,6 +105,20 @@ void Level::load(int levelNum, const Resources& res)
 
     // 2. EL HOYO (Aparece SOLO en la última isla, ajustado a su altura)
     holePos  = { tracks.back().holePos.x, tracks.back().holePos.y, FLOOR_Z + ((numIslands - 1) * heightChange) + 0.1f };
+
+    float minX = 100000.0f, maxX = -100000.0f, minY = 100000.0f, maxY = -100000.0f;
+    for (const auto& tile : tracks.back().floorTiles) {
+        for (const auto& vert : tile) {
+            if (vert.x < minX) minX = vert.x;
+            if (vert.x > maxX) maxX = vert.x;
+            if (vert.y < minY) minY = vert.y;
+            if (vert.y > maxY) maxY = vert.y;
+        }
+    }
+    edges = {minX, maxX, minY, maxY}; // guardamos los bordes de la última isla para centrar la cámara al empezar el juego
+
+    printf("Nivel %d generado con %d islas. HolePos: (%.2f, %.2f, %.2f). Última isla va de (%.2f, %.2f) a (%.2f, %.2f)\n", 
+            levelNum, numIslands, holePos.x, holePos.y, holePos.z, minX, minY, maxX, maxY);
 
     // 3. CONSTRUCCIÓN GEOMÉTRICA (Césped, Muros y Físicas)
     for(size_t t = 0; t < tracks.size(); ++t) {

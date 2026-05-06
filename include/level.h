@@ -63,6 +63,8 @@ public:
     std::vector<FloorMesh> floorMeshes;
     std::vector<LevelData> tracks;
 
+    std::vector<float> edges; // para centrar la camara al empezar el juego
+
     // ── Visual / gameplay state ──────────────────────────────────────────────
     bool      completed    = false;
     float     skyColorSeed = 0.0f;

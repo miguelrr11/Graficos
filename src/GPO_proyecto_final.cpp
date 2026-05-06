@@ -34,6 +34,8 @@ GLuint fbo, fboColorTex, fboDepthTex;
 GLuint skyFBO, skyColorTex;
 float  pixelSize = 3.0f;   // píxeles de pantalla por "píxel de juego"
 
+static bool startedGame = false;
+
 const char* skybox_vs = GLSL(
     layout(location = 0) in vec3 pos;
     out vec3 dir;
@@ -666,9 +668,9 @@ void init_scene()
         {'d',24}, {'q',25}, {'v',26}, {'J',27},
         {'u',28}, {'K',29}, {'c',30}, {'D',31},
         {'r',32}, {'b',33}, {'V',34}, {'R',35},
-        {'X',36}, {'F',37}, {'o',38}, {'n',39},
+        {'X',36}, {'F',37}, {'O',38}, {'n',39},
         {'B',40}, {'y',41}, {'L',42}, {'I',43},
-        {'O',44}, {'z',45}, {'Z',46}, {'M',47},
+        {'o',44}, {'z',45}, {'Z',46}, {'M',47},
         {'H',48}, {'C',49}, {'N',50}, {'A',51},
         {'i',52}, {'T',53}, {'Y',54},
         // ── Special ───────────────────────────────────────────────────────────
@@ -687,16 +689,41 @@ void render_scene()
     lastFrameTime = now;
     if (dt > 0.05f) dt = 0.05f;
 
+    
+
     // La mira sigue la dirección de la cámara (el mouse apunta)
-    game.level.shotAngle = cam_yaw + 180.0f;
-    game.level.handleInput(window, dt, game.bonusQueue);
-    game.level.update(dt, game.bonusQueue);
+        game.level.shotAngle = cam_yaw + 180.0f;
+        game.level.handleInput(window, dt, game.bonusQueue);
+        game.level.update(dt, game.bonusQueue);
+    
+
+    // static glm::vec3 target = game.level.ball.pos;
+    // target = lerpVector(target, game.level.ball.pos, 0.05f);  // suavizado de cámara, no funciona muy bien
 
     vec3 target = game.level.ball.pos;
-    vec3 camPos;
+    glm::vec3 camPos;
     camPos.x = target.x + cam_distance * cos(glm::radians(cam_pitch)) * cos(glm::radians(cam_yaw));
     camPos.y = target.y + cam_distance * cos(glm::radians(cam_pitch)) * sin(glm::radians(cam_yaw));
     camPos.z = target.z + cam_distance * sin(glm::radians(cam_pitch));
+
+    glm::vec3 titlePos;
+    if(!startedGame){
+        // nada mas ejecutar el juego, se mostrara el titulo en 3d, con el fondo del nivel atras, a la espera
+        // de presionar espacio para iniciar el juego
+        // camara arriba, mirando hacia abajo 45 grados (para ver el nivel en el fondo)
+        std::vector<float> edges = game.level.edges;
+        float midX = (edges[0] + edges[1]) / 2.0f;
+        float midY = (edges[2] + edges[3]) / 2.0f;
+        float deltaX = edges[1] - edges[0];
+        float deltaY = edges[3] - edges[2];
+        float z = std::max(deltaX, deltaY);  // distancia z basada en el tamaño del nivel
+        camPos = glm::vec3(game.level.holePos.x, game.level.holePos.y, game.level.holePos.z + 4.0f);
+        target = glm::vec3(game.level.ball.pos.x, game.level.ball.pos.y, 0.0f);
+
+        //add to campos a magnitude of 5 in the direction from the target to the camera position
+        glm::vec3 dir = glm::normalize(target - camPos);
+        titlePos = camPos + dir * 2.0f;
+    }
 
     mat4 P  = perspective(glm::radians(fov), aspect, 0.5f, 100.0f);
     mat4 V  = lookAt(camPos, target, up);
@@ -731,23 +758,32 @@ void render_scene()
     transfer_float("uPixelSize", 1.0f);
     game.level.render(prog, VP, game.bonusQueue);
 
-    // Alphabet debug: Tab = single-mesh viewer, ←/→ = cycle. Tab again = string test.
-    if (g_debugAlphabetGrid && alphabetModel.meshCount() > 0) {
-        // Show one mesh at a time, large, in front of the ball
-        const auto& m = alphabetModel.meshes[g_debugMeshIdx];
-        float scale = 1.2f / m.size;
-        glm::vec3 pos = game.level.ball.pos + glm::vec3(0.f, 0.f, 1.5f);
-        glm::mat4 M = glm::translate(glm::mat4(1.f), pos - m.center * scale)
-                    * glm::scale(glm::mat4(1.f), glm::vec3(scale));
-        glUseProgram(prog);
-        glUniform1i(glGetUniformLocation(prog, "uUseTex"), 0);
-        glUniform3f(glGetUniformLocation(prog, "uColor"), 1.f, 0.8f, 0.2f);
-        m.draw(prog, VP * M, M);
-        glUniform3f(glGetUniformLocation(prog, "uColor"), 1.f, 1.f, 1.f);
-    } else if (!g_debugAlphabetGrid) {
-        alphabetModel.drawString("abcdefghijklmnopqrstuvwxyz", prog, VP,
-            glm::vec3(1.f, 0.f, 1.f), 0.6f, 0.05f, glm::vec3(1.f, 0.8f, 0.2f));
+    
+    if (!startedGame) {
+        glm::vec3 viewDir   = glm::normalize(camPos - target);
+        glm::vec3 worldZ    = glm::vec3(0.f, 0.f, 1.f);
+        glm::vec3 textRight = glm::normalize(glm::cross(worldZ, viewDir));
+        glm::vec3 textFwd   = -viewDir + 0.5f * worldZ;  // inclinado hacia abajo para mejor perspectiva
+        glm::vec3 textUp    = glm::normalize(glm::cross(textRight, textFwd));
+        glm::mat4 rot(1.f);
+        rot[0] = glm::vec4(textRight, 0.f);
+        rot[1] = glm::vec4(textFwd,   0.f);
+        rot[2] = glm::vec4(textUp,    0.f);
+
+        float charSize = 0.3f, spacing = 0.03f;
+        float w = alphabetModel.stringWidth("HOP IN ONE", charSize, spacing);
+        glm::vec3 startPos = titlePos - textRight * (w * 0.5f);
+        alphabetModel.drawString("HOP IN ONE", prog, VP,
+            startPos, charSize, spacing, glm::vec3(1.f, 0.8f, 0.2f), rot);
+
+        charSize = 0.15f, spacing = 0.02f;
+        w = alphabetModel.stringWidth("Presiona SPACE", charSize, spacing);
+        startPos = titlePos - textRight * (w * 0.5f);
+        startPos.z -= 0.4f;  // bajar un poco el texto de instrucciones
+        alphabetModel.drawString("Presiona SPACE", prog, VP,
+            startPos, charSize, spacing, glm::vec3(1.f, 0.8f, 0.2f), rot);
     }
+    
 
     // Sombras con máscara de stencil: sombras solo donde hay suelo
     {
@@ -874,6 +910,11 @@ void render_scene()
 
     // ── Transitions + timer ───────────────────────────────────────────────────
     game.update(dt);
+    
+}
+
+glm::vec3 lerpVector(const glm::vec3& a, const glm::vec3& b, float t) {
+    return a + t * (b - a);
 }
 
 float map(float value, float inMin, float inMax, float outMin, float outMax) {
@@ -974,6 +1015,11 @@ static void KeyCallback(GLFWwindow* window, int key, int code, int action, int m
     if (key == GLFW_KEY_R && action == GLFW_PRESS) {
         game.level.destroy();
         game.level.load(game.currentLevel, game.res);
+    }
+
+    // Espacio: iniciar juego desde pantalla de título
+    if (key == GLFW_KEY_SPACE && action == GLFW_PRESS && !startedGame) {
+        startedGame = true;
     }
     
     // F11: Alternar Pantalla Completa
