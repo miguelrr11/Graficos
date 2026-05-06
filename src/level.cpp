@@ -17,14 +17,21 @@ static glm::vec4 hsv4(float h, float s, float v) {
     return glm::vec4(v*glm::mix(1.0f,r,s), v*glm::mix(1.0f,g,s), v*glm::mix(1.0f,b,s), 1.0f);
 }
 
+// pre-defined colors for bonuses
+static const glm::vec4 BONUS_COLORS[] = {
+    hsv4(200/360.0f, 1.0f, 1.0f), // salto extra: azul
+    hsv4(20/360.0f, 1.0f, 1.0f)   // superman: naranja
+};
+
 static const float GRAVITY     = -12.0f;
 static const float RESTITUTION = 0.35f;   // rebote en paredes/suelo
-static const float FRICTION    = 0.988f;  // multiplicador por frame (rolling)
+static const float FRICTION    = 0.99f;  // multiplicador por frame (rolling)
 static const float FRICTION_AIR = 0.995f; // fricción mientras está en el aire 
 static const float FLOOR_Z     = 0.2f;    // altura del suelo
 
 // ─── Constantes de disparo ──────────────────────────────────────────────────
-static const float MAX_POWER   = 12.0f;
+static float MAX_POWER   = 12.0f;
+static float SUPERMAN_MULT = 2.75f; // el superman multiplica tu impulso por este factor
 static const float CHARGE_RATE = 0.7f;    // potencia acumulada por segundo
 static const float AIM_SPEED   = 90.0f;   // grados/segundo al girar la mira
 static const float STOP_SPEED2 = 0.05f;  // velocidad mínima para detener la bola
@@ -33,7 +40,6 @@ static const float IMPULSE     = 5.75f;    // impulso del salto
 
 void Level::load(int levelNum, const Resources& res)
 {
-    // Textures come pre-loaded from Game::res – just copy the IDs we need.
     texBola = res.texBola;
 
     completed = false;
@@ -41,89 +47,7 @@ void Level::load(int levelNum, const Resources& res)
     shotPower = 0.0f;
     charging  = false;
     prevSegments_ = 0;
-    
 
-//     int heightChange = 1;
-
-//     std::vector<std::vector<glm::vec2>> trackPerimeters = {
-//     {{63.0f, 81.0f}, {67.0f, 83.0f}, {69.0f, 81.0f}, {69.0f, 76.0f}, {67.0f, 72.0f}, {63.0f, 72.0f}, {56.0f, 67.0f}, {56.0f, 69.0f}, {60.0f, 74.0f}},
-
-//     {{51.0f, 67.0f}, {54.0f, 65.0f}, {47.0f, 56.0f}, {42.0f, 58.0f}, {42.0f, 63.0f}},
-//     {{40.0f, 56.0f}, {47.0f, 54.0f}, {47.0f, 51.0f}, {42.0f, 49.0f}, {40.0f, 49.0f}, {38.0f, 54.0f}},
-//     {{45.0f, 47.0f}, {49.0f, 49.0f}, {56.0f, 49.0f}, {58.0f, 42.0f}, {54.0f, 40.0f}, {54.0f, 45.0f}},
-//     {{56.0f, 38.0f}, {60.0f, 42.0f}, {65.0f, 40.0f}, {63.0f, 36.0f}, {58.0f, 33.0f}}
-
-//     };
-//     ball.pos = { 67.5f, 81.0f, 0*heightChange };
-//     holePos = { 60.8f, 38.3f, (FLOOR_Z+0.1f)+4*heightChange };
-    
-
-//     size_t numTracks = trackPerimeters.size();
-    
-//     for(size_t t = 0; t < numTracks; ++t) {
-//         // 2. GENERAR LA PISTA (6 segmentos de longitud)
-//         // Usamos el algoritmo SAW + Anchura Variable que diseñamos
-//         LevelData track;
-//         track.perimeter = trackPerimeters[t];
-//         tracks.push_back(track);
-
-//         // 3. CÉSPED SOLO EN EL AREA DEL PERIMETRO
-//         floorMeshes.push_back(crear_floor_mesh(tracks.back().perimeter, FLOOR_Z + t*heightChange, 2.0f));
-//         floorMeshes.back().texID          = texCesped;
-//         floorMeshes.back().perimeter      = trackPerimeters[t];
-//         floorMeshes.back().zBase          = FLOOR_Z + t * heightChange;
-//         floorMeshes.back().useCheckerboard = true;
-
-//         // 4. EL MURO VISUAL
-//         // Pasamos: (puntos, cerrado, grosor=0.4f, altura=1.0f, zBase=FLOOR_Z, uvTile=1.0f)
-//         wallMeshes.push_back(crear_wall_mesh(tracks.back().perimeter, true, 0.4f, 0.5f, FLOOR_Z + t*heightChange, 1.0f));
-//         wallMeshes.back().texID = res.texMadera;
-
-//         // 6. EL HOYO
-//         if(t == numTracks - 1){
-//             //holePos = { 0, 0, FLOOR_Z + 0.02f };
-//             obstacles.push_back(crear_box(holePos + glm::vec3(0,0,-0.01f),
-//                                         { HOLE_RADIUS*2.5f, HOLE_RADIUS*2.5f, 0.05f },
-//                                         {0,0,0}, {1,1,1}, true, 1));
-//             obstacles.back().texID = res.texHoyo;
-//             obstacles.back().isHole = true;
-//         }
-//     }
-
-//     // 7. LA BOLA
-//     //ball.pos      = { 15, 70, FLOOR_Z + ball.radius };
-//     ball.vel      = { 0, 0, 0 };
-//     ball.moving   = true;
-//     ball.rollQuat = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
-//     ball.mesh     = crear_sphere({0,0,0}, ball.radius, {1.0f, 1.0f, 1.0f});
-
-//     ball.pos.z += ball.radius + 0.25f; // para que empiece ligeramente por encima del suelo
-
-//     // 5. LAS FÍSICAS (Cajas invisibles rotadas)
-//     for(size_t t = 0; t < tracks.size(); t++) {
-//         const LevelData& track = this->tracks[t];
-//         for (size_t i = 0; i < track.perimeter.size(); i++) {
-//             glm::vec2 pA = track.perimeter[i];
-//             glm::vec2 pB = track.perimeter[(i + 1) % track.perimeter.size()];
-            
-//             glm::vec2 dir = pB - pA;
-//             float longitud = glm::length(dir);
-//             float angulo = std::atan2(dir.y, dir.x);
-//             glm::vec2 centro = (pA + pB) * 0.5f;
-
-//             // Creamos la caja física: Invisible pero colisionable
-//             obstacles.push_back(crear_box({ centro.x, centro.y, FLOOR_Z + t*heightChange }, 
-//                                         { longitud, 0.4f, 1.0f }, // Grosor del muro de 0.4f
-//                                         { 0.0f, 0.0f, glm::degrees(angulo) }, 
-//                                         {1,1,1}, false));
-//             obstacles.back().ignoreRender = true; 
-//         }
-//     }
-
-    
-
-//     printf("Nivel Procedural Cargado. ¡A jugar!\n");
-// }
     int heightChange = 1;
     srand(time(NULL));
     skyColorSeed = (float)(rand() % 1000) / 1000.0f;
@@ -155,10 +79,16 @@ void Level::load(int levelNum, const Resources& res)
         currentStartAngle = std::atan2(direccionIsla.y, direccionIsla.x);
 
         if(nuevaIsla.bonusPos != glm::vec2(0.0f) && rf() < 0.7f) { // 70% de probabilidad de que aparezca un bonus en esta isla
+            int type = rf() < 0.75f ? 0 : 1; // 75% de que el bonus sea salto extra, 25% de que sea superman
+            glm::vec3 bonusColor = BONUS_COLORS[type];
+            
             BoxObstacle box = crear_box({nuevaIsla.bonusPos.x, nuevaIsla.bonusPos.y, FLOOR_Z + i*heightChange + 0.35f},
                                           {0.5f, 0.5f, 0.5f},
-                                          {30, 0, 45}, hsv4(200/360.0f, 1.0f, 1.0f), true);
+                                          {30, 0, 45}, bonusColor, true);
+
             box.isBonus = true;
+            box.bonusType = type;
+            
             box.eulerAnglesVel = {15.0f, 45.0f, 60.0f}; // El bonus gira sobre sí mismo
             obstacles.push_back(box);
         }
@@ -245,7 +175,7 @@ void Level::restartLevel() {
 // ════════════════════════════════════════════════════════════════════════════
 //  UPDATE – física cada frame
 // ════════════════════════════════════════════════════════════════════════════
-void Level::update(float dt, int& nBonus)
+void Level::update(float dt, std::vector<int>& bonusQueue)
 {
     if (pendingTransition != PendingTransition::NONE) return;
 
@@ -261,10 +191,6 @@ void Level::update(float dt, int& nBonus)
                 obs.dead = true;
             }
         }
-
-        // if(obs.isBonus && obs.dead) {
-        //     destroy_box(obs);
-        // }
     }
 
     particles.update(dt);   // always ticks, even when ball is stopped
@@ -278,7 +204,7 @@ void Level::update(float dt, int& nBonus)
     ball.pos += ball.vel * dt;
 
     resolveFloor();
-    resolveWalls(nBonus);
+    resolveWalls(bonusQueue);
 
     // ── Partículas: hojas al rodar ────────────────────────────────────────────
     if ((ball.onGround || ball.pos.z < currentFloorZ + ball.radius + 0.2f) && ball.moving) {
@@ -349,7 +275,7 @@ void Level::update(float dt, int& nBonus)
     }
 
     // Fricción y parada NORMAL (solo si no está en el agujero)
-    if (!enHoyo) {
+    if (!enHoyo) { // Si es superman, no frenamos nada
         if (ball.pos.z <= currentFloorZ + ball.radius + 0.02f) {
             ball.vel.x *= FRICTION;
             ball.vel.y *= FRICTION;
@@ -446,7 +372,7 @@ void Level::resolveFloor()
     }
 }
 
-void Level::resolveWalls(int& nBonus)
+void Level::resolveWalls(std::vector<int>& bonusQueue)
 {
     for (auto& obs : obstacles) {
         if (obs.ignoreCollision && !obs.isBonus && !obs.isDying && !obs.dead) continue;
@@ -515,7 +441,7 @@ void Level::resolveWalls(int& nBonus)
 
         if(obs.isBonus && !obs.isDying && !obs.dead) {
             obs.isDying = true;
-            nBonus++;
+            bonusQueue.push_back(obs.bonusType);
 
             for (int i = 0; i < 20; i++) {
                 float angle = (float)i / 20.0f * 6.2831853f;
@@ -529,7 +455,7 @@ void Level::resolveWalls(int& nBonus)
                 ep.size       = ranBetween(0.08f, 0.15f);
                 ep.endSize    = 0.02f;
                 int range     = rf()*60.0f;
-                ep.color      = hsv4((range + 180)/360.0f, ranBetween(0.2f, 0.9f), ranBetween(0.75f, 0.95f));
+                ep.color      = {obs.color.r, obs.color.g, obs.color.b, 1.0f};
                 ep.endColor   = hsv4((range + 180)/360.0f, ranBetween(0.2f, 0.9f), ranBetween(0.75f, 0.95f));
                 ep.rotVelSpread = 6.0f;
                 ep.count      = 12;
@@ -542,7 +468,7 @@ void Level::resolveWalls(int& nBonus)
 // ════════════════════════════════════════════════════════════════════════════
 //  RENDER
 // ════════════════════════════════════════════════════════════════════════════
-void Level::render(GLuint prog, const glm::mat4& VP, int nBonus)
+void Level::render(GLuint prog, const glm::mat4& VP, const std::vector<int>& bonusQueue)
 {
     // Obstáculos
     for (const auto& obs : obstacles){
@@ -561,19 +487,19 @@ void Level::render(GLuint prog, const glm::mat4& VP, int nBonus)
             ep.size       = 0.1f + rc() * 0.025f;
             ep.endSize    = 0.0f;
             int range     = rf()*60.0f;
-            ep.color      = hsv4((range + 180)/360.0f, ranBetween(0.2f, 0.9f), ranBetween(0.75f, 0.95f));
-            ep.endColor   = hsv4((range + 180)/360.0f, ranBetween(0.2f, 0.9f), ranBetween(0.75f, 0.95f));
+            ep.color      = {obs.color.r, obs.color.g, obs.color.b, 1.0f};
+            ep.endColor   = {obs.color.r, obs.color.g, obs.color.b, 0.0f};
             ep.rotVelSpread = 8.0f;
             ep.count      = 2;
             particles.emit(ep);
         }
     }
 
-    if(nBonus > 0){
+    if(!bonusQueue.empty()){
+        int lastBonusType = bonusQueue.back();
         EmitParams ep;
         float ranAngle = rf() * 6.2831853f;
         ep.pos        = {ball.pos.x + std::cos(ranAngle)*0.4f, ball.pos.y + std::sin(ranAngle)*0.4f, ball.pos.z};
-        //ep.vel should be so that the particle orbits around the bonus box
         ep.vel        = {-std::sin(ranAngle)*1.5f, std::cos(ranAngle)*1.5f, ranBetween(0.4f, 0.7f)};
         ep.velSpread  = {0,0,0};
         ep.acc        = {0,0,0};
@@ -582,8 +508,8 @@ void Level::render(GLuint prog, const glm::mat4& VP, int nBonus)
         ep.size       = 0.05f + rc() * 0.025f;
         ep.endSize    = 0.0f;
         int range     = rf()*60.0f;
-        ep.color      = hsv4((range + 180)/360.0f, ranBetween(0.2f, 0.9f), ranBetween(0.75f, 0.95f));
-        ep.endColor   = hsv4((range + 180)/360.0f, ranBetween(0.2f, 0.9f), ranBetween(0.75f, 0.95f));
+        ep.color      = BONUS_COLORS[lastBonusType];
+        ep.endColor   = {BONUS_COLORS[lastBonusType].r, BONUS_COLORS[lastBonusType].g, BONUS_COLORS[lastBonusType].b, 0.0f};
         ep.rotVelSpread = 8.0f;
         ep.count      = 1;
         particles.emit(ep);
@@ -606,25 +532,28 @@ void Level::render(GLuint prog, const glm::mat4& VP, int nBonus)
     render_sphere(bm, prog, VP, texBola);
 
     // Indicador de dirección de disparo (caja pequeña delante de la bola)
-    //if (!ball.moving && !completed) {
-        float rad = glm::radians(shotAngle);
-        glm::vec3 dir = { std::cos(rad), std::sin(rad), 0.0f };
-        glm::vec3 arrowPos = ball.pos + dir * (ball.radius * 3.0f);
+    float rad = glm::radians(shotAngle);
+    glm::vec3 dir = { std::cos(rad), std::sin(rad), 0.0f };
+    glm::vec3 arrowPos = ball.pos + dir * (ball.radius * 3.0f);
 
-        SphereObstacle arrow = ball.mesh;
-        arrow.position = arrowPos;
-        arrow.radius     = ball.radius * 0.25f;
-        // arrow.color    = { 1.0f, 1.0f - shotPower, 0.0f };   // amarillo -> rojo al cargar
-        //render_sphere(arrow, prog, VP, 0); // <-- AÑADIDO: Pasamos 0 (sin textura)
+    SphereObstacle arrow = ball.mesh;
+    arrow.position = arrowPos;
+    arrow.radius     = ball.radius * 0.25f;
+    // arrow.color    = { 1.0f, 1.0f - shotPower, 0.0f };   // amarillo -> rojo al cargar
+    //render_sphere(arrow, prog, VP, 0); // <-- AÑADIDO: Pasamos 0 (sin textura)
 
-        int numSegments = fmax(1, floor(shotPower * 10.0f)); // De 0 a 10 segmentos según la potencia
-        for(int i = 1; i <= numSegments; ++i) {
-            glm::vec3 segPos = ball.pos + dir * (ball.radius * (3.0f + i));
-            arrow.position = segPos;
-            arrow.color = { 1.0f, ((1.0f - shotPower)*i/numSegments), 0.0f }; // semitransparente
-            render_sphere(arrow, prog, VP, 0);
-        }
-    //}
+    int max_segs = 10;
+    if(bonusQueue.size() > 0 && bonusQueue.back() == 1) { // Si el último bonus es superman, aumentamos el número de segmentos
+        max_segs = int(max_segs * SUPERMAN_MULT);
+    }
+    int numSegments = fmax(1, floor(shotPower * max_segs)); // De 0 a max_segs segmentos según la potencia
+    for(int i = 1; i <= numSegments; ++i) {
+        glm::vec3 segPos = ball.pos + dir * (ball.radius * (3.0f + i));
+        arrow.position = segPos;
+        arrow.color = { 1.0f, ((1.0f - shotPower)*i/numSegments), 0.0f }; // semitransparente
+        render_sphere(arrow, prog, VP, 0);
+    }
+    
 
 }
 
@@ -702,10 +631,7 @@ void Level::renderShadows(GLuint shadow_prog, const glm::mat4& VP, glm::vec3 lig
 }
 
 
-// ════════════════════════════════════════════════════════════════════════════
-//  INPUT del jugador
-// ════════════════════════════════════════════════════════════════════════════
-void Level::handleInput(GLFWwindow* window, float dt, int& nBonus)
+void Level::handleInput(GLFWwindow* window, float dt, std::vector<int>& bonusQueue)
 {
     static bool hasClickedInAir = false;
     static bool prevSpace = false;
@@ -716,9 +642,10 @@ void Level::handleInput(GLFWwindow* window, float dt, int& nBonus)
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && !prevSpace) {
         numTimesSpacePressed++;
         float impulse = IMPULSE / (numTimesSpacePressed * numTimesSpacePressed);
-        if(nBonus > 0) {
+        //if the last bonusqueue is a jump bonus, we add more impulse (0 es salto extra)
+        if(!bonusQueue.empty() && bonusQueue.back() == 0) {
             impulse += IMPULSE;
-            nBonus--;
+            bonusQueue.pop_back();
         }
         ball.vel.z += impulse;
         ball.moving = true;
@@ -744,7 +671,7 @@ void Level::handleInput(GLFWwindow* window, float dt, int& nBonus)
             particles.emit(ep);
         }
         printf("¡Salto! x%d  impulso=%.2f  bonus=%d\n",
-               numTimesSpacePressed, impulse, nBonus);
+               numTimesSpacePressed, impulse, (int)bonusQueue.size());
     }
     prevSpace = (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS);
 
@@ -765,11 +692,20 @@ void Level::handleInput(GLFWwindow* window, float dt, int& nBonus)
     if (charging && curClick) {
         shotPower += CHARGE_RATE * dt;
         shotPower *= 1.0125f;
-        if (shotPower > 1.0f) shotPower = 1.0f;
+        int maxShotPower = 1.0f;
+        if(bonusQueue.size() > 0 && bonusQueue.back() == 1) { // Si el último bonus es superman, aumentamos el número de segmentos
+            maxShotPower *= SUPERMAN_MULT;
+        }
+        if (shotPower > maxShotPower) shotPower = maxShotPower;
 
-        int newSeg = (int)fmax(1.0f, floor(shotPower * 10.0f));
+        int max_segs = 10;
+        if(bonusQueue.size() > 0 && bonusQueue.back() == 1) { // Si el último bonus es superman, aumentamos el número de segmentos
+            max_segs = int(max_segs * SUPERMAN_MULT);
+        }
+
+        int newSeg = (int)fmax(1.0f, floor(shotPower * max_segs));
         if (newSeg > prevSegments_ && soloud && sfxBeep) {
-            float pitch = 0.8f + (newSeg - 1) * 0.07f;  // 0.80 → 1.43 across 10 steps
+            float pitch = 0.8f + (newSeg - 1) * 0.07f; //cambiamos de pitch para cada segmento
             SoLoud::handle h = soloud->play(*sfxBeep);
             soloud->setVolume(h, 0.1f);
             soloud->setRelativePlaySpeed(h, pitch);
@@ -780,6 +716,11 @@ void Level::handleInput(GLFWwindow* window, float dt, int& nBonus)
     if (charging && !curClick && prevClick) {  //  && (!inAir || !hasClickedInAir) no se porque puse esta restriccion, la quito
         float rad   = glm::radians(shotAngle);
         float power = shotPower * MAX_POWER;
+
+        if(bonusQueue.size() > 0 && bonusQueue.back() == 1) { // Si el último bonus es superman, aumentamos el número de segmentos
+            bonusQueue.pop_back(); // Consumimos el bonus de superman al disparar
+            printf("¡Bonus Superman consumido! Disparo potenciado.\n");
+        }
 
         ball.vel.x += std::cos(rad) * power;
         ball.vel.y += std::sin(rad) * power;
@@ -807,9 +748,6 @@ void Level::handleInput(GLFWwindow* window, float dt, int& nBonus)
     prevClick = curClick;
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-//  DESTROY
-// ════════════════════════════════════════════════════════════════════════════
 void Level::destroy()
 {
     for (auto& obs : obstacles) destroy_box(obs);

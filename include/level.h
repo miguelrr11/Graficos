@@ -95,13 +95,13 @@ public:
 
     // Per-frame physics + game logic. nBonus is the player's jump count (owned
     // by Game) and may be incremented when the ball collects a bonus.
-    void update(float dt, int& nBonus);
+    void update(float dt, std::vector<int>& bonusQueue);
 
     // Read input and mutate ball + nBonus (decrement on jump spend).
-    void handleInput(GLFWwindow* window, float dt, int& nBonus);
+    void handleInput(GLFWwindow* window, float dt, std::vector<int>& bonusQueue);
 
     // Draw the level. nBonus controls the ball aura effect.
-    void render(GLuint prog, const glm::mat4& VP, int nBonus);
+    void render(GLuint prog, const glm::mat4& VP, const std::vector<int>& bonusQueue);
 
     void renderShadows(GLuint shadow_prog, const glm::mat4& VP, glm::vec3 lightPos);
 
@@ -113,7 +113,7 @@ public:
 
 private:
     void resolveFloor();
-    void resolveWalls(int& nBonus);
+    void resolveWalls(std::vector<int>& bonusQueue);
     bool fireworksEmitted_ = false;
     int  prevSegments_     = 0;
 };

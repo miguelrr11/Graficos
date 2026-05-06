@@ -15,10 +15,11 @@ struct BoxObstacle {
     glm::vec3 size;
     glm::vec3 eulerAngles;
     glm::vec3 color;
-    int tile = 1;                  // para repetir la textura (1 = sin repetir, 2 = el doble, etc.)
+    int tile = 1;                   // para repetir la textura (1 = sin repetir, 2 = el doble, etc.)
     bool ignoreCollision = false;   // para obstáculos decorativos que no bloquean la bola
     bool ignoreRender = false;      // para obstáculos que sí bloquean la bola pero no se dibujan (ej. el suelo)
-    bool isBonus = false;          // para distinguir los obstáculos de bonus (que se pintan de blanco y dan puntos al tocar)
+    bool isBonus = false;           // para distinguir los obstáculos de bonus (que se pintan de blanco y dan puntos al tocar)
+    int bonusType = 0;              // 0 = salto extra, 1 = superman
 
     glm::vec3 eulerAnglesVel = glm::vec3(0.0f); // velocidad de rotación en grados por segundo, para obstáculos giratorios
     bool isDying = false; // para hacer animaciones de desaparición al recoger un bonus

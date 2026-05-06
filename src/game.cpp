@@ -20,8 +20,6 @@ void Game::init(SoLoud::Soloud* sol)
 // ─────────────────────────────────────────────────────────────────────────────
 void Game::destroy()
 {
-    // Sever the SoLoud back-pointer before ~SoLoud::Wav() can call back into
-    // an engine that may already be shut down.
     res.sfxBeep.mSoloud = nullptr;
 
     level.destroy();
@@ -36,7 +34,6 @@ void Game::destroy()
 // ─────────────────────────────────────────────────────────────────────────────
 void Game::update(float dt)
 {
-    // Start fade-out when the level signals a pending transition
     if (level.pendingTransition != Level::PendingTransition::NONE && dimState == DimState::IDLE)
         dimState = DimState::FADE_OUT;
 
@@ -56,7 +53,7 @@ void Game::update(float dt)
         if (dimValue >= 1.0f) { dimValue = 1.0f; dimState = DimState::IDLE; }
     }
 
-    // Global countdown timer
+    //timer de la pantalla
     gameTimer -= dt;
     if (gameTimer <= 0.0f && dimState == DimState::IDLE) {
         resetToLevel1();
@@ -68,7 +65,7 @@ void Game::update(float dt)
 // ─────────────────────────────────────────────────────────────────────────────
 void Game::nextLevel()
 {
-    currentLevel++;
+    currentLevel+=2;
     gameTimer += 30.0f;
     level.destroy();
     level.load(currentLevel, res);
@@ -84,7 +81,7 @@ void Game::resetToLevel1()
     printf("¡TIEMPO AGOTADO! Game Over. Vuelta al Nivel 1.\n");
     currentLevel = 1;
     gameTimer    = 60.0f;
-    nBonus       = 0;
+    bonusQueue.clear();
     level.destroy();
     level.load(currentLevel, res);
 }

@@ -651,8 +651,8 @@ void render_scene()
 
     // La mira sigue la dirección de la cámara (el mouse apunta)
     game.level.shotAngle = cam_yaw + 180.0f;
-    game.level.handleInput(window, dt, game.nBonus);
-    game.level.update(dt, game.nBonus);
+    game.level.handleInput(window, dt, game.bonusQueue);
+    game.level.update(dt, game.bonusQueue);
 
     vec3 target = game.level.ball.pos;
     vec3 camPos;
@@ -691,7 +691,7 @@ void render_scene()
     // Objetos (sin pixelación por textura: la hace el post-proceso)
     glUseProgram(prog);
     transfer_float("uPixelSize", 1.0f);
-    game.level.render(prog, VP, game.nBonus);
+    game.level.render(prog, VP, game.bonusQueue);
 
     // Sombras con máscara de stencil: sombras solo donde hay suelo
     {

@@ -16,7 +16,9 @@ public:
 
     // Player state – persists across levels and restarts
     int   currentLevel = 1;
-    int   nBonus       = 0;
+
+    // tus bonus son una cola de los tipos de bonus que has ido recogiendo, y se gastan en orden (primero el salto extra, luego el superman, etc.)
+    std::vector<int> bonusQueue;  // cada int es un tipo de bonus: 0 = salto extra, 1 = superman
 
     // Countdown timer; extended on each level completion
     float gameTimer = 60.0f;

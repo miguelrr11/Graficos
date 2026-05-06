@@ -37,4 +37,12 @@ cd build && cmake --build . --config Debug (WINDOWS)
 
 si te da error de doxygen, te lo instalas
 
+
+SI DA ERROR CMAKE EN WINDOWS: (tener cmakelists en raiz)
+Remove-Item -Recurse -Force build
+mkdir build
+cd build
+cmake ..
+cmake --build . --config Debug
+
 la herramienta para crear niveles esta aqui: https://miguelrr11.github.io/Miscellaneous/levelMakerMiniGolf3d/
