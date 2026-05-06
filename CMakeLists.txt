@@ -23,8 +23,7 @@ add_subdirectory(libs/glfw EXCLUDE_FROM_ALL)
 add_subdirectory(libs/glm )
 add_subdirectory(libs/glad )
 
-# ── Assimp (OBJ importer only, no tools, no exporter, no tests) ──────────────
-include(FetchContent)
+# ── Assimp (vendored in libs/assimp, OBJ importer only) ──────────────────────
 set(ASSIMP_BUILD_TESTS                OFF CACHE BOOL "" FORCE)
 set(ASSIMP_BUILD_ASSIMP_TOOLS         OFF CACHE BOOL "" FORCE)
 set(ASSIMP_INSTALL                    OFF CACHE BOOL "" FORCE)
@@ -32,12 +31,8 @@ set(ASSIMP_NO_EXPORT                  ON  CACHE BOOL "" FORCE)
 set(ASSIMP_BUILD_ALL_IMPORTERS_BY_DEFAULT OFF CACHE BOOL "" FORCE)
 set(ASSIMP_BUILD_OBJ_IMPORTER         ON  CACHE BOOL "" FORCE)
 set(BUILD_SHARED_LIBS                 OFF CACHE BOOL "" FORCE)
-FetchContent_Declare(assimp
-    GIT_REPOSITORY https://github.com/assimp/assimp.git
-    GIT_TAG        v5.4.3
-    GIT_SHALLOW    TRUE
-)
-FetchContent_MakeAvailable(assimp)
+set(ASSIMP_BUILD_ZLIB                 ON  CACHE BOOL "" FORCE)
+add_subdirectory(libs/assimp EXCLUDE_FROM_ALL)
 
 include_directories(libs/glad/include)
 include_directories(libs/glm)
@@ -85,8 +80,8 @@ add_executable(gpo_proyecto_final ${GPO_SOURCE_FILES})
 target_compile_definitions(gpo_proyecto_final PRIVATE WITH_MINIAUDIO)
 target_include_directories(gpo_proyecto_final PRIVATE
     ${PROJECT_SOURCE_DIR}/libs/soloud/src/backend/miniaudio
-    ${assimp_SOURCE_DIR}/include
-    ${assimp_BINARY_DIR}/include)
+    ${PROJECT_SOURCE_DIR}/libs/assimp/include
+    ${CMAKE_BINARY_DIR}/libs/assimp/include)
 
 if(WIN32)
     target_link_libraries(gpo_proyecto_final PRIVATE ${OPENGL_LIBRARIES} glfw glm glad_interface assimp)

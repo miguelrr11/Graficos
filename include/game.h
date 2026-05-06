@@ -35,7 +35,7 @@ public:
     void destroy();
 
     // Per-frame logic: advance the fade and fire level transitions/resets.
-    void update(float dt);
+    void update(float dt, bool startedGame);
 
 private:
     static constexpr float kFadeSpeed = 1.75f;  // full fade in ~0.57 s

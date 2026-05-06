@@ -35,6 +35,7 @@ GLuint skyFBO, skyColorTex;
 float  pixelSize = 3.0f;   // píxeles de pantalla por "píxel de juego"
 
 static bool startedGame = false;
+static bool startedAnimationStartingGame = false;
 
 const char* skybox_vs = GLSL(
     layout(location = 0) in vec3 pos;
@@ -692,37 +693,48 @@ void render_scene()
     
 
     // La mira sigue la dirección de la cámara (el mouse apunta)
-        game.level.shotAngle = cam_yaw + 180.0f;
-        game.level.handleInput(window, dt, game.bonusQueue);
-        game.level.update(dt, game.bonusQueue);
+
+
+
+    game.level.shotAngle = cam_yaw + 180.0f;
+    if(startedGame) game.level.handleInput(window, dt, game.bonusQueue);
+    game.level.update(dt, game.bonusQueue);
     
 
     // static glm::vec3 target = game.level.ball.pos;
     // target = lerpVector(target, game.level.ball.pos, 0.05f);  // suavizado de cámara, no funciona muy bien
 
     vec3 target = game.level.ball.pos;
-    glm::vec3 camPos;
-    camPos.x = target.x + cam_distance * cos(glm::radians(cam_pitch)) * cos(glm::radians(cam_yaw));
-    camPos.y = target.y + cam_distance * cos(glm::radians(cam_pitch)) * sin(glm::radians(cam_yaw));
-    camPos.z = target.z + cam_distance * sin(glm::radians(cam_pitch));
+    static glm::vec3 camPos = glm::vec3(game.level.holePos.x, game.level.holePos.y, game.level.holePos.z + 4.0f);
+    glm::vec3 dir = glm::normalize(target - camPos);
+    static glm::vec3 titlePos = camPos + dir * 2.0f;
 
-    glm::vec3 titlePos;
+    if(startedGame){
+        camPos.x = target.x + cam_distance * cos(glm::radians(cam_pitch)) * cos(glm::radians(cam_yaw));
+        camPos.y = target.y + cam_distance * cos(glm::radians(cam_pitch)) * sin(glm::radians(cam_yaw));
+        camPos.z = target.z + cam_distance * sin(glm::radians(cam_pitch));
+    }
+
     if(!startedGame){
         // nada mas ejecutar el juego, se mostrara el titulo en 3d, con el fondo del nivel atras, a la espera
         // de presionar espacio para iniciar el juego
         // camara arriba, mirando hacia abajo 45 grados (para ver el nivel en el fondo)
+        static float totalDistance = glm::distance(camPos, target);
         std::vector<float> edges = game.level.edges;
         float midX = (edges[0] + edges[1]) / 2.0f;
         float midY = (edges[2] + edges[3]) / 2.0f;
         float deltaX = edges[1] - edges[0];
         float deltaY = edges[3] - edges[2];
         float z = std::max(deltaX, deltaY);  // distancia z basada en el tamaño del nivel
-        camPos = glm::vec3(game.level.holePos.x, game.level.holePos.y, game.level.holePos.z + 4.0f);
         target = glm::vec3(game.level.ball.pos.x, game.level.ball.pos.y, 0.0f);
+        if(startedAnimationStartingGame) camPos = lerpVector(camPos, game.level.ball.pos, 0.05f);
 
-        //add to campos a magnitude of 5 in the direction from the target to the camera position
-        glm::vec3 dir = glm::normalize(target - camPos);
-        titlePos = camPos + dir * 2.0f;
+        //if campos is close to the target, start the game
+        if(glm::distance(camPos, target) < cam_distance){
+            startedGame = true;
+            cam_yaw = lerp(glm::degrees(atan2(camPos.y - target.y, camPos.x - target.x)), glm::degrees(atan2(target.y - camPos.y, target.x - camPos.x)), totalDistance / cam_distance);
+            cam_pitch = 45.0f;
+        }
     }
 
     mat4 P  = perspective(glm::radians(fov), aspect, 0.5f, 100.0f);
@@ -870,31 +882,34 @@ void render_scene()
     int sf = std::max(1, (int)scaleFont);
 
     // custom HUD para dibujar texto (solo numeros)
-    hud_clear();
-    {
-        int timerSec = std::max(0, (int)std::ceil(game.gameTimer));
-        char timerStr[8];
-        sprintf_s(timerStr, sizeof(timerStr), "%d", timerSec);
-        int tw = hud_text_width(timerStr, sf);
-        bool urgent = game.gameTimer < 5.0f;
-        hud_text(timerStr, (ANCHO - tw) / 2, 10, sf,
-                 255, urgent ? 51 : 255, urgent ? 51 : 255);
-
-        // now lets draw the miliseconds as well, under the seconds and smaller
-        char msStr[8];
-        int ms = (int)((game.gameTimer - std::floor(game.gameTimer)) * 100);
-        sprintf_s(msStr, sizeof(msStr), "%02d", ms);
-        int msw = hud_text_width(msStr, sf / 2);
-        hud_text(msStr, (ANCHO - msw) / 2, 10 + sf * 7 + 5, sf / 2,
+    if(startedGame){
+        hud_clear();
+        {
+            int timerSec = std::max(0, (int)std::ceil(game.gameTimer));
+            char timerStr[8];
+            sprintf_s(timerStr, sizeof(timerStr), "%d", timerSec);
+            int tw = hud_text_width(timerStr, sf);
+            bool urgent = game.gameTimer < 5.0f;
+            hud_text(timerStr, (ANCHO - tw) / 2, 10, sf,
                     255, urgent ? 51 : 255, urgent ? 51 : 255);
 
-        // numero de nivel en la esquina superior izquierda
-        char levelStr[16];
-        sprintf_s(levelStr, sizeof(levelStr), "Nivel %d", game.currentLevel);
-        hud_text(levelStr, -35, 10, 3);
-        
+            // now lets draw the miliseconds as well, under the seconds and smaller
+            char msStr[8];
+            int ms = (int)((game.gameTimer - std::floor(game.gameTimer)) * 100);
+            sprintf_s(msStr, sizeof(msStr), "%02d", ms);
+            int msw = hud_text_width(msStr, sf / 2);
+            hud_text(msStr, (ANCHO - msw) / 2, 10 + sf * 7 + 5, sf / 2,
+                        255, urgent ? 51 : 255, urgent ? 51 : 255);
+
+            // numero de nivel en la esquina superior izquierda
+            char levelStr[16];
+            sprintf_s(levelStr, sizeof(levelStr), "Nivel %d", game.currentLevel);
+            hud_text(levelStr, -35, 10, 3);
+            
+        }
+        hud_flush();
     }
-    hud_flush();
+    
 
     glActiveTexture(GL_TEXTURE3);
     glBindTexture(GL_TEXTURE_2D, hudTex);
@@ -909,7 +924,7 @@ void render_scene()
     glEnable(GL_DEPTH_TEST);
 
     // ── Transitions + timer ───────────────────────────────────────────────────
-    game.update(dt);
+    game.update(dt, startedGame);
     
 }
 
@@ -1018,8 +1033,8 @@ static void KeyCallback(GLFWwindow* window, int key, int code, int action, int m
     }
 
     // Espacio: iniciar juego desde pantalla de título
-    if (key == GLFW_KEY_SPACE && action == GLFW_PRESS && !startedGame) {
-        startedGame = true;
+    if (key == GLFW_KEY_SPACE && action == GLFW_PRESS && !startedAnimationStartingGame) {
+        startedAnimationStartingGame = true;
     }
     
     // F11: Alternar Pantalla Completa

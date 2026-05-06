@@ -213,6 +213,32 @@ docs/fast:
 	$(MAKE) $(MAKESILENT) -f libs/glfw/docs/CMakeFiles/docs.dir/build.make libs/glfw/docs/CMakeFiles/docs.dir/build
 .PHONY : docs/fast
 
+#=============================================================================
+# Target rules for targets named zlibstatic
+
+# Build rule for target.
+zlibstatic: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 zlibstatic
+.PHONY : zlibstatic
+
+# fast build rule for target.
+zlibstatic/fast:
+	$(MAKE) $(MAKESILENT) -f libs/assimp/contrib/zlib/CMakeFiles/zlibstatic.dir/build.make libs/assimp/contrib/zlib/CMakeFiles/zlibstatic.dir/build
+.PHONY : zlibstatic/fast
+
+#=============================================================================
+# Target rules for targets named assimp
+
+# Build rule for target.
+assimp: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 assimp
+.PHONY : assimp
+
+# fast build rule for target.
+assimp/fast:
+	$(MAKE) $(MAKESILENT) -f libs/assimp/code/CMakeFiles/assimp.dir/build.make libs/assimp/code/CMakeFiles/assimp.dir/build
+.PHONY : assimp/fast
+
 libs/glad/src/glad.o: libs/glad/src/glad.c.o
 .PHONY : libs/glad/src/glad.o
 
@@ -957,6 +983,30 @@ src/level.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/src/level.cpp.s
 .PHONY : src/level.cpp.s
 
+src/model.o: src/model.cpp.o
+.PHONY : src/model.o
+
+# target to build an object file
+src/model.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/src/model.cpp.o
+.PHONY : src/model.cpp.o
+
+src/model.i: src/model.cpp.i
+.PHONY : src/model.i
+
+# target to preprocess a source file
+src/model.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/src/model.cpp.i
+.PHONY : src/model.cpp.i
+
+src/model.s: src/model.cpp.s
+.PHONY : src/model.s
+
+# target to generate assembly for a file
+src/model.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gpo_proyecto_final.dir/build.make CMakeFiles/gpo_proyecto_final.dir/src/model.cpp.s
+.PHONY : src/model.cpp.s
+
 src/obstacle.o: src/obstacle.cpp.o
 .PHONY : src/obstacle.o
 
@@ -1067,8 +1117,10 @@ help:
 	@echo "... rebuild_cache"
 	@echo "... docs"
 	@echo "... uninstall"
+	@echo "... assimp"
 	@echo "... glfw"
 	@echo "... gpo_proyecto_final"
+	@echo "... zlibstatic"
 	@echo "... libs/glad/src/glad.o"
 	@echo "... libs/glad/src/glad.i"
 	@echo "... libs/glad/src/glad.s"
@@ -1162,6 +1214,9 @@ help:
 	@echo "... src/level.o"
 	@echo "... src/level.i"
 	@echo "... src/level.s"
+	@echo "... src/model.o"
+	@echo "... src/model.i"
+	@echo "... src/model.s"
 	@echo "... src/obstacle.o"
 	@echo "... src/obstacle.i"
 	@echo "... src/obstacle.s"

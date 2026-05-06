@@ -32,7 +32,7 @@ void Game::destroy()
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-void Game::update(float dt)
+void Game::update(float dt, bool startedGame)
 {
     if (level.pendingTransition != Level::PendingTransition::NONE && dimState == DimState::IDLE)
         dimState = DimState::FADE_OUT;
@@ -54,7 +54,9 @@ void Game::update(float dt)
     }
 
     //timer de la pantalla
-    gameTimer -= dt;
+    if (startedGame) {
+        gameTimer -= dt;
+    }
     if (gameTimer <= 0.0f && dimState == DimState::IDLE) {
         resetToLevel1();
         dimValue = 0.0f;
