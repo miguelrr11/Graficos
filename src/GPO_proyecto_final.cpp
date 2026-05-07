@@ -386,6 +386,9 @@ float cam_distance = 3.0f;   // distancia a la bola
 float lastFrameTime = 0.0f;
 float dt = 0.0f;
 
+// Spin accumulator for 'O' letter animation
+static float g_oSpin = 0.0f;
+
 // ─── HUD text system ──────────────────────────────────────────────────────────
 // 5×7 pixel font for digits 0-9
 static const uint8_t FONT_ROWS[10][7] = {
@@ -689,6 +692,7 @@ void render_scene()
     dt  = now - lastFrameTime;
     lastFrameTime = now;
     if (dt > 0.05f) dt = 0.05f;
+    g_oSpin += dt * 2.0f;  // ~2 rad/s spin for 'O' letters
 
     
 
@@ -716,24 +720,48 @@ void render_scene()
     }
 
     if(!startedGame){
-        // nada mas ejecutar el juego, se mostrara el titulo en 3d, con el fondo del nivel atras, a la espera
-        // de presionar espacio para iniciar el juego
-        // camara arriba, mirando hacia abajo 45 grados (para ver el nivel en el fondo)
-        static float totalDistance = glm::distance(camPos, target);
-        std::vector<float> edges = game.level.edges;
-        float midX = (edges[0] + edges[1]) / 2.0f;
-        float midY = (edges[2] + edges[3]) / 2.0f;
-        float deltaX = edges[1] - edges[0];
-        float deltaY = edges[3] - edges[2];
-        float z = std::max(deltaX, deltaY);  // distancia z basada en el tamaño del nivel
         target = glm::vec3(game.level.ball.pos.x, game.level.ball.pos.y, 0.0f);
-        if(startedAnimationStartingGame) camPos = lerpVector(camPos, game.level.ball.pos, 0.05f);
 
-        //if campos is close to the target, start the game
-        if(glm::distance(camPos, target) < cam_distance){
-            startedGame = true;
-            cam_yaw = lerp(glm::degrees(atan2(camPos.y - target.y, camPos.x - target.x)), glm::degrees(atan2(target.y - camPos.y, target.x - camPos.x)), totalDistance / cam_distance);
-            cam_pitch = 45.0f;
+        static float animTimer      = 0.f;
+        static float animStartYaw   = 0.f;
+        static float animStartPitch = 0.f;
+        static float animTargetYaw  = 0.f;
+        static bool  animInited     = false;
+        const  float animDuration   = 1.25f; //duracion de la animacion de girar la camara al llegar a la bola
+
+        if(startedAnimationStartingGame) {
+            if(!animInited) {
+                glm::vec3 d = camPos - target;
+                float horiz = glm::length(glm::vec2(d.x, d.y));
+                animStartYaw   = glm::degrees(atan2f(d.y, d.x));
+                animStartPitch = glm::degrees(atan2f(d.z, horiz));
+                // Camera behind ball = opposite of ball→hole direction
+                animTargetYaw  = glm::degrees(atan2f(
+                    game.level.ball.pos.y - game.level.holePos.y,
+                    game.level.ball.pos.x - game.level.holePos.x));
+                animInited = true;
+            }
+
+            animTimer += dt;
+            float rawT = glm::clamp(animTimer / animDuration, 0.f, 1.f);
+            float t    = rawT * rawT * (3.f - 2.f * rawT);
+
+            float yawDiff = animTargetYaw - animStartYaw;
+            if (yawDiff >  180.f) yawDiff -= 360.f;
+            if (yawDiff < -180.f) yawDiff += 360.f;
+            cam_yaw   = animStartYaw + yawDiff * t;
+            cam_pitch = lerp(animStartPitch, 45.0f, t);
+
+            glm::vec3 gameCamPos;
+            gameCamPos.x = target.x + cam_distance * cosf(glm::radians(cam_pitch)) * cosf(glm::radians(cam_yaw));
+            gameCamPos.y = target.y + cam_distance * cosf(glm::radians(cam_pitch)) * sinf(glm::radians(cam_yaw));
+            gameCamPos.z = target.z + cam_distance * sinf(glm::radians(cam_pitch));
+            camPos = lerpVector(camPos, gameCamPos, 0.06f);
+
+            if(rawT >= 1.0f) {
+                camPos = gameCamPos;
+                startedGame = true;
+            }
         }
     }
 
@@ -786,14 +814,15 @@ void render_scene()
         float w = alphabetModel.stringWidth("HOP IN ONE", charSize, spacing);
         glm::vec3 startPos = titlePos - textRight * (w * 0.5f);
         alphabetModel.drawString("HOP IN ONE", prog, VP,
-            startPos, charSize, spacing, glm::vec3(1.f, 0.8f, 0.2f), rot);
+            startPos, charSize, spacing, glm::vec3(1.f, 0.8f, 0.2f), rot, g_oSpin);
 
-        charSize = 0.15f, spacing = 0.02f;
-        w = alphabetModel.stringWidth("Presiona SPACE", charSize, spacing);
+        charSize = 0.17f, spacing = 0.02f;
+        char* instr = "PRESS SPACE";
+        w = alphabetModel.stringWidth(instr, charSize, spacing);
         startPos = titlePos - textRight * (w * 0.5f);
-        startPos.z -= 0.4f;  // bajar un poco el texto de instrucciones
-        alphabetModel.drawString("Presiona SPACE", prog, VP,
-            startPos, charSize, spacing, glm::vec3(1.f, 0.8f, 0.2f), rot);
+        startPos.z -= 0.4f;
+        alphabetModel.drawString(instr, prog, VP,
+            startPos, charSize, spacing, glm::vec3(1.f, 0.8f, 0.2f), rot, g_oSpin);
     }
     
 
@@ -957,7 +986,7 @@ int main(int argc, char* argv[])
     printf("Audio load error: %d\n", error);
     gMusic.setLooping(true);
     int handle = gSoloud->play(gMusic);
-    gSoloud->setVolume(handle, 0.0f); //0 for debug, deberia ser 1.0
+    gSoloud->setVolume(handle, 1.0f); //0 for debug, deberia ser 1.0
 
     game.init(gSoloud);
     init_scene();

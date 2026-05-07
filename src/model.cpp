@@ -172,7 +172,7 @@ float Model::stringWidth(const char* str, float charSize, float spacing) const
 
 void Model::drawString(const char* str, GLuint prog, const glm::mat4& VP,
                        glm::vec3 startPos, float charSize, float spacing,
-                       glm::vec3 color, glm::mat4 rotation) const
+                       glm::vec3 color, glm::mat4 rotation, float spinTime) const
 {
     glUseProgram(prog);
     glUniform1i(glGetUniformLocation(prog, "uUseTex"), 0);
@@ -182,6 +182,7 @@ void Model::drawString(const char* str, GLuint prog, const glm::mat4& VP,
     glm::vec3 rightDir = glm::vec3(rotation[0]);
 
     float advance = 0.f;
+    int index = 0;
     for (const char* c = str; *c; c++) {
         if (*c == ' ') { advance += charSize * 0.6f + spacing; continue; }
 
@@ -196,14 +197,25 @@ void Model::drawString(const char* str, GLuint prog, const glm::mat4& VP,
             const ModelMesh& m = meshes[it->second];
             float scale = charSize / m.size;
             glm::vec3 pos = startPos + rightDir * advance;
+
+            glm::mat4 charRot = rotation;
+            if (*c == 'O' || *c == 'o') {
+                // spin around the text's local Z (up) axis
+                glm::vec3 localZ = glm::vec3(rotation[2]);
+                glm::mat4 spin = glm::rotate(glm::mat4(1.f), spinTime, localZ);
+                charRot = spin * rotation;
+                pos.z += 0.07f * sin(spinTime * 2.f + index * 0.3f);  // bob up and down a bit
+            }
+
             glm::mat4 M = glm::translate(glm::mat4(1.f), pos)
-                        * rotation
+                        * charRot
                         * glm::scale(glm::mat4(1.f), glm::vec3(scale))
                         * glm::translate(glm::mat4(1.f), -m.center);
             m.draw(prog, VP * M, M);
         }
 
         advance += charSize + spacing;
+        index++;
     }
 
     glUniform3f(glGetUniformLocation(prog, "uColor"), 1.f, 1.f, 1.f);
