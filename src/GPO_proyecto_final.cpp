@@ -904,11 +904,16 @@ void render_scene()
     glUniform1f(glGetUniformLocation(quad_prog, "uFogEnd"),    200.0f);
 
     // ── HUD: draw all text into CPU buffer, upload once ───────────────────────
+    // 1. Calculamos la proporción de la pantalla actual frente a la original (750 de ALTO)
+    float screenRatio = (float)ALTO / 750.0f;
+
     static float scaleFont = 6.0f;
     if (game.gameTimer < 10.0f) scaleFont = lerp(scaleFont, 10.0f, 0.1f);
     else if (game.gameTimer < 5.0f)  scaleFont += cosf(now * 10.0f) * 0.5f;
     else scaleFont = 6.0f;
-    int sf = std::max(1, (int)scaleFont);
+    
+    // 2. Escalamos la fuente del temporizador
+    int sf = std::max(1, (int)(scaleFont * screenRatio));
 
     // custom HUD para dibujar texto (solo numeros)
     if(startedGame){
@@ -919,7 +924,8 @@ void render_scene()
             sprintf_s(timerStr, sizeof(timerStr), "%d", timerSec);
             int tw = hud_text_width(timerStr, sf);
             bool urgent = game.gameTimer < 5.0f;
-            hud_text(timerStr, (ANCHO - tw) / 2, 10, sf,
+            // Escalamos también la posición Y (10 * screenRatio)
+            hud_text(timerStr, (ANCHO - tw) / 2, (int)(10 * screenRatio), sf,
                     255, urgent ? 51 : 255, urgent ? 51 : 255);
 
             // now lets draw the miliseconds as well, under the seconds and smaller
@@ -927,14 +933,15 @@ void render_scene()
             int ms = (int)((game.gameTimer - std::floor(game.gameTimer)) * 100);
             sprintf_s(msStr, sizeof(msStr), "%02d", ms);
             int msw = hud_text_width(msStr, sf / 2);
-            hud_text(msStr, (ANCHO - msw) / 2, 10 + sf * 7 + 5, sf / 2,
+            hud_text(msStr, (ANCHO - msw) / 2, (int)((10 + scaleFont * 7 + 5) * screenRatio), std::max(1, sf / 2),
                         255, urgent ? 51 : 255, urgent ? 51 : 255);
 
             // numero de nivel en la esquina superior izquierda
             char levelStr[16];
             sprintf_s(levelStr, sizeof(levelStr), "Nivel %d", game.currentLevel);
-            hud_text(levelStr, -35, 10, 3);
-            
+            // 3. Escalamos el tamaño 3 original del nivel y su posición X (-35) e Y (10)
+            int lvlSf = std::max(1, (int)(3.0f * screenRatio));
+            hud_text(levelStr, (int)(-35 * screenRatio), (int)(10 * screenRatio), lvlSf);
         }
         hud_flush();
     }
