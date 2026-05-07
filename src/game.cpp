@@ -60,6 +60,16 @@ void Game::update(float dt, bool startedGame)
     //timer de la pantalla
     if (startedGame) {
         gameTimer -= dt;
+
+        // --- CONSUMO INMEDIATO DEL BONUS DE TIEMPO ---
+        // Leemos la lista de bonus al revés para poder borrarlos sin que se rompa el bucle
+        for (int i = (int)bonusQueue.size() - 1; i >= 0; --i) {
+            if (bonusQueue[i] == 2) { // Si es un cubo dorado...
+                gameTimer += 10.0f;   // +10 segundos
+                printf("¡Cubo Dorado recogido! +10 segundos\n");
+                bonusQueue.erase(bonusQueue.begin() + i); // Lo sacamos de la mochila
+            }
+        }
     }
     if (gameTimer <= 0.0f && dimState == DimState::IDLE) {
         resetToLevel1();

@@ -21,8 +21,9 @@ static glm::vec4 hsv4(float h, float s, float v) {
 
 // pre-defined colors for bonuses
 static const glm::vec4 BONUS_COLORS[] = {
-    hsv4(200/360.0f, 1.0f, 1.0f), // salto extra: azul
-    hsv4(20/360.0f, 1.0f, 1.0f)   // superman: naranja
+    hsv4(200/360.0f, 1.0f, 1.0f), // 0: salto extra (azul)
+    hsv4(20/360.0f, 1.0f, 1.0f),  // 1: superman (naranja)
+    hsv4(60/360.0f, 1.0f, 1.0f)   // 2: tiempo extra (dorado)
 };
 
 static const float GRAVITY      = -12.0f;
@@ -83,7 +84,21 @@ void Level::load(int levelNum, const Resources& res)
         currentStartAngle = std::atan2(direccionIsla.y, direccionIsla.x);
 
         if(nuevaIsla.bonusPos != glm::vec2(0.0f) && rf() < 0.7f) { // 70% de probabilidad de que aparezca un bonus en esta isla
-            int type = rf() < 0.75f ? 0 : 1; // 75% de que el bonus sea salto extra, 25% de que sea superman
+            
+            // Repartimos: 50% Salto, 30% Superman, 20% Tiempo
+            float roll = rf();
+            int type;
+            if (roll < 0.50f)      type = 0;
+            else if (roll < 0.80f) type = 1;
+            else {
+                if (i >= 2) {
+                    type = 2;
+                }
+                else {
+                    type = 0; // en las primeras islas no hay bonus de tiempo para no farmear tiempo.
+                }
+            }                  
+
             glm::vec3 bonusColor = BONUS_COLORS[type];
             
             BoxObstacle box = crear_box({nuevaIsla.bonusPos.x, nuevaIsla.bonusPos.y, FLOOR_Z + i*heightChange + 0.35f},
@@ -377,7 +392,7 @@ void Level::update(float dt, std::vector<int>& bonusQueue)
         }
 
         // Si ya se ha hundido suficiente, señalamos la transición (render_scene la ejecuta)
-        if (ball.pos.z < -0.5f + currentFloorZ) {
+        if (ball.pos.z < holePos.z - 0.5f) {
             printf("¡NIVEL COMPLETADO! Avanzando...\n");
             pendingTransition = PendingTransition::NEXT_LEVEL;
             return;
