@@ -125,10 +125,13 @@ void Level::load(int levelNum, const Resources& res)
     // Assign a random surface type to each island
     std::vector<SurfaceType> islandSurface(tracks.size());
     for (size_t t = 0; t < tracks.size(); ++t) {
-        int r = rand() % 3;
-        islandSurface[t] = (r == 0) ? SurfaceType::GRASS
-                         : (r == 1) ? SurfaceType::ICE
-                                    : SurfaceType::SAND;
+        int r = rand() % 10;
+        if(r < 6) islandSurface[t] = SurfaceType::GRASS;
+        else if(r < 8) islandSurface[t] = SurfaceType::ICE;
+        else islandSurface[t] = SurfaceType::SAND;
+
+        //las primeras islas que sean cesped siempre
+        if(levelNum == 1 && t < 2) islandSurface[t] = SurfaceType::GRASS;
     }
 
     // 3. CONSTRUCCIÓN GEOMÉTRICA (Suelo, Muros y Físicas)

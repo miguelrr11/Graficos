@@ -986,7 +986,7 @@ int main(int argc, char* argv[])
     printf("Audio load error: %d\n", error);
     gMusic.setLooping(true);
     int handle = gSoloud->play(gMusic);
-    gSoloud->setVolume(handle, 0.0f); //0 for debug, deberia ser 1.0
+    gSoloud->setVolume(handle, 1.0f); //0 for debug, deberia ser 1.0
 
     game.init(gSoloud);
     init_scene();
