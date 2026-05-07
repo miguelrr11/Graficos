@@ -241,10 +241,30 @@ void Level::update(float dt, std::vector<int>& bonusQueue)
 
     // gravedad
     ball.vel.z += GRAVITY * dt;
-    ball.pos += ball.vel * dt;
 
-    resolveFloor();
-    resolveWalls(bonusQueue);
+    // --- MOVIMIENTO CON SUB-STEPPING (ANTI-TUNNELING) ---
+    int numSteps = 1;
+    float currentSpeed = glm::length(ball.vel);
+    float distanceThisFrame = currentSpeed * dt;
+    
+    // Si la bola se va a mover de golpe más de la mitad de su radio, 
+    // partimos el tiempo en cachitos más pequeños.
+    if (distanceThisFrame > (ball.radius * 0.5f)) {
+        numSteps = (int)std::ceil(distanceThisFrame / (ball.radius * 0.5f));
+    }
+    if (numSteps > 10) numSteps = 10; // Tope de seguridad para no fundir el PC
+    
+    float subDt = dt / numSteps;
+    
+    // En vez de mover y comprobar una vez, movemos un poquito y comprobamos, 
+    // movemos otro poquito y comprobamos...
+    for (int i = 0; i < numSteps; i++) {
+        ball.pos += ball.vel * subDt;
+        
+        // --- COLISIONES (ahora dentro del sub-paso) ---
+        resolveFloor();
+        resolveWalls(bonusQueue);
+    }
 
     // ── Partículas: hojas al rodar ────────────────────────────────────────────
     if ((ball.onGround || ball.pos.z < currentFloorZ + ball.radius + 0.2f) && ball.moving) {
