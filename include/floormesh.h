@@ -3,14 +3,18 @@
 #include <glm/glm.hpp>
 #include <vector>
 
+enum class SurfaceType { GRASS, ICE, SAND };
+
 struct FloorMesh {
     GLuint VAO = 0, VBO = 0, EBO = 0;
     int    indexCount = 0;
     GLuint texID = 0;
 
     std::vector<glm::vec2> perimeter;
-    float zBase          = 0.0f;
-    bool  useCheckerboard = false;
+    float       zBase          = 0.0f;
+    bool        useCheckerboard = false;
+    SurfaceType surfaceType    = SurfaceType::GRASS;
+    float       friction       = 0.99f;
 };
 
 // Triangula el polígono del perímetro y crea un mesh plano en z=zBase.

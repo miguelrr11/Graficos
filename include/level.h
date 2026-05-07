@@ -27,6 +27,8 @@ struct Resources {
     GLuint texMadera = 0;
     GLuint texHoyo   = 0;
     GLuint texBola   = 0;
+    GLuint texIce    = 0;
+    GLuint texSand   = 0;
 
     SoLoud::Soloud* soloud  = nullptr;
     SoLoud::Wav     sfxBeep;           // VALUE – owned by the Resources holder (Game::res)
@@ -68,6 +70,8 @@ public:
     // ── Visual / gameplay state ──────────────────────────────────────────────
     bool      completed    = false;
     float     skyColorSeed = 0.0f;
+    float       currentFriction    = 0.99f;          // updated each frame by resolveFloor()
+    SurfaceType currentSurfaceType = SurfaceType::GRASS;
 
     // ── Shot input state ─────────────────────────────────────────────────────
     float shotAngle = 0.0f;

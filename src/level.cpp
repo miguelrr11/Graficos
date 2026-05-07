@@ -25,11 +25,13 @@ static const glm::vec4 BONUS_COLORS[] = {
     hsv4(20/360.0f, 1.0f, 1.0f)   // superman: naranja
 };
 
-static const float GRAVITY     = -12.0f;
-static const float RESTITUTION = 0.35f;   // rebote en paredes/suelo
-static const float FRICTION    = 0.99f;  // multiplicador por frame (rolling)
-static const float FRICTION_AIR = 0.995f; // fricción mientras está en el aire 
-static const float FLOOR_Z     = 0.2f;    // altura del suelo
+static const float GRAVITY      = -12.0f;
+static const float RESTITUTION  = 0.35f;   // rebote en paredes/suelo
+static const float FRICTION     = 0.99f;   // grass: multiplicador por frame (rolling)
+static const float FRICTION_ICE = 0.9985f; // ice: casi sin rozamiento
+static const float FRICTION_SAND= 0.965f;  // sand: frena rápido
+static const float FRICTION_AIR = 0.995f;  // fricción mientras está en el aire
+static const float FLOOR_Z      = 0.2f;    // altura del suelo
 
 // ─── Constantes de disparo ──────────────────────────────────────────────────
 static float MAX_POWER   = 12.0f;
@@ -120,17 +122,36 @@ void Level::load(int levelNum, const Resources& res)
     printf("Nivel %d generado con %d islas. HolePos: (%.2f, %.2f, %.2f). Última isla va de (%.2f, %.2f) a (%.2f, %.2f)\n", 
             levelNum, numIslands, holePos.x, holePos.y, holePos.z, minX, minY, maxX, maxY);
 
-    // 3. CONSTRUCCIÓN GEOMÉTRICA (Césped, Muros y Físicas)
+    // Assign a random surface type to each island
+    std::vector<SurfaceType> islandSurface(tracks.size());
+    for (size_t t = 0; t < tracks.size(); ++t) {
+        int r = rand() % 3;
+        islandSurface[t] = (r == 0) ? SurfaceType::GRASS
+                         : (r == 1) ? SurfaceType::ICE
+                                    : SurfaceType::SAND;
+    }
+
+    // 3. CONSTRUCCIÓN GEOMÉTRICA (Suelo, Muros y Físicas)
     for(size_t t = 0; t < tracks.size(); ++t) {
         float alturaIsla = FLOOR_Z + t * heightChange;
 
-        // Césped (Ahora lo montamos baldosa a baldosa)
+        SurfaceType surf = islandSurface[t];
+        GLuint      tex  = (surf == SurfaceType::ICE)  ? res.texIce
+                         : (surf == SurfaceType::SAND) ? res.texSand
+                                                       : res.texCesped;
+        float       fric = (surf == SurfaceType::ICE)  ? FRICTION_ICE
+                         : (surf == SurfaceType::SAND) ? FRICTION_SAND
+                                                       : FRICTION;
+
+        // Suelo (baldosa a baldosa)
         for (const auto& tile : tracks[t].floorTiles) {
             floorMeshes.push_back(crear_floor_mesh(tile, alturaIsla, 2.0f));
-            floorMeshes.back().texID = res.texCesped;
-            floorMeshes.back().perimeter = tile; // El "perímetro" físico de esta baldosa
-            floorMeshes.back().zBase = alturaIsla;
-            floorMeshes.back().useCheckerboard = true;
+            floorMeshes.back().texID         = tex;
+            floorMeshes.back().perimeter     = tile;
+            floorMeshes.back().zBase         = alturaIsla;
+            floorMeshes.back().surfaceType   = surf;
+            floorMeshes.back().friction      = fric;
+            floorMeshes.back().useCheckerboard = (surf == SurfaceType::GRASS);
         }
         // Muros visuales
 
@@ -241,9 +262,19 @@ void Level::update(float dt, std::vector<int>& bonusQueue)
             ep.lifeSpread = 0.12f;
             ep.size       = 0.05f + rc() * 0.025f;
             ep.endSize    = 0.0f;
-            int range     = rf()*60.0f;
-            ep.color      = hsv4((range + 80)/360.0f, ranBetween(0.2f, 0.9f), ranBetween(0.75f, 0.95f));
-            ep.endColor   = {0.4f, 0.85f, 0.1f, 0.0f};
+            if (currentSurfaceType == SurfaceType::ICE) {
+                float t   = ranBetween(0.f, 1.f);
+                ep.color    = {0.6f + t*0.3f, 0.85f + t*0.1f, 1.0f, 1.0f};
+                ep.endColor = {0.5f, 0.8f, 1.0f, 0.0f};
+            } else if (currentSurfaceType == SurfaceType::SAND) {
+                float t   = ranBetween(0.f, 1.f);
+                ep.color    = {1.0f, 0.85f + t*0.1f, 0.4f + t*0.2f, 1.0f};
+                ep.endColor = {0.95f, 0.75f, 0.3f, 0.0f};
+            } else {
+                int range   = rf()*60.0f;
+                ep.color    = hsv4((range + 80)/360.0f, ranBetween(0.2f, 0.9f), ranBetween(0.75f, 0.95f));
+                ep.endColor = {0.4f, 0.85f, 0.1f, 0.0f};
+            }
             ep.rotVelSpread = 8.0f;
             float speed = glm::length(ball.vel);
             ep.count      = clamp(int(speed * 0.5f), 1, 3); // más velocidad = más hojas
@@ -293,8 +324,8 @@ void Level::update(float dt, std::vector<int>& bonusQueue)
     // Fricción y parada NORMAL (solo si no está en el agujero)
     if (!enHoyo) { // Si es superman, no frenamos nada
         if (ball.pos.z <= currentFloorZ + ball.radius + 0.02f) {
-            ball.vel.x *= FRICTION;
-            ball.vel.y *= FRICTION;
+            ball.vel.x *= currentFriction;
+            ball.vel.y *= currentFriction;
         }
         else{
             ball.vel.x *= FRICTION_AIR;
@@ -363,7 +394,9 @@ void Level::resolveFloor()
     if (glm::length(d2D) < HOLE_RADIUS) return;
 
     // Buscar el floor mesh más alto cuyo polígono contiene la posición XY de la bola
-    float bestZ = -1e9f;
+    float       bestZ        = -1e9f;
+    float       bestFriction = FRICTION;
+    SurfaceType bestSurface  = SurfaceType::GRASS;
     for (const auto& floor : floorMeshes) {
         if (floor.zBase > ball.pos.z + ball.radius) continue; // suelo sobre la bola, ignorar
         if (floor.zBase <= bestZ) continue;                   // ya encontramos uno más alto
@@ -371,14 +404,18 @@ void Level::resolveFloor()
         // Fan-triangulation desde el vértice 0, igual que crear_floor_mesh
         for (size_t i = 1; i + 1 < poly.size(); ++i) {
             if (pointInTriangle(ballXY, poly[0], poly[i], poly[i + 1])) {
-                bestZ = floor.zBase;
+                bestZ        = floor.zBase;
+                bestFriction = floor.friction;
+                bestSurface  = floor.surfaceType;
                 break;
             }
         }
     }
 
     if (bestZ > -1e9f) {
-        currentFloorZ = bestZ;
+        currentFloorZ      = bestZ;
+        currentFriction    = bestFriction;
+        currentSurfaceType = bestSurface;
         if (ball.pos.z < bestZ + ball.radius) {
             ball.pos.z = bestZ + ball.radius;
             if (ball.vel.z < 0.0f)

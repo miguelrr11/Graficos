@@ -986,7 +986,7 @@ int main(int argc, char* argv[])
     printf("Audio load error: %d\n", error);
     gMusic.setLooping(true);
     int handle = gSoloud->play(gMusic);
-    gSoloud->setVolume(handle, 1.0f); //0 for debug, deberia ser 1.0
+    gSoloud->setVolume(handle, 0.0f); //0 for debug, deberia ser 1.0
 
     game.init(gSoloud);
     init_scene();
@@ -1041,20 +1041,6 @@ void ResizeCallback(GLFWwindow* window, int width, int height)
 static void KeyCallback(GLFWwindow* window, int key, int code, int action, int mode)
 {
     if (key == GLFW_KEY_ESCAPE) glfwSetWindowShouldClose(window, true);
-    // Tab: toggle alphabet debug (grid vs single mesh viewer)
-    if (key == GLFW_KEY_TAB && action == GLFW_PRESS) {
-        extern bool g_debugAlphabetGrid;
-        g_debugAlphabetGrid = !g_debugAlphabetGrid;
-    }
-    // Left/Right: cycle through meshes in single-mesh debug view
-    if (action == GLFW_PRESS || action == GLFW_REPEAT) {
-        extern int g_debugMeshIdx;
-        int n = alphabetModel.meshCount();
-        if (n > 0) {
-            if (key == GLFW_KEY_RIGHT) { g_debugMeshIdx = (g_debugMeshIdx + 1) % n; printf("[debug] mesh %d\n", g_debugMeshIdx); }
-            if (key == GLFW_KEY_LEFT)  { g_debugMeshIdx = (g_debugMeshIdx - 1 + n) % n; printf("[debug] mesh %d\n", g_debugMeshIdx); }
-        }
-    }
     // R: reiniciar nivel
     if (key == GLFW_KEY_R && action == GLFW_PRESS) {
         game.level.destroy();

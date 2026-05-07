@@ -10,6 +10,8 @@ void Game::init(SoLoud::Soloud* sol)
     res.texMadera = cargar_textura(getAssetPath("madera2.jpg").c_str());
     res.texHoyo   = cargar_textura(getAssetPath("hoyo.png").c_str());
     res.texBola   = cargar_textura(getAssetPath("bola2.png").c_str());
+    res.texIce    = cargar_textura(getAssetPath("ice4.png").c_str());
+    res.texSand   = cargar_textura(getAssetPath("sand4.png").c_str());
     if (sol) res.sfxBeep.load(getAssetPath("beep3.wav").c_str());
 
     level.soloud  = res.soloud;
@@ -28,7 +30,9 @@ void Game::destroy()
     glDeleteTextures(1, &res.texMadera);
     glDeleteTextures(1, &res.texHoyo);
     glDeleteTextures(1, &res.texBola);
-    res.texCesped = res.texMadera = res.texHoyo = res.texBola = 0;
+    glDeleteTextures(1, &res.texIce);
+    glDeleteTextures(1, &res.texSand);
+    res.texCesped = res.texMadera = res.texHoyo = res.texBola = res.texIce = res.texSand = 0;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
