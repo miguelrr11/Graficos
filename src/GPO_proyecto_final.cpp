@@ -37,6 +37,10 @@ float  pixelSize = 3.0f;   // píxeles de pantalla por "píxel de juego"
 static bool startedGame = false;
 static bool startedAnimationStartingGame = false;
 
+// Variables para controlar la pantalla completa desde cualquier parte
+static bool isFullScreenGlobal = false;
+static int windowed_x = 0, windowed_y = 0, windowed_width = 800, windowed_height = 600;
+
 const char* skybox_vs = GLSL(
     layout(location = 0) in vec3 pos;
     out vec3 dir;
@@ -390,13 +394,20 @@ float dt = 0.0f;
 static float g_oSpin = 0.0f;
 
 // ─── HUD text system ──────────────────────────────────────────────────────────
-// 5×7 pixel font for digits 0-9
-static const uint8_t FONT_ROWS[10][7] = {
-    {14,17,17,17,17,17,14}, {4,12,4,4,4,4,14},
-    {14,17,1,6,8,16,31},    {14,17,1,6,1,17,14},
-    {17,17,17,31,1,1,1},    {31,16,30,1,1,17,14},
-    {14,16,16,30,17,17,14}, {31,1,2,4,8,8,8},
-    {14,17,17,14,17,17,14}, {14,17,17,15,1,1,14}
+// Fuente ampliada: Números (0-9) y Letras (A-Z)
+static const uint8_t FONT_ROWS[36][7] = {
+    // 0-9
+    {14,17,17,17,17,17,14}, {4,12,4,4,4,4,14}, {14,17,1,6,8,16,31}, {14,17,1,6,1,17,14},
+    {17,17,17,31,1,1,1}, {31,16,30,1,1,17,14}, {14,16,16,30,17,17,14}, {31,1,2,4,8,8,8},
+    {14,17,17,14,17,17,14}, {14,17,17,15,1,1,14},
+    // A-Z (10 al 35)
+    {14,17,17,31,17,17,17}, {30,17,17,30,17,17,30}, {14,17,16,16,16,17,14}, {30,17,17,17,17,17,30},
+    {31,16,16,30,16,16,31}, {31,16,16,30,16,16,16}, {14,17,16,23,17,17,14}, {17,17,17,31,17,17,17},
+    {14,4,4,4,4,4,14},      {15,2,2,2,2,18,12},     {17,18,20,24,20,18,17}, {16,16,16,16,16,16,31},
+    {17,27,21,17,17,17,17}, {17,25,21,19,17,17,17}, {14,17,17,17,17,17,14}, {30,17,17,30,16,16,16},
+    {14,17,17,17,21,18,13}, {30,17,17,30,20,18,17}, {14,17,16,14,1,17,14},  {31,4,4,4,4,4,4},
+    {17,17,17,17,17,17,14}, {17,17,17,17,17,10,4},  {17,17,17,21,21,27,17}, {17,17,10,4,10,17,17},
+    {17,17,10,4,4,4,4},     {31,1,2,4,8,16,31}
 };
 
 static std::vector<uint8_t> hudBuf;
@@ -431,32 +442,48 @@ static inline void hud_put(int x, int y, uint8_t r, uint8_t g, uint8_t b) {
     p[0]=r; p[1]=g; p[2]=b; p[3]=255;
 }
 
-// Returns pixel width of a digit string at the given size (1px gap between chars)
 static int hud_text_width(const char* str, int size) {
     int n = 0;
-    for (const char* c = str; *c; c++) if (*c >= '0' && *c <= '9') n++;
+    for (const char* c = str; *c; c++) {
+        if ((*c >= '0' && *c <= '9') || (*c >= 'A' && *c <= 'Z') || (*c >= 'a' && *c <= 'z')) n++;
+    }
     return n > 0 ? n * (5 * size) + (n - 1) : 0;
 }
 
-// Draw a string of digits at screen-pixel position (x,y). size = screen pixels per font pixel.
-// Color defaults to white; only digits 0-9 are rendered (other chars skipped with a gap).
-static void hud_text(const char* str, int x, int y, int size,
-                     uint8_t r = 255, uint8_t g = 255, uint8_t b = 255) {
+static void hud_text(const char* str, int x, int y, int size, uint8_t r = 255, uint8_t g = 255, uint8_t b = 255) {
     int cx = x;
     for (const char* c = str; *c; c++) {
-        if (*c < '0' || *c > '9') { cx += size * 3; continue; }
-        int d = *c - '0';
-        hudDX1 = std::min(hudDX1, cx - 1);
-        hudDY1 = std::min(hudDY1, y - 1);
-        hudDX2 = std::max(hudDX2, cx + 5 * size);
-        hudDY2 = std::max(hudDY2, y + 7 * size);
+        int d = -1;
+        if (*c >= '0' && *c <= '9') d = *c - '0';
+        else if (*c >= 'A' && *c <= 'Z') d = *c - 'A' + 10;
+        else if (*c >= 'a' && *c <= 'z') d = *c - 'a' + 10;
+
+        if (d == -1) { cx += size * 3; continue; } // Espacio o caracter no soportado
+
+        hudDX1 = std::min(hudDX1, cx - 1); hudDY1 = std::min(hudDY1, y - 1);
+        hudDX2 = std::max(hudDX2, cx + 5 * size); hudDY2 = std::max(hudDY2, y + 7 * size);
         for (int row = 0; row < 7; row++) {
             int bits = FONT_ROWS[d][row];
             for (int col = 0; col < 5; col++) {
                 if ((bits >> (4 - col)) & 1) {
-                    for (int sy = 0; sy < size; sy++)
-                        for (int sx = 0; sx < size; sx++)
-                            hud_put(cx + col*size + sx, y + row*size + sy, r, g, b);
+                    // Pintar letra y borde negro simultáneamente (muchísimo más rápido)
+                    for (int sy = -1; sy <= size; sy++) {
+                        for (int sx = -1; sx <= size; sx++) {
+                            int px = cx + col*size + sx;
+                            int py = y + row*size + sy;
+                            if ((unsigned)px >= (unsigned)hudW || (unsigned)py >= (unsigned)hudH) continue;
+                            uint8_t* p = hudBuf.data() + (py * hudW + px) * 4;
+
+                            // Centro de la letra (color)
+                            if (sx >= 0 && sx < size && sy >= 0 && sy < size) {
+                                p[0]=r; p[1]=g; p[2]=b; p[3]=255;
+                            } 
+                            // Borde externo (solo pintar de negro si está vacío para no pisar el color)
+                            else if (p[3] == 0) {
+                                p[0]=0; p[1]=0; p[2]=0; p[3]=255;
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -466,34 +493,9 @@ static void hud_text(const char* str, int x, int y, int size,
 
 static void hud_flush() {
     if (!hudTex || hudW == 0 || hudDX2 < hudDX1) return;
-
-    int x1 = std::max(hudDX1, 0),     y1 = std::max(hudDY1, 0);
-    int x2 = std::min(hudDX2, hudW-1), y2 = std::min(hudDY2, hudH-1);
-    int rw = x2-x1+1, rh = y2-y1+1;
-
-    // Snapshot alpha of the dirty region (fill-only) before writing stroke pixels
-    std::vector<uint8_t> snap((size_t)rw * rh);
-    for (int py = y1; py <= y2; py++)
-        for (int px = x1; px <= x2; px++)
-            snap[(py-y1)*rw+(px-x1)] = hudBuf[(py*hudW+px)*4+3];
-
-    auto snapGet = [&](int px, int py) -> bool {
-        int lx = px-x1, ly = py-y1;
-        if ((unsigned)lx >= (unsigned)rw || (unsigned)ly >= (unsigned)rh) return false;
-        return snap[ly*rw+lx] > 0;
-    };
-
-    for (int py = y1; py <= y2; py++) {
-        for (int px = x1; px <= x2; px++) {
-            if (snap[(py-y1)*rw+(px-x1)]) continue;
-            bool stroke = false;
-            for (int dy = -1; dy <= 1 && !stroke; dy++)
-                for (int dx = -1; dx <= 1 && !stroke; dx++)
-                    if ((dx || dy) && snapGet(px+dx, py+dy)) stroke = true;
-            if (stroke) hud_put(px, py, 0, 0, 0);
-        }
-    }
-
+    
+    // Ya no hay bucle gigante de cálculo de bordes aquí.
+    // Solo subimos la textura a la gráfica de golpe.
     glBindTexture(GL_TEXTURE_2D, hudTex);
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, hudW, hudH, GL_RGBA, GL_UNSIGNED_BYTE, hudBuf.data());
 }
@@ -936,12 +938,23 @@ void render_scene()
             hud_text(msStr, (ANCHO - msw) / 2, (int)((10 + scaleFont * 7 + 5) * screenRatio), std::max(1, sf / 2),
                         255, urgent ? 51 : 255, urgent ? 51 : 255);
 
-            // numero de nivel en la esquina superior izquierda
+           // numero de nivel en la esquina superior izquierda
             char levelStr[16];
-            sprintf_s(levelStr, sizeof(levelStr), "Nivel %d", game.currentLevel);
+            sprintf_s(levelStr, sizeof(levelStr), "NIVEL %d", game.currentLevel);
             // 3. Escalamos el tamaño 3 original del nivel y su posición X (-35) e Y (10)
             int lvlSf = std::max(1, (int)(3.0f * screenRatio));
-            hud_text(levelStr, (int)(-35 * screenRatio), (int)(10 * screenRatio), lvlSf);
+            hud_text(levelStr, (int)(15 * screenRatio), (int)(10 * screenRatio), lvlSf); // Puesto en 15 para que no se salga a la izquierda
+
+            // 4. Mensaje inferior de la tecla F
+            char msgStr[64];
+            if (isFullScreenGlobal) {
+                sprintf_s(msgStr, sizeof(msgStr), "PULSE F PARA SALIR DE PANTALLA COMPLETA");
+            } else {
+                sprintf_s(msgStr, sizeof(msgStr), "PULSE F PARA PANTALLA COMPLETA");
+            }
+            int msgSf = std::max(1, (int)(1.5f * screenRatio)); // Un poco más pequeño que el Nivel
+            int msgW = hud_text_width(msgStr, msgSf);
+            hud_text(msgStr, (ANCHO - msgW) / 2, ALTO - (int)(35 * screenRatio), msgSf, 200, 200, 200); // Centrado, abajo, en color gris claro
         }
         hud_flush();
     }
@@ -1059,29 +1072,23 @@ static void KeyCallback(GLFWwindow* window, int key, int code, int action, int m
         startedAnimationStartingGame = true;
     }
     
-    // F11: Alternar Pantalla Completa
-    static bool prevPressedF = false;
-    if (key == GLFW_KEY_F && action == GLFW_PRESS && !prevPressedF) {
-        prevPressedF = true;
-        static bool isFullScreen = false;
-        static int windowed_x, windowed_y, windowed_width, windowed_height;
-
-        if (!isFullScreen) {
-            // Guardar posición y tamaño actuales para cuando volvamos a modo ventana
+    // F: Alternar Pantalla Completa
+    if (key == GLFW_KEY_F && action == GLFW_PRESS) {
+        if (!isFullScreenGlobal) {
+            // Guardar posición y tamaño actuales para restaurarlos luego
             glfwGetWindowPos(window, &windowed_x, &windowed_y);
             glfwGetWindowSize(window, &windowed_width, &windowed_height);
 
-            // Obtener el monitor principal y su resolución nativa
             GLFWmonitor* monitor = glfwGetPrimaryMonitor();
             const GLFWvidmode* mode = glfwGetVideoMode(monitor);
             
             // Pasar a pantalla completa
             glfwSetWindowMonitor(window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
-            isFullScreen = true;
+            isFullScreenGlobal = true;
         } else {
-            // Volver a modo ventana recuperando las dimensiones guardadas
+            // Volver a modo ventana recuperando las dimensiones
             glfwSetWindowMonitor(window, NULL, windowed_x, windowed_y, windowed_width, windowed_height, 0);
-            isFullScreen = false;
+            isFullScreenGlobal = false;
         }
     }
 }
