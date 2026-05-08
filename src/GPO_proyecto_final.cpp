@@ -947,14 +947,21 @@ void render_scene()
 
             // 4. Mensaje inferior de la tecla F
             char msgStr[64];
-            if (isFullScreenGlobal) {
-                sprintf_s(msgStr, sizeof(msgStr), "PULSE F PARA SALIR DE PANTALLA COMPLETA");
-            } else {
+            if (!isFullScreenGlobal) {
                 sprintf_s(msgStr, sizeof(msgStr), "PULSE F PARA PANTALLA COMPLETA");
+                int msgSf = std::max(1, (int)(2.0f * screenRatio)); // Un poco más pequeño que el Nivel
+                int msgW = hud_text_width(msgStr, msgSf);
+                hud_text(msgStr, (ANCHO - msgW) / 2, ALTO - (int)(40 * screenRatio), msgSf, 200, 200, 200); // Centrado, abajo, en color gris claro
             }
-            int msgSf = std::max(1, (int)(1.5f * screenRatio)); // Un poco más pequeño que el Nivel
-            int msgW = hud_text_width(msgStr, msgSf);
-            hud_text(msgStr, (ANCHO - msgW) / 2, ALTO - (int)(35 * screenRatio), msgSf, 200, 200, 200); // Centrado, abajo, en color gris claro
+            
+            // 5. Mensaje tutorial
+            if(game.currentLevel == 1) {
+                char tutorialStr[64];
+                sprintf_s(tutorialStr, sizeof(tutorialStr), "CLICK PARA IMPULSAR, ESPACIO PARA SALTAR");
+                int tutorialSf = std::max(1, (int)(2.0f * screenRatio));
+                int tutorialW = hud_text_width(tutorialStr, tutorialSf);
+                hud_text(tutorialStr, (ANCHO - tutorialW) / 2, ALTO - (int)(20 * screenRatio), tutorialSf, 200, 200, 200); // Centrado, abajo, en color gris claro
+            }
         }
         hud_flush();
     }
