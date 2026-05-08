@@ -21,6 +21,14 @@ struct BoxObstacle {
     bool isBonus = false;           // para distinguir los obstáculos de bonus (que se pintan de blanco y dan puntos al tocar)
     int bonusType = 0;              // 0 = salto extra, 1 = superman, 2 = tiempo extra, 3 = respawn (desactivado), 4 = respawn (activado)
 
+    /**
+     * Explicacion del bonus 3
+     * Solo spawnea 1 bonus de este tipo por nivel, y solo niveles mas altos que el 8
+     * Una vez se coge, el bonus se marca como tipo 4 y el punto de respawn se actualiza a la posición del bonus
+     * Una vez el jugador se cae y respawnea donde el bonus, este se muere y no se vuelve poder a coger, ademas
+     * el punto de respawn se reinicia al inicial (solo tienes una oportunidad de usar el bonus de respawn)
+     */
+
     glm::vec3 eulerAnglesVel = glm::vec3(0.0f); // velocidad de rotación en grados por segundo, para obstáculos giratorios
     bool isDying = false; // para hacer animaciones de desaparición al recoger un bonus
     bool dead = false; // para marcar obstáculos de bonus que ya fueron recogidos y deben desaparecer
