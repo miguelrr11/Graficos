@@ -962,6 +962,18 @@ void render_scene()
                 int tutorialW = hud_text_width(tutorialStr, tutorialSf);
                 hud_text(tutorialStr, (ANCHO - tutorialW) / 2, ALTO - (int)(20 * screenRatio), tutorialSf, 200, 200, 200); // Centrado, abajo, en color gris claro
             }
+
+            // 6. Indicador de bonus dorado (si es mayor que 0, se escribe)
+            if(game.goldBonus > 0){
+                char goldBonusStr[64];
+                sprintf_s(goldBonusStr, sizeof(goldBonusStr), "10");
+                int tutorialSf = std::max(1, (int)(3.0f * screenRatio));
+                int tutorialW = hud_text_width(goldBonusStr, tutorialSf);
+                float off = game.goldBonus * 50;
+                hud_text(goldBonusStr, (ANCHO - tutorialW) / 2 + 70, (int)(10 * screenRatio) + off, tutorialSf, 200, 200, 200);
+                game.goldBonus = lerp(game.goldBonus, 0.0f, 0.01f);
+                if(game.goldBonus < 0.05f) game.goldBonus = 0.0f;
+            }
         }
         hud_flush();
     }

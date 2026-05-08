@@ -19,7 +19,7 @@ struct BoxObstacle {
     bool ignoreCollision = false;   // para obstáculos decorativos que no bloquean la bola
     bool ignoreRender = false;      // para obstáculos que sí bloquean la bola pero no se dibujan (ej. el suelo)
     bool isBonus = false;           // para distinguir los obstáculos de bonus (que se pintan de blanco y dan puntos al tocar)
-    int bonusType = 0;              // 0 = salto extra, 1 = superman
+    int bonusType = 0;              // 0 = salto extra, 1 = superman, 2 = tiempo extra, 3 = respawn (desactivado), 4 = respawn (activado)
 
     glm::vec3 eulerAnglesVel = glm::vec3(0.0f); // velocidad de rotación en grados por segundo, para obstáculos giratorios
     bool isDying = false; // para hacer animaciones de desaparición al recoger un bonus

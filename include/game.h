@@ -27,6 +27,9 @@ public:
     DimState dimState = DimState::FADE_IN;
     float    dimValue = 0.0f;
 
+    // Indicador de bonus dorado (+10 secs)
+    float goldBonus = 0.0f;
+
     // Load textures + audio then build the first level.
     // Must be called after OpenGL and SoLoud are both initialised.
     void init(SoLoud::Soloud* sol);

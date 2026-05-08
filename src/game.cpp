@@ -68,6 +68,7 @@ void Game::update(float dt, bool startedGame)
                 gameTimer += 10.0f;   // +10 segundos
                 printf("¡Cubo Dorado recogido! +10 segundos\n");
                 bonusQueue.erase(bonusQueue.begin() + i); // Lo sacamos de la mochila
+                goldBonus = 1.0f;
             }
         }
     }

@@ -23,7 +23,8 @@ static glm::vec4 hsv4(float h, float s, float v) {
 static const glm::vec4 BONUS_COLORS[] = {
     hsv4(200/360.0f, 1.0f, 1.0f), // 0: salto extra (azul)
     hsv4(20/360.0f, 1.0f, 1.0f),  // 1: superman (naranja)
-    hsv4(60/360.0f, 1.0f, 1.0f)   // 2: tiempo extra (dorado)
+    hsv4(50/360.0f, 0.95f, 1.0f),   // 2: tiempo extra (dorado)
+    hsv4(130/360.0f, 0.95f, 1.0f)   // 3: respawn (verde)
 };
 
 static const float GRAVITY      = -12.0f;
@@ -97,7 +98,12 @@ void Level::load(int levelNum, const Resources& res)
                 else {
                     type = 0; // en las primeras islas no hay bonus de tiempo para no farmear tiempo.
                 }
-            }                  
+            }   
+            
+            // si el nivel es superior a 8, en la plataforma del medio se añade siempre un bonus de respawn (tipo 3)
+            if(levelNum > 8 && i == floor(numIslands / 2)) {
+                type = 3;
+            }
 
             glm::vec3 bonusColor = BONUS_COLORS[type];
             
@@ -115,6 +121,8 @@ void Level::load(int levelNum, const Resources& res)
 
     // 1. LA BOLA (Aparece en la primera isla)
     ball.pos = { tracks[0].startPos.x, tracks[0].startPos.y, FLOOR_Z + ball.radius + 0.25f };
+    respawnPos = ball.pos;
+    curRespawnPos = respawnPos;
     ball.vel      = { 0, 0, 0 };
     ball.moving   = true;
     ball.rollQuat = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
@@ -211,15 +219,20 @@ void Level::load(int levelNum, const Resources& res)
 
 void Level::restartLevel() {
     // reiniciar estado de bola para volver a empezar el mismo nivel
-    ball.pos = { tracks[0].startPos.x, tracks[0].startPos.y, FLOOR_Z + ball.radius + 0.25f };
+    ball.pos = curRespawnPos;
     ball.vel      = { 0, 0, 0 };
     ball.moving   = true;
+
 
     // Reiniciar obstáculos de bonus
     for (auto& obs : obstacles) {
         if (obs.isBonus) {
             printf("Reiniciando bonus en posición (%.2f, %.2f)\n", obs.position.x, obs.position.y);
             obs.isDying = false;
+            if(obs.bonusType == 4) {
+                obs.isDying = true;
+                curRespawnPos = respawnPos;
+            }
             obs.dead = false;
             obs.size = {0.5f, 0.5f, 0.5f};
         }
@@ -406,7 +419,9 @@ void Level::update(float dt, std::vector<int>& bonusQueue)
         return;
     }
 
-    
+    // delete obstacles if dead
+    obstacles.erase(std::remove_if(obstacles.begin(), obstacles.end(),
+        [](const BoxObstacle& obs) { return obs.dead; }), obstacles.end());
 }
 
 
@@ -530,9 +545,16 @@ void Level::resolveWalls(std::vector<int>& bonusQueue)
         if (!obs.isBonus) ball.vel.y = sinA * velLocal.x + cosA * velLocal.y;
         if (!obs.isBonus) ball.vel.z = velLocal.z;
 
-        if(obs.isBonus && !obs.isDying && !obs.dead) {
-            obs.isDying = true;
-            bonusQueue.push_back(obs.bonusType);
+        if(obs.isBonus && !obs.isDying && !obs.dead && obs.bonusType != 4) {
+            if(obs.bonusType >= 0 && obs.bonusType < 3){ 
+                bonusQueue.push_back(obs.bonusType);
+                obs.isDying = true;
+            }
+            else if(obs.bonusType == 3) {
+                obs.bonusType = 4; // el punto de respawn se activa
+                obs.eulerAnglesVel *= 5.0f;
+                curRespawnPos = obs.position + glm::vec3(0,0,1.0f);
+            }
 
             for (int i = 0; i < 20; i++) {
                 float angle = (float)i / 20.0f * 6.2831853f;
@@ -568,12 +590,18 @@ void Level::render(GLuint prog, const glm::mat4& VP, const std::vector<int>& bon
         if(obs.isBonus && !obs.dead) {
             EmitParams ep;
             float ranAngle = rf() * 6.2831853f;
-            ep.pos        = {obs.position.x + std::cos(ranAngle)*0.8f, obs.position.y + std::sin(ranAngle)*0.8f, obs.position.z};
-            //ep.vel should be so that the particle orbits around the bonus box
-            ep.vel        = {-std::sin(ranAngle)*1.5f, std::cos(ranAngle)*1.5f, ranBetween(0.5f, 1.0f)};
+            if(obs.bonusType != 4){ 
+                ep.vel = {-std::sin(ranAngle)*1.5f, std::cos(ranAngle)*1.5f, ranBetween(0.5f, 1.0f)};
+                ep.pos        = {obs.position.x + std::cos(ranAngle)*0.8f, obs.position.y + std::sin(ranAngle)*0.8f, obs.position.z};
+                ep.life       = 3.0f;
+            }
+            if(obs.bonusType == 4){ 
+                ep.vel = {-std::sin(ranAngle)*0.8f, std::cos(ranAngle)*0.8f, ranBetween(3.0f, 4.0f)};
+                ep.pos        = {obs.position.x + std::cos(ranAngle)*0.25f, obs.position.y + std::sin(ranAngle)*0.25f, obs.position.z};
+                ep.life       = 20.0f;
+            }
             ep.velSpread  = {0,0,0};
             ep.acc        = {0,0,0};
-            ep.life       = 3.0f;
             ep.lifeSpread = 0.12f;
             ep.size       = 0.1f + rc() * 0.025f;
             ep.endSize    = 0.0f;
@@ -584,6 +612,7 @@ void Level::render(GLuint prog, const glm::mat4& VP, const std::vector<int>& bon
             ep.count      = 2;
             particles.emit(ep);
         }
+
     }
 
     if(!bonusQueue.empty()){

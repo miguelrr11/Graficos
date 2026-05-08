@@ -59,6 +59,8 @@ public:
     std::vector<BoxObstacle> obstacles;
     Ball      ball;
     glm::vec3 holePos       = { 7.0f, 0.0f, 0.0f };
+    glm::vec3 curRespawnPos    = { 0.5f, 0.0f, 0.15f };  // el respawn que se actualiza si se coge un bonus tipo 3
+    glm::vec3 respawnPos       = curRespawnPos;          // el respawn inicial
     float     currentFloorZ = 0.0f;
 
     std::vector<WallMesh>  wallMeshes;
@@ -77,6 +79,8 @@ public:
     float shotAngle = 0.0f;
     float shotPower = 0.0f;
     bool  charging  = false;
+
+    
 
     // ── Particles & billboard helpers ────────────────────────────────────────
     ParticleSystem particles;
