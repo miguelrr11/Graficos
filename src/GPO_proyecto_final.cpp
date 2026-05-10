@@ -32,7 +32,7 @@ GLuint quad_prog;
 GLuint quadVAO, quadVBO;
 GLuint fbo, fboColorTex, fboDepthTex;
 GLuint skyFBO, skyColorTex;
-float  pixelSize = 3.0f;   // píxeles de pantalla por "píxel de juego"
+float  pixelSize = 4.0f;   // píxeles de pantalla por "píxel de juego"
 
 static bool startedGame = false;
 static bool startedAnimationStartingGame = false;
@@ -159,23 +159,20 @@ const char* quad_fs = GLSL(
         // Pixelated base
         vec3 color = texture(screenTex, uv).rgb;
 
-        // ── 0. Color aberration (radial, edges only, sub-pixel smooth) ────
+        // ── 0. Color aberration
         vec2  toCenter = fragUV - 0.5;
         float distC    = length(toCenter);
 
-        // 0 in the center ~30% radius, ramps to 1 at the corners
-        float abMask   = smoothstep(0.4, 0.8, distC);
+        float abMask   = smoothstep(0.3, 0.65, distC);
 
-        // Radial offset in continuous UV space — grows toward the corners
-        // and isn't snapped to the pixel grid.
-        vec2 abOffset  = toCenter * abMask * 0.05;   // tweak 0.04 to taste
+        // importante normalizar para que el desplazamiento sea consistente independientemente de la resolución o del pixelSize
+        vec2  abDir    = distC > 0.001 ? toCenter / distC : vec2(0.0);
+        vec2  abOffset = abDir * (distC * distC) * 0.03;
 
-        // R and B sampled from fragUV (smooth), NOT from uv (pixelated).
-        // This is what makes the fringe break out of the pixel grid.
-        float aR = texture(screenTex, fragUV + abOffset).r;
-        float aB = texture(screenTex, fragUV - abOffset).b;
+        // clampeamos para no leer fuera de la textura
+        float aR = texture(screenTex, clamp(fragUV + abOffset, vec2(0.0), vec2(1.0))).r;
+        float aB = texture(screenTex, clamp(fragUV - abOffset, vec2(0.0), vec2(1.0))).b;
 
-        // Blend in only at the edges; center remains the clean pixelated color.
         color.r = mix(color.r, aR, abMask);
         color.b = mix(color.b, aB, abMask);
 
@@ -188,7 +185,9 @@ const char* quad_fs = GLSL(
         float dL   = linearDepth(texture(depthTex, uv - vec2(off.x,  0.0)).r);
         float dD   = linearDepth(texture(depthTex, uv - vec2(0.0,  off.y)).r);
         float edge = max(max(abs(d-dR), abs(d-dL)), max(abs(d-dU), abs(d-dD)));
-        color = mix(color, vec3(0.04, 0.04, 0.08), step(0.15, edge / max(d, 0.01)) * 0.88);
+        // Normalizamos según el game pixel para que el grosor sea consistente independientemente de la resolución o del pixelSize
+        float edgeNorm = edge * (resolution.x / pixelSize) / max(d, 0.01);
+        color = mix(color, vec3(0.04, 0.04, 0.08), step(40.0, edgeNorm) * 0.88);
 
         // ── 3. Scanlines (una línea oscura cada 2 filas de píxeles) ────────
         float row = mod(block.y, 2.0);
@@ -707,8 +706,6 @@ void render_scene()
     game.level.update(dt, game.bonusQueue);
     
 
-    // static glm::vec3 target = game.level.ball.pos;
-    // target = lerpVector(target, game.level.ball.pos, 0.05f);  // suavizado de cámara, no funciona muy bien
 
     vec3 target = game.level.ball.pos;
     static glm::vec3 camPos = glm::vec3(game.level.holePos.x, game.level.holePos.y, game.level.holePos.z + 4.0f);
@@ -819,7 +816,7 @@ void render_scene()
             startPos, charSize, spacing, glm::vec3(1.f, 0.8f, 0.2f), rot, g_oSpin);
 
         charSize = 0.17f, spacing = 0.02f;
-        char* instr = "PRESS SPACE";
+        char instr[12] = "PRESS SPACE";
         w = alphabetModel.stringWidth(instr, charSize, spacing);
         startPos = titlePos - textRight * (w * 0.5f);
         startPos.z -= 0.4f;
@@ -1025,7 +1022,7 @@ int main(int argc, char* argv[])
     printf("Audio load error: %d\n", error);
     gMusic.setLooping(true);
     int handle = gSoloud->play(gMusic);
-    gSoloud->setVolume(handle, 1.0f); //0 for debug, deberia ser 1.0
+    gSoloud->setVolume(handle, 0.0f); //0 for debug, deberia ser 1.0
 
     game.init(gSoloud);
     init_scene();
@@ -1098,7 +1095,7 @@ static void KeyCallback(GLFWwindow* window, int key, int code, int action, int m
             glfwGetWindowPos(window, &windowed_x, &windowed_y);
             glfwGetWindowSize(window, &windowed_width, &windowed_height);
 
-            GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+            GLFWmonitor* monitor = getCurrentMonitor(window);
             const GLFWvidmode* mode = glfwGetVideoMode(monitor);
             
             // Pasar a pantalla completa
@@ -1110,6 +1107,42 @@ static void KeyCallback(GLFWwindow* window, int key, int code, int action, int m
             isFullScreenGlobal = false;
         }
     }
+}
+
+GLFWmonitor* getCurrentMonitor(GLFWwindow* window)
+{
+    int nmonitors, i;
+    GLFWmonitor** monitors = glfwGetMonitors(&nmonitors);
+
+    int wx, wy, ww, wh;
+    glfwGetWindowPos(window, &wx, &wy);
+    glfwGetWindowSize(window, &ww, &wh);
+
+    GLFWmonitor* bestMonitor = nullptr;
+    int bestArea = 0;
+
+    for (i = 0; i < nmonitors; i++)
+    {
+        int mx, my;
+        glfwGetMonitorPos(monitors[i], &mx, &my);
+
+        const GLFWvidmode* mode = glfwGetVideoMode(monitors[i]);
+
+        int mw = mode->width;
+        int mh = mode->height;
+
+        int overlap =
+            std::max(0, std::min(wx + ww, mx + mw) - std::max(wx, mx)) *
+            std::max(0, std::min(wy + wh, my + mh) - std::max(wy, my));
+
+        if (overlap > bestArea)
+        {
+            bestArea = overlap;
+            bestMonitor = monitors[i];
+        }
+    }
+
+    return bestMonitor;
 }
 
 void MouseCallback(GLFWwindow* window, double xpos, double ypos)

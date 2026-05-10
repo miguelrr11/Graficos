@@ -100,8 +100,8 @@ void Level::load(int levelNum, const Resources& res)
                 }
             }   
             
-            // si el nivel es superior a 8, en la plataforma del medio se añade siempre un bonus de respawn (tipo 3)
-            if(levelNum > 8 && i == floor(numIslands / 2)) {
+            // si el nivel es superior a 5, en la plataforma del medio se añade siempre un bonus de respawn (tipo 3)
+            if(levelNum > 5 && i == floor(numIslands / 2)) {
                 type = 3;
             }
 
@@ -419,9 +419,9 @@ void Level::update(float dt, std::vector<int>& bonusQueue)
         return;
     }
 
-    // delete obstacles if dead
+    // eliminamos obstaculos de tiempo o de respawn que ya han sido recogidos y su animación de desaparición ha terminado
     obstacles.erase(std::remove_if(obstacles.begin(), obstacles.end(),
-        [](const BoxObstacle& obs) { return obs.dead; }), obstacles.end());
+        [](const BoxObstacle& obs) { return (obs.dead && (obs.bonusType == 4 || obs.bonusType == 2)); }), obstacles.end());
 }
 
 
@@ -761,7 +761,7 @@ void Level::handleInput(GLFWwindow* window, float dt, std::vector<int>& bonusQue
 
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && !prevSpace) {
         numTimesSpacePressed++;
-        float impulse = IMPULSE / (numTimesSpacePressed * numTimesSpacePressed);
+        float impulse = IMPULSE / (numTimesSpacePressed * (numTimesSpacePressed * 0.95f));
         //if the last bonusqueue is a jump bonus, we add more impulse (0 es salto extra)
         if(!bonusQueue.empty() && bonusQueue.back() == 0) {
             impulse += IMPULSE;

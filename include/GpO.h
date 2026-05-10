@@ -95,3 +95,6 @@ std::string getAssetPath(const std::string& filename);
 float map(float value, float inMin, float inMax, float outMin, float outMax);
 float lerp(float a, float b, float t);
 glm::vec3 lerpVector(const glm::vec3& a, const glm::vec3& b, float t);
+
+// auxiliar para encontrar el monitor actual (para fullscreen)
+GLFWmonitor* getCurrentMonitor(GLFWwindow* window);

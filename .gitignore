@@ -8,3 +8,7 @@ CMakeDoxyfile.in
 CMakeDoxygenDefaults.cmake
 Makefile
 bin/gpo_proyecto_final
+libs/assimp/contrib/zlib/zconf.h
+libs/assimp/lib/libassimpd.a
+libs/assimp/include/assimp/revision.h
+libs/assimp/contrib/zlib/libzlibstaticd.a
