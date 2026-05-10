@@ -155,8 +155,6 @@ const char* quad_fs = GLSL(
         // ── 1. Pixelación ──────────────────────────────────────────────────
         vec2 block = floor(fragUV * resolution / pixelSize);
         vec2 uv    = (block * pixelSize + pixelSize * 0.5) / resolution;
-
-        // Pixelated base
         vec3 color = texture(screenTex, uv).rgb;
 
         // ── 0. Color aberration
@@ -176,7 +174,7 @@ const char* quad_fs = GLSL(
         color.r = mix(color.r, aR, abMask);
         color.b = mix(color.b, aB, abMask);
 
-        // ── 2. Outlines (bordes por diferencia de profundidad lineal) ─────────
+        // ── 2. Outlines
         vec2 off = (pixelSize / resolution);
         float rawD = texture(depthTex, uv).r;
         float d    = linearDepth(rawD);
@@ -189,11 +187,11 @@ const char* quad_fs = GLSL(
         float edgeNorm = edge * (resolution.x / pixelSize) / max(d, 0.01);
         color = mix(color, vec3(0.04, 0.04, 0.08), step(40.0, edgeNorm) * 0.88);
 
-        // ── 3. Scanlines (una línea oscura cada 2 filas de píxeles) ────────
+        // ── 3. Scanlines
         float row = mod(block.y, 2.0);
         color *= (row < 1.0) ? 0.9 : 1.0;
 
-        // ── 4. Niebla con dithering ordenado (Bayer 4x4) ───────────────────
+        // ── 4. Niebla con dithering de bayer (no usado)
         if (rawD < 0.9999) {
             float linD = d;
             float fogF = clamp((uFogEnd - linD) / (uFogEnd - uFogStart), 0.0, 1.0);
@@ -212,22 +210,21 @@ const char* quad_fs = GLSL(
             int by = int(mod(block.y, 4.0));
             float threshold = bayer[by * 4 + bx];
 
-            // Soft band around each pixel's threshold -> merging dither
-            float band = 0.0;  // 0.0 = original crisp dither, ~0.2 = very soft
+            float band = 0.0;
             float t    = smoothstep(threshold - band, threshold + band, fogF);
 
             vec3 skyColor = texture(skyTex, uv).rgb;
             color = mix(skyColor, color, t);
         }
 
-        // ── 5. Vignette ────────────────────────────────────────────────────
+        // ── 5. Viñeta
         vec2  vc = fragUV - 0.5;
         float dist = dot(vc, vc);
         float v = smoothstep(0.8, 0.2, dist);
 
         color *= v;
 
-        // HUD overlay – aqui se dibuja el texto sacandolo directamente de la textura del HUD
+        // HUD (texto pixelado)
         {
             vec4 hud = texture(hudTex, vec2(fragUV.x, 1.0 - fragUV.y));
             if (hud.a > 0.5) color = hud.rgb;
@@ -253,7 +250,7 @@ const char* shadow_fs = GLSL(
     }
 );
 
-// ─── Shaders principales para objetos ─────────────────────────────────────────────────────
+// ─── Shaders para objetos
 const char* vertex_prog = GLSL(
     layout(location = 0) in vec3 pos;
     layout(location = 1) in vec3 normal;
@@ -271,7 +268,7 @@ const char* vertex_prog = GLSL(
         gl_Position     = MVP * vec4(pos, 1.0);
         fragPos         = vec3(M * vec4(pos, 1.0));
         fragNormal      = mat3(transpose(inverse(M))) * normal;
-        fragLocalNormal = normal;     // sin transformar: gira con el objeto
+        fragLocalNormal = normal;
         fragUV          = uv;
     }
 );
@@ -307,7 +304,7 @@ const char* fragment_prog = GLSL(
         if (uUseTex >= 1) {
 
             if (uMappingType == 0) {
-                // --- UV normal (cajas, planos) ---
+                // uv normal con tiling, offset y pixelación
                 if (uUseTexOffset == 1) {
                     uv += uTexOffset;
                 }
@@ -328,7 +325,7 @@ const char* fragment_prog = GLSL(
                 }
             }
             else if (uMappingType == 1) {
-                // --- mapeo esférico por normal local (esferas) ---
+                // mapeo esferico
                 vec3 n = normalize(fragLocalNormal);
 
                 vec2 sphUV = vec2(
@@ -365,13 +362,15 @@ const char* fragment_prog = GLSL(
     }
 );
 
-// ─── Globals ──────────────────────────────────────────────────────────────────
+
 GLFWwindow* window;
 GLuint      prog;
-Game        game;           // ← top-level game state (owns level + resources)
+Game        game;
 Model       alphabetModel;
-bool        g_debugAlphabetGrid = true;  // Tab toggles this
-int         g_debugMeshIdx      = 0;    // Left/Right arrows cycle through meshes
+
+// debug letras 3d
+bool        g_debugAlphabetGrid = true;
+int         g_debugMeshIdx      = 0;
 
 // Cámara
 vec3  up       = vec3(0, 0, 1);
@@ -383,17 +382,16 @@ float mouseSensitivity = 0.1f;
 float fov    = 80.0f;
 float aspect = ANCHO / ALTO;
 float cam_speed = 5.0f;
-float cam_distance = 3.0f;   // distancia a la bola
+float cam_distance = 3.0f;
 
 // Tiempo para deltaTime real
 float lastFrameTime = 0.0f;
 float dt = 0.0f;
 
-// Spin accumulator for 'O' letter animation
+// Para el spin de la letra O en el titulo
 static float g_oSpin = 0.0f;
 
-// ─── HUD text system ──────────────────────────────────────────────────────────
-// Fuente ampliada: Números (0-9) y Letras (A-Z)
+//sistema HUD
 static const uint8_t FONT_ROWS[36][7] = {
     // 0-9
     {14,17,17,17,17,17,14}, {4,12,4,4,4,4,14}, {14,17,1,6,8,16,31}, {14,17,1,6,1,17,14},
@@ -465,7 +463,7 @@ static void hud_text(const char* str, int x, int y, int size, uint8_t r = 255, u
             int bits = FONT_ROWS[d][row];
             for (int col = 0; col < 5; col++) {
                 if ((bits >> (4 - col)) & 1) {
-                    // Pintar letra y borde negro simultáneamente (muchísimo más rápido)
+                    // Pintar letra y borde negro simultáneamente
                     for (int sy = -1; sy <= size; sy++) {
                         for (int sx = -1; sx <= size; sx++) {
                             int px = cx + col*size + sx;
@@ -492,9 +490,6 @@ static void hud_text(const char* str, int x, int y, int size, uint8_t r = 255, u
 
 static void hud_flush() {
     if (!hudTex || hudW == 0 || hudDX2 < hudDX1) return;
-    
-    // Ya no hay bucle gigante de cálculo de bordes aquí.
-    // Solo subimos la textura a la gráfica de golpe.
     glBindTexture(GL_TEXTURE_2D, hudTex);
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, hudW, hudH, GL_RGBA, GL_UNSIGNED_BYTE, hudBuf.data());
 }
@@ -513,7 +508,7 @@ static glm::mat4 makeShadowMatrix(glm::vec3 L, float groundZ = 0.0f)
     );
 }
 
-// ─── FBO para post-proceso ───────────────────────────────────────────────────
+// FBO para post-proceso
 void setup_fbo(int w, int h)
 {
     glGenFramebuffers(1, &fbo);
@@ -576,7 +571,6 @@ void setup_quad()
     glBindVertexArray(0);
 }
 
-// ─── Skybox helper ───────────────────────────────────────────────────────────
 void crear_skybox()
 {
     float v[] = {
@@ -595,8 +589,6 @@ void crear_skybox()
     glBindVertexArray(0);
 }
 
-
-// ─── Inicialización ───────────────────────────────────────────────────────────
 void init_scene()
 {
     int w, h;
@@ -653,18 +645,15 @@ void init_scene()
 
     lastFrameTime = (float)glfwGetTime();
 
-    // Load alphabet model (one mesh per letter)
+    // Load alphabet model
     alphabetModel.load(getAssetPath("alphabet obj.obj"));
 
-    // Character map: verified one-by-one with Tab + Left/Right arrow viewer.
-    // Duplicates resolved as upper/lowercase pairs where distinguishable.
     alphabetModel.setCharMap({
-        // ── Digits ────────────────────────────────────────────────────────────
+        // digitos
         {'6', 0}, {'8', 1}, {'9', 2}, {'4', 3},
-        // index 4 = unknown
         {'3', 4}, {'w', 5},
         {'0',56}, {'7',57}, {'1',58}, {'2',59}, {'5',55},
-        // ── Letters ───────────────────────────────────────────────────────────
+        // letras
         {'P', 6}, {'g', 7},
         {'Q', 8}, {'W', 9},
         {'p',10}, {'m',11}, {'f',12}, {'h',13}, {'a',14}, {'x',15},
@@ -678,14 +667,12 @@ void init_scene()
         {'o',44}, {'z',45}, {'Z',46}, {'M',47},
         {'H',48}, {'C',49}, {'N',50}, {'A',51},
         {'i',52}, {'T',53}, {'Y',54},
-        // ── Special ───────────────────────────────────────────────────────────
         {'.',60}, {'j',61}, {'l',62},
-        // index 55 = duplicate 5, index 63 = duplicate '.' → skipped
     });
 }
 
 
-// ─── Render ───────────────────────────────────────────────────────────────────
+// Render
 void render_scene()
 {
     // deltaTime real
@@ -693,19 +680,12 @@ void render_scene()
     dt  = now - lastFrameTime;
     lastFrameTime = now;
     if (dt > 0.05f) dt = 0.05f;
-    g_oSpin += dt * 2.0f;  // ~2 rad/s spin for 'O' letters
+    g_oSpin += dt * 2.0f;
 
-    
-
-    // La mira sigue la dirección de la cámara (el mouse apunta)
-
-
-
+    // direccion de la camara segun el mouse
     game.level.shotAngle = cam_yaw + 180.0f;
     if(startedGame) game.level.handleInput(window, dt, game.bonusQueue);
     game.level.update(dt, game.bonusQueue);
-    
-
 
     vec3 target = game.level.ball.pos;
     static glm::vec3 camPos = glm::vec3(game.level.holePos.x, game.level.holePos.y, game.level.holePos.z + 4.0f);
@@ -764,11 +744,11 @@ void render_scene()
         }
     }
 
-    mat4 P  = perspective(glm::radians(fov), aspect, 0.5f, 100.0f);
+    mat4 P  = perspective(glm::radians(fov), aspect, 0.5f, 1000.0f);
     mat4 V  = lookAt(camPos, target, up);
     mat4 VP = P * V;
 
-    // Billboard vectors for particle rendering (extracted from view matrix rows)
+    // vectores del billboard
     game.level.camRight = glm::normalize(glm::vec3(V[0][0], V[1][0], V[2][0]));
     game.level.camUp    = glm::normalize(glm::vec3(V[0][1], V[1][1], V[2][1]));
 
@@ -786,6 +766,9 @@ void render_scene()
     glBindVertexArray(0);
     glEnable(GL_DEPTH_TEST);
 
+    // glm::vec3 lightPos = game.level.ball.pos + glm::vec3(20.0f, 20.0f, 80.0f);
+    glm::vec3 lightPos = glm::vec3(300.0f, 0, 400.0f);
+
     // ── 1. Renderizar escena al FBO ───────────────────────────────────────────
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -795,6 +778,7 @@ void render_scene()
     // Objetos (sin pixelación por textura: la hace el post-proceso)
     glUseProgram(prog);
     transfer_float("uPixelSize", 1.0f);
+    transfer_vec3("uLightPos", lightPos);
     game.level.render(prog, VP, game.bonusQueue);
 
     
@@ -827,7 +811,6 @@ void render_scene()
 
     // Sombras con máscara de stencil: sombras solo donde hay suelo
     {
-        static const glm::vec3 LIGHT_POS = {25.0f, 25.0f, 80.0f};
 
         // Paso 1 – marcar en stencil las áreas de suelo (stencil = 1)
         // Usar GL_LEQUAL porque los floors ya están en el depth buffer con GL_LESS
@@ -857,7 +840,7 @@ void render_scene()
         glDepthFunc(GL_LEQUAL);
         glEnable(GL_POLYGON_OFFSET_FILL);
         glPolygonOffset(-1.0f, -1.0f);
-        game.level.renderShadows(shadow_prog, VP, LIGHT_POS);
+        game.level.renderShadows(shadow_prog, VP, lightPos);
         glDisable(GL_POLYGON_OFFSET_FILL);
         glDepthFunc(GL_LESS);
         glDisable(GL_BLEND);
@@ -880,7 +863,7 @@ void render_scene()
     // Partículas: después del skybox para que no sean sobreescritas por él
     game.level.particles.render(VP, game.level.camRight, game.level.camUp);
 
-    // ── 2. Post-proceso: pixelación sobre el framebuffer por defecto ──────────
+    // ── 2. Post-proceso: pixelación sobre el framebuffer por defecto
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClear(GL_COLOR_BUFFER_BIT);
     glDisable(GL_DEPTH_TEST);
@@ -902,8 +885,7 @@ void render_scene()
     glUniform1f(glGetUniformLocation(quad_prog, "uFogStart"),  100.0f);
     glUniform1f(glGetUniformLocation(quad_prog, "uFogEnd"),    200.0f);
 
-    // ── HUD: draw all text into CPU buffer, upload once ───────────────────────
-    // 1. Calculamos la proporción de la pantalla actual frente a la original (750 de ALTO)
+    // HUD: dibujamos todo el texto en un buffer en la CPU
     float screenRatio = (float)ALTO / 750.0f;
 
     static float scaleFont = 6.0f;
@@ -911,10 +893,9 @@ void render_scene()
     else if (game.gameTimer < 5.0f)  scaleFont += cosf(now * 10.0f) * 0.5f;
     else scaleFont = 6.0f;
     
-    // 2. Escalamos la fuente del temporizador
     int sf = std::max(1, (int)(scaleFont * screenRatio));
 
-    // custom HUD para dibujar texto (solo numeros)
+    // timer
     if(startedGame){
         hud_clear();
         {
@@ -923,11 +904,9 @@ void render_scene()
             sprintf_s(timerStr, sizeof(timerStr), "%d", timerSec);
             int tw = hud_text_width(timerStr, sf);
             bool urgent = game.gameTimer < 5.0f;
-            // Escalamos también la posición Y (10 * screenRatio)
             hud_text(timerStr, (ANCHO - tw) / 2, (int)(10 * screenRatio), sf,
                     255, urgent ? 51 : 255, urgent ? 51 : 255);
 
-            // now lets draw the miliseconds as well, under the seconds and smaller
             char msStr[8];
             int ms = (int)((game.gameTimer - std::floor(game.gameTimer)) * 100);
             sprintf_s(msStr, sizeof(msStr), "%02d", ms);
@@ -938,9 +917,9 @@ void render_scene()
            // numero de nivel en la esquina superior izquierda
             char levelStr[16];
             sprintf_s(levelStr, sizeof(levelStr), "NIVEL %d", game.currentLevel);
-            // 3. Escalamos el tamaño 3 original del nivel y su posición X (-35) e Y (10)
+
             int lvlSf = std::max(1, (int)(3.0f * screenRatio));
-            hud_text(levelStr, (int)(15 * screenRatio), (int)(10 * screenRatio), lvlSf); // Puesto en 15 para que no se salga a la izquierda
+            hud_text(levelStr, (int)(15 * screenRatio), (int)(10 * screenRatio), lvlSf);
 
             // 4. Mensaje inferior de la tecla F
             char msgStr[64];
@@ -948,7 +927,7 @@ void render_scene()
                 sprintf_s(msgStr, sizeof(msgStr), "PULSE F PARA PANTALLA COMPLETA");
                 int msgSf = std::max(1, (int)(2.0f * screenRatio)); // Un poco más pequeño que el Nivel
                 int msgW = hud_text_width(msgStr, msgSf);
-                hud_text(msgStr, (ANCHO - msgW) / 2, ALTO - (int)(40 * screenRatio), msgSf, 200, 200, 200); // Centrado, abajo, en color gris claro
+                hud_text(msgStr, (ANCHO - msgW) / 2, ALTO - (int)(40 * screenRatio), msgSf, 200, 200, 200);
             }
             
             // 5. Mensaje tutorial
@@ -957,7 +936,7 @@ void render_scene()
                 sprintf_s(tutorialStr, sizeof(tutorialStr), "CLICK PARA IMPULSAR, ESPACIO PARA SALTAR");
                 int tutorialSf = std::max(1, (int)(2.0f * screenRatio));
                 int tutorialW = hud_text_width(tutorialStr, tutorialSf);
-                hud_text(tutorialStr, (ANCHO - tutorialW) / 2, ALTO - (int)(20 * screenRatio), tutorialSf, 200, 200, 200); // Centrado, abajo, en color gris claro
+                hud_text(tutorialStr, (ANCHO - tutorialW) / 2, ALTO - (int)(20 * screenRatio), tutorialSf, 200, 200, 200);
             }
 
             // 6. Indicador de bonus dorado (si es mayor que 0, se escribe)
@@ -988,7 +967,7 @@ void render_scene()
 
     glEnable(GL_DEPTH_TEST);
 
-    // ── Transitions + timer ───────────────────────────────────────────────────
+    // transiciones y timer
     game.update(dt, startedGame);
     
 }
@@ -1005,8 +984,6 @@ float lerp(float a, float b, float t) {
     return a + t * (b - a);
 }
 
-
-// ─── Main ─────────────────────────────────────────────────────────────────────
 int main(int argc, char* argv[])
 {
     init_GLFW();
@@ -1022,7 +999,7 @@ int main(int argc, char* argv[])
     printf("Audio load error: %d\n", error);
     gMusic.setLooping(true);
     int handle = gSoloud->play(gMusic);
-    gSoloud->setVolume(handle, 0.0f); //0 for debug, deberia ser 1.0
+    gSoloud->setVolume(handle, 1.0f); //0 for debug, deberia ser 1.0
 
     game.init(gSoloud);
     init_scene();
@@ -1044,7 +1021,6 @@ int main(int argc, char* argv[])
 }
 
 
-// ─── Callbacks ────────────────────────────────────────────────────────────────
 void show_info()
 {
     static int fps = 0;
@@ -1071,7 +1047,7 @@ void ResizeCallback(GLFWwindow* window, int width, int height)
     ALTO = height; ANCHO = width;
     aspect = (float)width / (float)height;
     destroy_fbo();
-    setup_fbo(width, height);  // also calls hud_resize
+    setup_fbo(width, height);
 }
 
 static void KeyCallback(GLFWwindow* window, int key, int code, int action, int mode)

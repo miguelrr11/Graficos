@@ -60,11 +60,10 @@ void Level::load(int levelNum, const Resources& res)
     tracks.clear();
 
     // --- EL DIRECTOR DE ARCHIPIÉLAGOS ---
-    // En Nivel 1 y 2 habrá 2 islas. En Nivel 3 y 4 habrá 3 islas, etc.
     int numIslands = int((2 + (levelNum - 1) / 2) * 1.5);
 
     // El hueco crece con la dificultad (empieza en 3m, sube 0.5m por nivel)
-    float jumpDistance = 3.0f + (levelNum * 0.5f); 
+    
 
     glm::vec2 currentStartPos = {0.0f, 0.0f};
     float currentStartAngle = 0.0f;
@@ -72,6 +71,8 @@ void Level::load(int levelNum, const Resources& res)
     for (int i = 0; i < numIslands; i++) {
         // Generamos tramos cortos para que las islas no sean kilométricas
         int numTramos = 2 + (rand() % 4); // de 2 a 5 tramos por isla
+
+        float jumpDistance = ranBetween(4.0f, 8.0f);
         
         LevelData nuevaIsla = generateTrack(currentStartPos, currentStartAngle, numTramos, levelNum);
         tracks.push_back(nuevaIsla);
