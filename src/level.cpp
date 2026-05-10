@@ -611,12 +611,12 @@ void Level::render(GLuint prog, const glm::mat4& VP, const std::vector<int>& bon
             ep.endColor   = {obs.color.r, obs.color.g, obs.color.b, 0.0f};
             ep.rotVelSpread = 8.0f;
             ep.count      = 2;
-            particles.emit(ep);
+            if (particleEmitEnabled) particles.emit(ep);
         }
 
     }
 
-    if(!bonusQueue.empty()){
+    if(!bonusQueue.empty() && particleEmitEnabled){
         int lastBonusType = bonusQueue.back();
         EmitParams ep;
         float ranAngle = rf() * 6.2831853f;

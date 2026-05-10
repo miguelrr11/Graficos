@@ -388,6 +388,22 @@ float cam_distance = 3.0f;
 float lastFrameTime = 0.0f;
 float dt = 0.0f;
 
+// Estado compartido entre update_scene y render_scene
+static float     g_now     = 0.0f;
+static glm::vec3 g_camPos;
+static glm::vec3 g_titlePos;
+static glm::vec3 g_target;
+static glm::mat4 g_P, g_V, g_VP;
+static glm::vec3 g_lightPos;
+static bool      g_paused  = false;
+
+// Statics de la animación del intro (promovidos para que los actualice update_scene)
+static float anim_Timer      = 0.f;
+static float anim_StartYaw   = 0.f;
+static float anim_StartPitch = 0.f;
+static float anim_TargetYaw  = 0.f;
+static bool  anim_Inited     = false;
+
 // Para el spin de la letra O en el titulo
 static float g_oSpin = 0.0f;
 
@@ -669,105 +685,100 @@ void init_scene()
         {'i',52}, {'T',53}, {'Y',54},
         {'.',60}, {'j',61}, {'l',62},
     });
+
+    // Inicializar estado de cámara compartido
+    g_camPos   = glm::vec3(game.level.holePos.x, game.level.holePos.y, game.level.holePos.z + 4.0f);
+    g_target   = glm::vec3(game.level.ball.pos.x, game.level.ball.pos.y, 0.0f);
+    g_titlePos = g_camPos + glm::normalize(g_target - g_camPos) * 2.0f;
+}
+
+void update_scene() {
+    g_now = (float)glfwGetTime();
+    dt    = g_now - lastFrameTime;
+    lastFrameTime = g_now;
+    if (dt > 0.05f) dt = 0.05f;
+    g_oSpin += dt * 2.0f;
+
+    game.level.shotAngle = cam_yaw + 180.0f;
+    if (startedGame) game.level.handleInput(window, dt, game.bonusQueue);
+    game.level.update(dt, game.bonusQueue);
+
+    g_target = game.level.ball.pos;
+
+    if (startedGame) {
+        g_camPos.x = g_target.x + cam_distance * cos(glm::radians(cam_pitch)) * cos(glm::radians(cam_yaw));
+        g_camPos.y = g_target.y + cam_distance * cos(glm::radians(cam_pitch)) * sin(glm::radians(cam_yaw));
+        g_camPos.z = g_target.z + cam_distance * sin(glm::radians(cam_pitch));
+    }
+
+    if (!startedGame) {
+        g_target = glm::vec3(game.level.ball.pos.x, game.level.ball.pos.y, 0.0f);
+        const float animDuration = 1.25f;
+
+        if (startedAnimationStartingGame) {
+            if (!anim_Inited) {
+                glm::vec3 d = g_camPos - g_target;
+                float horiz = glm::length(glm::vec2(d.x, d.y));
+                anim_StartYaw   = glm::degrees(atan2f(d.y, d.x));
+                anim_StartPitch = glm::degrees(atan2f(d.z, horiz));
+                anim_TargetYaw  = glm::degrees(atan2f(
+                    game.level.ball.pos.y - game.level.holePos.y,
+                    game.level.ball.pos.x - game.level.holePos.x));
+                anim_Inited = true;
+            }
+
+            anim_Timer += dt;
+            float rawT = glm::clamp(anim_Timer / animDuration, 0.f, 1.f);
+            float t    = rawT * rawT * (3.f - 2.f * rawT);
+
+            float yawDiff = anim_TargetYaw - anim_StartYaw;
+            if (yawDiff >  180.f) yawDiff -= 360.f;
+            if (yawDiff < -180.f) yawDiff += 360.f;
+            cam_yaw   = anim_StartYaw + yawDiff * t;
+            cam_pitch = lerp(anim_StartPitch, 45.0f, t);
+
+            glm::vec3 gameCamPos;
+            gameCamPos.x = g_target.x + cam_distance * cosf(glm::radians(cam_pitch)) * cosf(glm::radians(cam_yaw));
+            gameCamPos.y = g_target.y + cam_distance * cosf(glm::radians(cam_pitch)) * sinf(glm::radians(cam_yaw));
+            gameCamPos.z = g_target.z + cam_distance * sinf(glm::radians(cam_pitch));
+            g_camPos = lerpVector(g_camPos, gameCamPos, 0.06f);
+
+            if (rawT >= 1.0f) {
+                g_camPos = gameCamPos;
+                startedGame = true;
+            }
+        }
+    }
+
+    g_P  = perspective(glm::radians(fov), aspect, 0.5f, 1000.0f);
+    g_V  = lookAt(g_camPos, g_target, up);
+    g_VP = g_P * g_V;
+
+    game.level.camRight = glm::normalize(glm::vec3(g_V[0][0], g_V[1][0], g_V[2][0]));
+    game.level.camUp    = glm::normalize(glm::vec3(g_V[0][1], g_V[1][1], g_V[2][1]));
+
+    g_lightPos = glm::vec3(300.0f, 0, 400.0f);
+
+    game.update(dt, startedGame);
 }
 
 
 // Render
 void render_scene()
 {
-    // deltaTime real
-    float now = (float)glfwGetTime();
-    dt  = now - lastFrameTime;
-    lastFrameTime = now;
-    if (dt > 0.05f) dt = 0.05f;
-    g_oSpin += dt * 2.0f;
-
-    // direccion de la camara segun el mouse
-    game.level.shotAngle = cam_yaw + 180.0f;
-    if(startedGame) game.level.handleInput(window, dt, game.bonusQueue);
-    game.level.update(dt, game.bonusQueue);
-
-    vec3 target = game.level.ball.pos;
-    static glm::vec3 camPos = glm::vec3(game.level.holePos.x, game.level.holePos.y, game.level.holePos.z + 4.0f);
-    glm::vec3 dir = glm::normalize(target - camPos);
-    static glm::vec3 titlePos = camPos + dir * 2.0f;
-
-    if(startedGame){
-        camPos.x = target.x + cam_distance * cos(glm::radians(cam_pitch)) * cos(glm::radians(cam_yaw));
-        camPos.y = target.y + cam_distance * cos(glm::radians(cam_pitch)) * sin(glm::radians(cam_yaw));
-        camPos.z = target.z + cam_distance * sin(glm::radians(cam_pitch));
-    }
-
-    if(!startedGame){
-        target = glm::vec3(game.level.ball.pos.x, game.level.ball.pos.y, 0.0f);
-
-        static float animTimer      = 0.f;
-        static float animStartYaw   = 0.f;
-        static float animStartPitch = 0.f;
-        static float animTargetYaw  = 0.f;
-        static bool  animInited     = false;
-        const  float animDuration   = 1.25f; //duracion de la animacion de girar la camara al llegar a la bola
-
-        if(startedAnimationStartingGame) {
-            if(!animInited) {
-                glm::vec3 d = camPos - target;
-                float horiz = glm::length(glm::vec2(d.x, d.y));
-                animStartYaw   = glm::degrees(atan2f(d.y, d.x));
-                animStartPitch = glm::degrees(atan2f(d.z, horiz));
-                // Camera behind ball = opposite of ball→hole direction
-                animTargetYaw  = glm::degrees(atan2f(
-                    game.level.ball.pos.y - game.level.holePos.y,
-                    game.level.ball.pos.x - game.level.holePos.x));
-                animInited = true;
-            }
-
-            animTimer += dt;
-            float rawT = glm::clamp(animTimer / animDuration, 0.f, 1.f);
-            float t    = rawT * rawT * (3.f - 2.f * rawT);
-
-            float yawDiff = animTargetYaw - animStartYaw;
-            if (yawDiff >  180.f) yawDiff -= 360.f;
-            if (yawDiff < -180.f) yawDiff += 360.f;
-            cam_yaw   = animStartYaw + yawDiff * t;
-            cam_pitch = lerp(animStartPitch, 45.0f, t);
-
-            glm::vec3 gameCamPos;
-            gameCamPos.x = target.x + cam_distance * cosf(glm::radians(cam_pitch)) * cosf(glm::radians(cam_yaw));
-            gameCamPos.y = target.y + cam_distance * cosf(glm::radians(cam_pitch)) * sinf(glm::radians(cam_yaw));
-            gameCamPos.z = target.z + cam_distance * sinf(glm::radians(cam_pitch));
-            camPos = lerpVector(camPos, gameCamPos, 0.06f);
-
-            if(rawT >= 1.0f) {
-                camPos = gameCamPos;
-                startedGame = true;
-            }
-        }
-    }
-
-    mat4 P  = perspective(glm::radians(fov), aspect, 0.5f, 1000.0f);
-    mat4 V  = lookAt(camPos, target, up);
-    mat4 VP = P * V;
-
-    // vectores del billboard
-    game.level.camRight = glm::normalize(glm::vec3(V[0][0], V[1][0], V[2][0]));
-    game.level.camUp    = glm::normalize(glm::vec3(V[0][1], V[1][1], V[2][1]));
-
     // ── 0. Skybox solo al sky FBO (usado después para el color de niebla) ────
     glBindFramebuffer(GL_FRAMEBUFFER, skyFBO);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
     glDisable(GL_DEPTH_TEST);
     glUseProgram(skybox_prog);
-    transfer_mat4("VP", P * mat4(mat3(V)));
-    transfer_float("uTime", now);
+    transfer_mat4("VP", g_P * mat4(mat3(g_V)));
+    transfer_float("uTime", g_now);
     transfer_float("uColorSeed", game.level.skyColorSeed);
     glBindVertexArray(skyboxVAO);
     glDrawArrays(GL_TRIANGLES, 0, 36);
     glBindVertexArray(0);
     glEnable(GL_DEPTH_TEST);
-
-    // glm::vec3 lightPos = game.level.ball.pos + glm::vec3(20.0f, 20.0f, 80.0f);
-    glm::vec3 lightPos = glm::vec3(300.0f, 0, 400.0f);
 
     // ── 1. Renderizar escena al FBO ───────────────────────────────────────────
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
@@ -775,18 +786,17 @@ void render_scene()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
 
-    // Objetos (sin pixelación por textura: la hace el post-proceso)
     glUseProgram(prog);
     transfer_float("uPixelSize", 1.0f);
-    transfer_vec3("uLightPos", lightPos);
-    game.level.render(prog, VP, game.bonusQueue);
+    transfer_vec3("uLightPos", g_lightPos);
+    game.level.particleEmitEnabled = !g_paused;
+    game.level.render(prog, g_VP, game.bonusQueue);
 
-    
     if (!startedGame) {
-        glm::vec3 viewDir   = glm::normalize(camPos - target);
+        glm::vec3 viewDir   = glm::normalize(g_camPos - g_target);
         glm::vec3 worldZ    = glm::vec3(0.f, 0.f, 1.f);
         glm::vec3 textRight = glm::normalize(glm::cross(worldZ, viewDir));
-        glm::vec3 textFwd   = -viewDir + 0.5f * worldZ;  // inclinado hacia abajo para mejor perspectiva
+        glm::vec3 textFwd   = -viewDir + 0.5f * worldZ;
         glm::vec3 textUp    = glm::normalize(glm::cross(textRight, textFwd));
         glm::mat4 rot(1.f);
         rot[0] = glm::vec4(textRight, 0.f);
@@ -795,25 +805,21 @@ void render_scene()
 
         float charSize = 0.3f, spacing = 0.03f;
         float w = alphabetModel.stringWidth("HOP IN ONE", charSize, spacing);
-        glm::vec3 startPos = titlePos - textRight * (w * 0.5f);
-        alphabetModel.drawString("HOP IN ONE", prog, VP,
+        glm::vec3 startPos = g_titlePos - textRight * (w * 0.5f);
+        alphabetModel.drawString("HOP IN ONE", prog, g_VP,
             startPos, charSize, spacing, glm::vec3(1.f, 0.8f, 0.2f), rot, g_oSpin);
 
         charSize = 0.17f, spacing = 0.02f;
         char instr[12] = "PRESS SPACE";
         w = alphabetModel.stringWidth(instr, charSize, spacing);
-        startPos = titlePos - textRight * (w * 0.5f);
+        startPos = g_titlePos - textRight * (w * 0.5f);
         startPos.z -= 0.4f;
-        alphabetModel.drawString(instr, prog, VP,
+        alphabetModel.drawString(instr, prog, g_VP,
             startPos, charSize, spacing, glm::vec3(1.f, 0.8f, 0.2f), rot, g_oSpin);
     }
-    
 
     // Sombras con máscara de stencil: sombras solo donde hay suelo
     {
-
-        // Paso 1 – marcar en stencil las áreas de suelo (stencil = 1)
-        // Usar GL_LEQUAL porque los floors ya están en el depth buffer con GL_LESS
         glEnable(GL_STENCIL_TEST);
         glStencilMask(0xFF);
         glStencilFunc(GL_ALWAYS, 1, 0xFF);
@@ -823,14 +829,13 @@ void render_scene()
         glDepthFunc(GL_LEQUAL);
         glUseProgram(shadow_prog);
         for (const auto& fm : game.level.floorMeshes) {
-            transfer_mat4("MVP", VP);
+            transfer_mat4("MVP", g_VP);
             glBindVertexArray(fm.VAO);
             glDrawElements(GL_TRIANGLES, fm.indexCount, GL_UNSIGNED_INT, 0);
             glBindVertexArray(0);
         }
         glDepthFunc(GL_LESS);
 
-        // Paso 2 – dibujar sombras solo donde stencil == 1
         glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
         glStencilFunc(GL_EQUAL, 1, 0xFF);
         glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
@@ -840,7 +845,7 @@ void render_scene()
         glDepthFunc(GL_LEQUAL);
         glEnable(GL_POLYGON_OFFSET_FILL);
         glPolygonOffset(-1.0f, -1.0f);
-        game.level.renderShadows(shadow_prog, VP, lightPos);
+        game.level.renderShadows(shadow_prog, g_VP, g_lightPos);
         glDisable(GL_POLYGON_OFFSET_FILL);
         glDepthFunc(GL_LESS);
         glDisable(GL_BLEND);
@@ -852,16 +857,16 @@ void render_scene()
     // Skybox
     glDepthFunc(GL_LEQUAL);
     glUseProgram(skybox_prog);
-    transfer_mat4("VP", P * mat4(mat3(V)));
-    transfer_float("uTime", now);
+    transfer_mat4("VP", g_P * mat4(mat3(g_V)));
+    transfer_float("uTime", g_now);
     transfer_float("uColorSeed", game.level.skyColorSeed);
     glBindVertexArray(skyboxVAO);
     glDrawArrays(GL_TRIANGLES, 0, 36);
     glBindVertexArray(0);
     glDepthFunc(GL_LESS);
 
-    // Partículas: después del skybox para que no sean sobreescritas por él
-    game.level.particles.render(VP, game.level.camRight, game.level.camUp);
+    // Partículas
+    game.level.particles.render(g_VP, game.level.camRight, game.level.camUp);
 
     // ── 2. Post-proceso: pixelación sobre el framebuffer por defecto
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -885,18 +890,17 @@ void render_scene()
     glUniform1f(glGetUniformLocation(quad_prog, "uFogStart"),  100.0f);
     glUniform1f(glGetUniformLocation(quad_prog, "uFogEnd"),    200.0f);
 
-    // HUD: dibujamos todo el texto en un buffer en la CPU
+    // HUD
     float screenRatio = (float)ALTO / 750.0f;
 
     static float scaleFont = 6.0f;
     if (game.gameTimer < 10.0f) scaleFont = lerp(scaleFont, 10.0f, 0.1f);
-    else if (game.gameTimer < 5.0f)  scaleFont += cosf(now * 10.0f) * 0.5f;
+    else if (game.gameTimer < 5.0f)  scaleFont += cosf(g_now * 10.0f) * 0.5f;
     else scaleFont = 6.0f;
-    
+
     int sf = std::max(1, (int)(scaleFont * screenRatio));
 
-    // timer
-    if(startedGame){
+    if (startedGame) {
         hud_clear();
         {
             int timerSec = std::max(0, (int)std::ceil(game.gameTimer));
@@ -914,24 +918,20 @@ void render_scene()
             hud_text(msStr, (ANCHO - msw) / 2, (int)((10 + scaleFont * 7 + 5) * screenRatio), std::max(1, sf / 2),
                         255, urgent ? 51 : 255, urgent ? 51 : 255);
 
-           // numero de nivel en la esquina superior izquierda
             char levelStr[16];
             sprintf_s(levelStr, sizeof(levelStr), "NIVEL %d", game.currentLevel);
-
             int lvlSf = std::max(1, (int)(3.0f * screenRatio));
             hud_text(levelStr, (int)(15 * screenRatio), (int)(10 * screenRatio), lvlSf);
 
-            // 4. Mensaje inferior de la tecla F
             char msgStr[64];
             if (!isFullScreenGlobal) {
                 sprintf_s(msgStr, sizeof(msgStr), "PULSE F PARA PANTALLA COMPLETA");
-                int msgSf = std::max(1, (int)(2.0f * screenRatio)); // Un poco más pequeño que el Nivel
+                int msgSf = std::max(1, (int)(2.0f * screenRatio));
                 int msgW = hud_text_width(msgStr, msgSf);
                 hud_text(msgStr, (ANCHO - msgW) / 2, ALTO - (int)(40 * screenRatio), msgSf, 200, 200, 200);
             }
-            
-            // 5. Mensaje tutorial
-            if(game.currentLevel == 1) {
+
+            if (game.currentLevel == 1) {
                 char tutorialStr[64];
                 sprintf_s(tutorialStr, sizeof(tutorialStr), "CLICK PARA IMPULSAR, ESPACIO PARA SALTAR");
                 int tutorialSf = std::max(1, (int)(2.0f * screenRatio));
@@ -939,8 +939,7 @@ void render_scene()
                 hud_text(tutorialStr, (ANCHO - tutorialW) / 2, ALTO - (int)(20 * screenRatio), tutorialSf, 200, 200, 200);
             }
 
-            // 6. Indicador de bonus dorado (si es mayor que 0, se escribe)
-            if(game.goldBonus > 0){
+            if (game.goldBonus > 0) {
                 char goldBonusStr[64];
                 sprintf_s(goldBonusStr, sizeof(goldBonusStr), "10");
                 int tutorialSf = std::max(1, (int)(3.0f * screenRatio));
@@ -948,12 +947,11 @@ void render_scene()
                 float off = game.goldBonus * 50;
                 hud_text(goldBonusStr, (ANCHO - tutorialW) / 2 + 70, (int)(10 * screenRatio) + off, tutorialSf, 200, 200, 200);
                 game.goldBonus = lerp(game.goldBonus, 0.0f, 0.01f);
-                if(game.goldBonus < 0.05f) game.goldBonus = 0.0f;
+                if (game.goldBonus < 0.05f) game.goldBonus = 0.0f;
             }
         }
         hud_flush();
     }
-    
 
     glActiveTexture(GL_TEXTURE3);
     glBindTexture(GL_TEXTURE_2D, hudTex);
@@ -966,10 +964,6 @@ void render_scene()
     glBindVertexArray(0);
 
     glEnable(GL_DEPTH_TEST);
-
-    // transiciones y timer
-    game.update(dt, startedGame);
-    
 }
 
 glm::vec3 lerpVector(const glm::vec3& a, const glm::vec3& b, float t) {
@@ -1006,6 +1000,7 @@ int main(int argc, char* argv[])
 
     glfwSwapInterval(1);
     while (!glfwWindowShouldClose(window)) {
+        if (!g_paused) update_scene();
         render_scene();
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -1053,6 +1048,11 @@ void ResizeCallback(GLFWwindow* window, int width, int height)
 static void KeyCallback(GLFWwindow* window, int key, int code, int action, int mode)
 {
     if (key == GLFW_KEY_ESCAPE) glfwSetWindowShouldClose(window, true);
+
+    if (key == GLFW_KEY_ENTER && action == GLFW_PRESS) {
+        g_paused = !g_paused;
+        if (!g_paused) lastFrameTime = (float)glfwGetTime(); // evitar spike de dt al retomar
+    }
     // R: reiniciar nivel
     if (key == GLFW_KEY_R && action == GLFW_PRESS) {
         game.level.destroy();
@@ -1123,6 +1123,7 @@ GLFWmonitor* getCurrentMonitor(GLFWwindow* window)
 
 void MouseCallback(GLFWwindow* window, double xpos, double ypos)
 {
+    if (g_paused) { lastX = (float)xpos; lastY = (float)ypos; return; }
     if (firstMouse) {
         lastX = (float)xpos;
         lastY = (float)ypos;

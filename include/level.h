@@ -84,6 +84,7 @@ public:
 
     // ── Particles & billboard helpers ────────────────────────────────────────
     ParticleSystem particles;
+    bool      particleEmitEnabled = true;
     glm::vec3 camRight = { 1, 0, 0 };
     glm::vec3 camUp    = { 0, 0, 1 };
 
