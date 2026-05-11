@@ -34,6 +34,7 @@ struct Model {
     std::unordered_map<char, int> charMap;  // optional: char → mesh index
 
     bool load(const std::string& path);
+    bool loadMem(const unsigned char* data, unsigned int size);
 
     // Draw all meshes
     void draw(GLuint prog, const glm::mat4& MVP, const glm::mat4& M = glm::mat4(1.f)) const;

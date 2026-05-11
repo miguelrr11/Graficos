@@ -51,20 +51,14 @@ void ModelMesh::destroy()
     indexCount = 0;
 }
 
-bool Model::load(const std::string& path)
+static bool processScene(Model& model, Assimp::Importer& importer, const aiScene* scene, const char* label)
 {
-    Assimp::Importer importer;
-    const aiScene* scene = importer.ReadFile(path,
-        aiProcess_Triangulate |
-        aiProcess_GenSmoothNormals |
-        aiProcess_FlipUVs);
-
     if (!scene || (scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) || !scene->mRootNode) {
         printf("[Model] Assimp error: %s\n", importer.GetErrorString());
         return false;
     }
 
-    meshes.reserve(scene->mNumMeshes);
+    model.meshes.reserve(scene->mNumMeshes);
     for (unsigned int i = 0; i < scene->mNumMeshes; i++) {
         aiMesh* aiM = scene->mMeshes[i];
 
@@ -93,7 +87,6 @@ bool Model::load(const std::string& path)
         ModelMesh mesh;
         mesh.name = aiM->mName.C_Str();
 
-        // Compute bounds from vertex positions
         for (const auto& v : verts) {
             mesh.boundsMin = glm::min(mesh.boundsMin, v.pos);
             mesh.boundsMax = glm::max(mesh.boundsMax, v.pos);
@@ -103,11 +96,32 @@ bool Model::load(const std::string& path)
         mesh.size = std::max({ext.x, ext.y, ext.z, 0.001f});
 
         mesh.upload(verts, indices);
-        meshes.push_back(std::move(mesh));
+        model.meshes.push_back(std::move(mesh));
     }
 
-    printf("[Model] Loaded '%s'  (%d meshes)\n", path.c_str(), (int)meshes.size());
+    printf("[Model] Loaded '%s'  (%d meshes)\n", label, (int)model.meshes.size());
     return true;
+}
+
+bool Model::load(const std::string& path)
+{
+    Assimp::Importer importer;
+    const aiScene* scene = importer.ReadFile(path,
+        aiProcess_Triangulate |
+        aiProcess_GenSmoothNormals |
+        aiProcess_FlipUVs);
+    return processScene(*this, importer, scene, path.c_str());
+}
+
+bool Model::loadMem(const unsigned char* data, unsigned int size)
+{
+    Assimp::Importer importer;
+    const aiScene* scene = importer.ReadFileFromMemory(data, size,
+        aiProcess_Triangulate |
+        aiProcess_GenSmoothNormals |
+        aiProcess_FlipUVs,
+        "obj");
+    return processScene(*this, importer, scene, "<embedded obj>");
 }
 
 void Model::draw(GLuint prog, const glm::mat4& MVP, const glm::mat4& M) const

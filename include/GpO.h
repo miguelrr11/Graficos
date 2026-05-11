@@ -88,6 +88,7 @@ GLFWwindow*  Init_Window(const char*);
 
 // FUNCION PARA CARGAR TEXTURA
 GLuint cargar_textura(const char* ruta);
+GLuint cargar_textura_mem(const unsigned char* mem, unsigned int size);
 
 // Buscador de rutas universal
 std::string getAssetPath(const std::string& filename);

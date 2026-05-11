@@ -12,6 +12,7 @@ ATG, 2019
 #include "soloud.h"
 #include "soloud_wavstream.h"
 #include "game.h"
+#include <embedded_assets.h>
 
 
 // TAMAÑO y TITULO INICIAL de la VENTANA
@@ -663,7 +664,7 @@ void init_scene()
     lastFrameTime = (float)glfwGetTime();
 
     // Load alphabet model
-    alphabetModel.load(getAssetPath("alphabet obj.obj"));
+    alphabetModel.loadMem(asset_alphabet_obj_obj, asset_alphabet_obj_obj_size);
 
     alphabetModel.setCharMap({
         // digitos
@@ -1024,11 +1025,11 @@ int main(int argc, char* argv[])
 
     int initErr = gSoloud->init(SoLoud::Soloud::CLIP_ROUNDOFF, SoLoud::Soloud::MINIAUDIO);
     printf("SoLoud init error: %d\n", initErr);
-    int error = gMusic.load(getAssetPath("Balatro.mp3").c_str());
+    int error = gMusic.loadMem(asset_Balatro_mp3, asset_Balatro_mp3_size, false, false);
     printf("Audio load error: %d\n", error);
     gMusic.setLooping(true);
     int handle = gSoloud->play(gMusic);
-    gSoloud->setVolume(handle, 0.0f); //0 for debug, deberia ser 1.0
+    gSoloud->setVolume(handle, 1.0f); //0 for debug, deberia ser 1.0
 
     game.init(gSoloud);
     init_scene();

@@ -1,18 +1,19 @@
 #include "game.h"
 #include <GpO.h>
 #include <cstdio>
+#include <embedded_assets.h>
 
 // ─────────────────────────────────────────────────────────────────────────────
 void Game::init(SoLoud::Soloud* sol)
 {
     res.soloud   = sol;
-    res.texCesped = cargar_textura(getAssetPath("cesped.jpg").c_str());
-    res.texMadera = cargar_textura(getAssetPath("madera2.jpg").c_str());
-    res.texHoyo   = cargar_textura(getAssetPath("hoyo.png").c_str());
-    res.texBola   = cargar_textura(getAssetPath("bola2.png").c_str());
-    res.texIce    = cargar_textura(getAssetPath("ice4.png").c_str());
-    res.texSand   = cargar_textura(getAssetPath("sand4.png").c_str());
-    if (sol) res.sfxBeep.load(getAssetPath("beep3.wav").c_str());
+    res.texCesped = cargar_textura_mem(asset_cesped_jpg,  asset_cesped_jpg_size);
+    res.texMadera = cargar_textura_mem(asset_madera2_jpg, asset_madera2_jpg_size);
+    res.texHoyo   = cargar_textura_mem(asset_hoyo_png,    asset_hoyo_png_size);
+    res.texBola   = cargar_textura_mem(asset_bola2_png,   asset_bola2_png_size);
+    res.texIce    = cargar_textura_mem(asset_ice4_png,    asset_ice4_png_size);
+    res.texSand   = cargar_textura_mem(asset_sand4_png,   asset_sand4_png_size);
+    if (sol) res.sfxBeep.loadMem(asset_beep3_wav, asset_beep3_wav_size, false, false);
 
     level.soloud  = res.soloud;
     level.sfxBeep = &res.sfxBeep;

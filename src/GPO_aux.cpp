@@ -555,7 +555,7 @@ GLuint cargar_textura(const char* ruta) {
     int width, height, nrComponents;
     // Forzamos 4 componentes (RGBA) para que funcione tanto con JPG como con PNG con transparencia
     unsigned char* data = stbi_load(ruta, &width, &height, &nrComponents, 4);
-    
+
     if (data) {
         glBindTexture(GL_TEXTURE_2D, textureID);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
@@ -573,6 +573,30 @@ GLuint cargar_textura(const char* ruta) {
     } else {
         printf("ERROR: No se pudo cargar la textura en la ruta: %s\n", ruta);
         stbi_image_free(data);
+    }
+
+    return textureID;
+}
+
+GLuint cargar_textura_mem(const unsigned char* mem, unsigned int size) {
+    GLuint textureID;
+    glGenTextures(1, &textureID);
+
+    int width, height, nrComponents;
+    unsigned char* data = stbi_load_from_memory(mem, (int)size, &width, &height, &nrComponents, 4);
+
+    if (data) {
+        glBindTexture(GL_TEXTURE_2D, textureID);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        stbi_image_free(data);
+        printf("Textura embebida cargada (%dx%d)\n", width, height);
+    } else {
+        printf("ERROR: No se pudo decodificar textura embebida\n");
     }
 
     return textureID;
