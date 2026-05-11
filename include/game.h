@@ -30,6 +30,9 @@ public:
     // Indicador de bonus dorado (+10 secs)
     float goldBonus = 0.0f;
 
+    // Señal para que el renderer reoriente la cámara al inicio del nivel
+    bool needsCamReset = false;
+
     // Load textures + audio then build the first level.
     // Must be called after OpenGL and SoLoud are both initialised.
     void init(SoLoud::Soloud* sol);

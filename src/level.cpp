@@ -3,6 +3,8 @@
 #include <cstdio>
 #include <cmath>
 #include <ctime>
+#include <algorithm>
+
 
 // ─── Constantes de física ───────────────────────────────────────────────────
 static float rf() { return (float)rand() / (float)RAND_MAX; }

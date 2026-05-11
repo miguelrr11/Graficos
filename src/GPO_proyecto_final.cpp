@@ -32,7 +32,7 @@ GLuint quad_prog;
 GLuint quadVAO, quadVBO;
 GLuint fbo, fboColorTex, fboDepthTex;
 GLuint skyFBO, skyColorTex;
-float  pixelSize = 4.0f;   // píxeles de pantalla por "píxel de juego"
+float  pixelSize = 3.0f;   // píxeles de pantalla por "píxel de juego"
 
 static bool startedGame = false;
 static bool startedAnimationStartingGame = false;
@@ -395,7 +395,8 @@ static glm::vec3 g_titlePos;
 static glm::vec3 g_target;
 static glm::mat4 g_P, g_V, g_VP;
 static glm::vec3 g_lightPos;
-static bool      g_paused  = false;
+static bool      g_paused       = false;
+static bool      g_showControls = false;
 
 // Statics de la animación del intro (promovidos para que los actualice update_scene)
 static float anim_Timer      = 0.f;
@@ -721,9 +722,10 @@ void update_scene() {
                 float horiz = glm::length(glm::vec2(d.x, d.y));
                 anim_StartYaw   = glm::degrees(atan2f(d.y, d.x));
                 anim_StartPitch = glm::degrees(atan2f(d.z, horiz));
+                glm::vec2 hole  = game.level.tracks[0].holePos;
                 anim_TargetYaw  = glm::degrees(atan2f(
-                    game.level.ball.pos.y - game.level.holePos.y,
-                    game.level.ball.pos.x - game.level.holePos.x));
+                    game.level.ball.pos.y - hole.y,
+                    game.level.ball.pos.x - hole.x));
                 anim_Inited = true;
             }
 
@@ -741,7 +743,8 @@ void update_scene() {
             gameCamPos.x = g_target.x + cam_distance * cosf(glm::radians(cam_pitch)) * cosf(glm::radians(cam_yaw));
             gameCamPos.y = g_target.y + cam_distance * cosf(glm::radians(cam_pitch)) * sinf(glm::radians(cam_yaw));
             gameCamPos.z = g_target.z + cam_distance * sinf(glm::radians(cam_pitch));
-            g_camPos = lerpVector(g_camPos, gameCamPos, 0.06f);
+            const float camSnapSpeed = 4.0f;
+            g_camPos = lerpVector(g_camPos, gameCamPos, 1.0f - expf(-camSnapSpeed * dt));
 
             if (rawT >= 1.0f) {
                 g_camPos = gameCamPos;
@@ -760,6 +763,18 @@ void update_scene() {
     g_lightPos = glm::vec3(300.0f, 0, 400.0f);
 
     game.update(dt, startedGame);
+
+    if (game.needsCamReset && !game.level.tracks.empty()) {
+        glm::vec2 start = game.level.tracks[0].startPos;
+        glm::vec2 hole  = game.level.tracks[0].holePos;
+        glm::vec2 fwd   = hole - start;
+        if (glm::length(fwd) > 0.001f) {
+            fwd = glm::normalize(fwd);
+            cam_yaw   = glm::degrees(std::atan2f(fwd.y, fwd.x)) + 180.0f;
+            cam_pitch = 30.0f;
+        }
+        game.needsCamReset = false;
+    }
 }
 
 
@@ -931,12 +946,32 @@ void render_scene()
                 hud_text(msgStr, (ANCHO - msgW) / 2, ALTO - (int)(40 * screenRatio), msgSf, 200, 200, 200);
             }
 
-            if (game.currentLevel == 1) {
-                char tutorialStr[64];
-                sprintf_s(tutorialStr, sizeof(tutorialStr), "CLICK PARA IMPULSAR, ESPACIO PARA SALTAR");
-                int tutorialSf = std::max(1, (int)(2.0f * screenRatio));
-                int tutorialW = hud_text_width(tutorialStr, tutorialSf);
-                hud_text(tutorialStr, (ANCHO - tutorialW) / 2, ALTO - (int)(20 * screenRatio), tutorialSf, 200, 200, 200);
+            {
+                // Hint fijo: "PULSE TAB PARA CONTROLES"
+                const char* tabHint = "PULSE TAB PARA CONTROLES";
+                int hintSf = std::max(1, (int)(1.75f * screenRatio));
+                int hintW  = hud_text_width(tabHint, hintSf);
+                hud_text(tabHint, (ANCHO - hintW) / 2, ALTO - (int)(20 * screenRatio), hintSf, 180, 180, 180);
+
+                // Panel de controles mientras TAB esté pulsado
+                if (g_showControls) {
+                    const char* controls[] = {
+                        "CLICK PARA MOVERTE",
+                        "ESPACIO REPETIDAS VECES PARA SALTAR",
+                        "ENTER PARA PAUSA",
+                        "ESC PARA SALIR"
+                    };
+                    int ctrlSf      = std::max(1, (int)(3.0f * screenRatio));
+                    int lineHeight  = (int)(ctrlSf * 10 * screenRatio);
+                    int numLines    = sizeof(controls) / sizeof(controls[0]);
+                    int totalH      = numLines * lineHeight;
+                    int startY      = (ALTO - totalH) / 2;
+
+                    for (int i = 0; i < numLines; i++) {
+                        int w = hud_text_width(controls[i], ctrlSf);
+                        hud_text(controls[i], (ANCHO - w) / 2, startY + i * lineHeight, ctrlSf, 255, 255, 255);
+                    }
+                }
             }
 
             if (game.goldBonus > 0) {
@@ -1004,7 +1039,7 @@ int main(int argc, char* argv[])
     printf("Audio load error: %d\n", error);
     gMusic.setLooping(true);
     int handle = gSoloud->play(gMusic);
-    gSoloud->setVolume(handle, 1.0f); //0 for debug, deberia ser 1.0
+    gSoloud->setVolume(handle, 0.0f); //0 for debug, deberia ser 1.0
 
     game.init(gSoloud);
     init_scene();
@@ -1060,6 +1095,11 @@ static void KeyCallback(GLFWwindow* window, int key, int code, int action, int m
 {
     if (key == GLFW_KEY_ESCAPE) glfwSetWindowShouldClose(window, true);
 
+    if (key == GLFW_KEY_TAB) {
+        if (action == GLFW_PRESS)   g_showControls = true;
+        if (action == GLFW_RELEASE) g_showControls = false;
+    }
+
     if (key == GLFW_KEY_ENTER && action == GLFW_PRESS) {
         g_paused = !g_paused;
         if (!g_paused) lastFrameTime = (float)glfwGetTime(); // evitar spike de dt al retomar
@@ -1068,6 +1108,7 @@ static void KeyCallback(GLFWwindow* window, int key, int code, int action, int m
     if (key == GLFW_KEY_R && action == GLFW_PRESS) {
         game.level.destroy();
         game.level.load(game.currentLevel, game.res);
+        game.needsCamReset = true;
     }
 
     // Espacio: iniciar juego desde pantalla de título

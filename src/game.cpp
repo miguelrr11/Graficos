@@ -86,11 +86,13 @@ void Game::nextLevel()
     gameTimer += 30.0f;
     level.destroy();
     level.load(currentLevel, res);
+    needsCamReset = true;
 }
 
 void Game::restartLevel()
 {
     level.restartLevel();
+    needsCamReset = true;
 }
 
 void Game::resetToLevel1()
@@ -101,4 +103,5 @@ void Game::resetToLevel1()
     bonusQueue.clear();
     level.destroy();
     level.load(currentLevel, res);
+    needsCamReset = true;
 }
