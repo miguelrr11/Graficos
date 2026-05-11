@@ -486,21 +486,17 @@ void Level::resolveWalls(std::vector<int>& bonusQueue)
     for (auto& obs : obstacles) {
         if (obs.ignoreCollision && !obs.isBonus && !obs.isDying && !obs.dead) continue;
 
-        // ── 1. Rotar la posición de la bola al espacio LOCAL del obstáculo ──
+        // rotamos la bola según la rotacion del obstaculo, asi es más facil hacer el AABB
         float angle = glm::radians(obs.eulerAngles.z);
         float cosA  =  std::cos(angle);
         float sinA  =  std::sin(angle);
-
-        // Vector desde el centro del obstáculo hasta la bola
         glm::vec3 d = ball.pos - obs.position;
-
-        // Rotación inversa en Z (lleva d al espacio local)
         glm::vec3 local;
         local.x =  cosA * d.x + sinA * d.y;
         local.y = -sinA * d.x + cosA * d.y;
         local.z =  d.z;
 
-        // ── 2. AABB en espacio local (inflado por radio de la bola) ─────────
+        // AABB (inflado por el radio de la bola)
         glm::vec3 half = obs.size * 0.5f;
         glm::vec3 minE = -(half + glm::vec3(ball.radius));
         glm::vec3 maxE =  (half + glm::vec3(ball.radius));
@@ -509,7 +505,7 @@ void Level::resolveWalls(std::vector<int>& bonusQueue)
         if (local.y < minE.y || local.y > maxE.y) continue;
         if (local.z < minE.z || local.z > maxE.z) continue;
 
-        // ── 3. Cara de mínima penetración ───────────────────────────────────
+        // cara de minima prenetacion: calculamos cuánto se ha metido la bola en cada dirección
         float pen[6] = {
             maxE.x - local.x,  local.x - minE.x,
             maxE.y - local.y,  local.y - minE.y,
@@ -523,10 +519,10 @@ void Level::resolveWalls(std::vector<int>& bonusQueue)
         int   axis = best / 2;
         float sign = (best % 2 == 0) ? 1.0f : -1.0f;
 
-        // ball resting on top face of a wall
+        // la bola está tocando el suelo
         if (axis == 2 && sign == 1.0f) ball.onGround = true;
 
-        // ── 4. Corregir posición en espacio local y volver al mundo ─────────
+        // corrgimos la posicion de la bola antes de su velocidad
         local[axis] += sign * pen[best];
 
         glm::vec3 corrected;
@@ -535,7 +531,7 @@ void Level::resolveWalls(std::vector<int>& bonusQueue)
         corrected.z = local.z;
         if (!obs.isBonus) ball.pos = obs.position + corrected;
 
-        // ── 5. Reflejar velocidad en espacio local y volver al mundo ────────
+        // corregimos la velocidad de la bola según el mismo eje
         glm::vec3 velLocal;
         velLocal.x =  cosA * ball.vel.x + sinA * ball.vel.y;
         velLocal.y = -sinA * ball.vel.x + cosA * ball.vel.y;
@@ -686,8 +682,7 @@ void Level::render(GLuint prog, const glm::mat4& VP, const std::vector<int>& bon
 // ════════════════════════════════════════════════════════════════════════════
 void Level::renderShadows(GLuint shadow_prog, const glm::mat4& VP, glm::vec3 lightPos)
 {
-    // Collect one floor height per island (floors are pushed in island order,
-    // so the first tile of each new zBase marks a new island).
+    // guardamos cada Z
     std::vector<float> islandZ;
     for (const auto& fm : floorMeshes) {
         if (islandZ.empty() || fm.zBase != islandZ.back())
@@ -695,7 +690,7 @@ void Level::renderShadows(GLuint shadow_prog, const glm::mat4& VP, glm::vec3 lig
     }
     if (islandZ.empty()) return;
 
-    // Build a shadow matrix that projects onto the plane z = gz.
+    // construimos la matriz de proyeccion ortogonal para proyectar cada objeto al plano Z
     float lx = lightPos.x, ly = lightPos.y, lz = lightPos.z;
     auto shadowMat = [&](float gz) -> glm::mat4 {
         float d = lz - gz;
@@ -707,7 +702,7 @@ void Level::renderShadows(GLuint shadow_prog, const glm::mat4& VP, glm::vec3 lig
         );
     };
 
-    // Find the highest floor height at or below a given world-z (for obstacles / ball).
+    // buscamos el suelo más alto
     auto floorBelow = [&](float z) -> float {
         float best = islandZ[0];
         for (float h : islandZ)
@@ -717,7 +712,6 @@ void Level::renderShadows(GLuint shadow_prog, const glm::mat4& VP, glm::vec3 lig
 
     glUseProgram(shadow_prog);
 
-    // Wall meshes: wallMeshes[t] belongs to island t.
     for (size_t t = 0; t < wallMeshes.size(); ++t) {
         float gz  = (t < islandZ.size()) ? islandZ[t] : islandZ.back();
         glm::mat4 MVP = VP * shadowMat(gz);
@@ -727,7 +721,6 @@ void Level::renderShadows(GLuint shadow_prog, const glm::mat4& VP, glm::vec3 lig
         glBindVertexArray(0);
     }
 
-    // Obstacles (bonus boxes, hole decal – skip invisible physics boxes).
     for (const auto& obs : obstacles) {
         if (obs.ignoreRender || obs.isHole) continue;
         if (obs.size.x * obs.size.y > 50.0f) continue;
@@ -739,7 +732,7 @@ void Level::renderShadows(GLuint shadow_prog, const glm::mat4& VP, glm::vec3 lig
         glBindVertexArray(0);
     }
 
-    // Ball: project onto whatever floor it is currently on.
+    // la bola también proyecta sombra
     {
         float gz = currentFloorZ;
         SphereObstacle bm = ball.mesh;
