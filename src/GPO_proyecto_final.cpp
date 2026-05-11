@@ -32,7 +32,7 @@ GLuint quad_prog;
 GLuint quadVAO, quadVBO;
 GLuint fbo, fboColorTex, fboDepthTex;
 GLuint skyFBO, skyColorTex;
-float  pixelSize = 4.0f;   // píxeles de pantalla por "píxel de juego"
+float  pixelSize = 3.0f;   // píxeles de pantalla por "píxel de juego"
 
 static bool startedGame = false;
 static bool startedAnimationStartingGame = false;
