@@ -911,12 +911,12 @@ void render_scene()
             hud_text(timerStr, (ANCHO - tw) / 2, (int)(10 * screenRatio), sf,
                     255, urgent ? 51 : 255, urgent ? 51 : 255);
 
-            char msStr[8];
-            int ms = (int)((game.gameTimer - std::floor(game.gameTimer)) * 100);
-            sprintf_s(msStr, sizeof(msStr), "%02d", ms);
-            int msw = hud_text_width(msStr, sf / 2);
-            hud_text(msStr, (ANCHO - msw) / 2, (int)((10 + scaleFont * 7 + 5) * screenRatio), std::max(1, sf / 2),
-                        255, urgent ? 51 : 255, urgent ? 51 : 255);
+            // char msStr[8];
+            // int ms = (int)((game.gameTimer - std::floor(game.gameTimer)) * 100);
+            // sprintf_s(msStr, sizeof(msStr), "%02d", ms);
+            // int msw = hud_text_width(msStr, sf / 2);
+            // hud_text(msStr, (ANCHO - msw) / 2, (int)((10 + scaleFont * 7 + 5) * screenRatio), std::max(1, sf / 2),
+            //             255, urgent ? 51 : 255, urgent ? 51 : 255);
 
             char levelStr[16];
             sprintf_s(levelStr, sizeof(levelStr), "NIVEL %d", game.currentLevel);
@@ -949,6 +949,14 @@ void render_scene()
                 game.goldBonus = lerp(game.goldBonus, 0.0f, 0.01f);
                 if (game.goldBonus < 0.05f) game.goldBonus = 0.0f;
             }
+
+            if(g_paused){
+                char pausedStr[64];
+                sprintf_s(pausedStr, sizeof(pausedStr), "ENTER PARA DESPAUSAR");
+                int pausedSf = std::max(1, (int)(3.0f * screenRatio));
+                int pausedW = hud_text_width(pausedStr, pausedSf);
+                hud_text(pausedStr, (ANCHO - pausedW) / 2, ALTO / 2, pausedSf, 255, 100, 100);
+            }
         }
         hud_flush();
     }
@@ -980,6 +988,9 @@ float lerp(float a, float b, float t) {
 
 int main(int argc, char* argv[])
 {
+#ifdef EMBED_ASSETS
+    extractEmbeddedAssets();
+#endif
     init_GLFW();
     window = Init_Window(prac);
     load_Opengl();
